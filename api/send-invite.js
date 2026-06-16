@@ -1,7 +1,8 @@
-const { Resend } = require('resend');
+import { Resend } from 'resend';
 
-module.exports = async function handler(req, res) {
-  const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -151,4 +152,4 @@ If you didn't expect this invitation, you can safely ignore this email.
       message: error.message 
     });
   }
-};
+}

@@ -257,3 +257,58 @@ export async function getSharedProjects(userId) {
     return []
   }
 }
+
+// ── Task Comments ──────────────────────────────────────────
+
+export async function getTaskComments(taskId) {
+  if (!supabase) return []
+  try {
+    const { data, error } = await supabase
+      .from('pm_task_comments')
+      .select('*')
+      .eq('task_id', taskId)
+      .order('created_at', { ascending: true })
+    if (error) { console.error('Error fetching comments:', error); return [] }
+    return data || []
+  } catch (err) { return [] }
+}
+
+export async function createTaskComment(fields) {
+  if (!supabase) throw new Error('Database not configured')
+  const { data, error } = await supabase
+    .from('pm_task_comments')
+    .insert(fields)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteTaskComment(id) {
+  if (!supabase) throw new Error('Database not configured')
+  const { error } = await supabase.from('pm_task_comments').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ── Activity Feed ──────────────────────────────────────────
+
+export async function getProjectActivity(projectId, limit = 20) {
+  if (!supabase) return []
+  try {
+    const { data, error } = await supabase
+      .from('pm_activity')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+    if (error) { console.error('Error fetching activity:', error); return [] }
+    return data || []
+  } catch (err) { return [] }
+}
+
+export async function logActivity(fields) {
+  if (!supabase) return
+  try {
+    await supabase.from('pm_activity').insert(fields)
+  } catch {}
+}

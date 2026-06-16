@@ -89,16 +89,22 @@ export async function recommendStack(inputs) {
 }
 
 export async function planProject(description) {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
   try {
-    const response = await fetch('/api/openai-plan', {
+    const response = await fetch(`${supabaseUrl}/functions/v1/openai-plan`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseKey}`,
+      },
       body: JSON.stringify({ description })
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to plan project')
+      const err = await response.json()
+      throw new Error(err.error || 'Failed to plan project')
     }
 
     return await response.json()

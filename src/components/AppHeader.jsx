@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { LogOut, ChevronRight } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import NotificationBell from './pm/NotificationBell'
 
 /**
  * Shared app header for all authenticated pages.
@@ -48,6 +49,8 @@ export default function AppHeader({ breadcrumbs = [], actions, badge }) {
           {actions}
 
           {badge}
+
+          <NotificationBell />
 
           <span className="hidden sm:block text-xs text-white/30 truncate max-w-[160px]">
             {user?.email}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, LayoutDashboard, Lock, Users } from 'lucide-react'
+import { Plus, LayoutDashboard, Lock, Users, Gift } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getProjects, getTasks, getSharedProjects } from '../../lib/pmService'
 import ProjectCard from '../../components/pm/ProjectCard'
@@ -88,12 +88,20 @@ export default function PMDashboard() {
         breadcrumbs={[{ label: 'PM', href: '/pm' }, { label: 'Projects' }]}
         badge={
           !isPro ? (
-            <button
-              onClick={() => setShowUpgrade(true)}
-              className="text-[11px] text-yellow-400/80 hover:text-yellow-400 transition-colors border border-yellow-400/20 px-2.5 py-1 rounded-lg"
-            >
-              Free · Upgrade
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowUpgrade(true)}
+                className="text-[11px] text-yellow-400/80 hover:text-yellow-400 transition-colors border border-yellow-400/20 px-2.5 py-1 rounded-lg"
+              >
+                Free · Upgrade
+              </button>
+              <button
+                onClick={() => navigate('/pm/refer')}
+                className="flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 transition-colors border border-white/[0.06] px-2.5 py-1 rounded-lg"
+              >
+                <Gift size={11} /> Refer &amp; Earn
+              </button>
+            </div>
           ) : (
             <span className="text-[11px] text-white/30 border border-white/[0.08] px-2.5 py-1 rounded-lg">Pro</span>
           )

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Plus, X, ClipboardList, Zap, Eye, CheckCircle } from 'lucide-react'
 import TaskCard from './TaskCard'
-import { createTask, updateTask, deleteTask } from '../../lib/pmService'
+import { createTask, updateTask, deleteTask, logActivity } from "../../lib/pmService"
 
 const COLUMNS = [
   { id: 'todo',        label: 'To Do',       color: 'bg-white/10' },
@@ -17,7 +17,7 @@ const EMPTY_STATE = {
   done:        { Icon: CheckCircle,  hint: 'Completed tasks will appear here' },
 }
 
-export default function KanbanBoard({ projectId, tasks, onTasksChange }) {
+export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
   const [addingTo, setAddingTo] = useState(null)
   const [newTitle, setNewTitle] = useState('')
   const [dragTaskId, setDragTaskId] = useState(null)
@@ -39,6 +39,7 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange }) {
     onTasksChange([...tasks, task])
     setNewTitle('')
     setAddingTo(null)
+    if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_created', entity_type: 'task', entity_title: newTitle.trim() })
   }
 
   const handleDelete = async (taskId) => {
@@ -59,6 +60,7 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange }) {
     if (!task || task.status === newStatus) { setDragTaskId(null); return }
     onTasksChange(tasks.map((t) => t.id === dragTaskId ? { ...t, status: newStatus } : t))
     await updateTask(dragTaskId, { status: newStatus })
+    if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: newStatus === 'done' ? 'task_done' : 'task_updated', entity_type: 'task', entity_title: task.title })
     setDragTaskId(null)
   }
 

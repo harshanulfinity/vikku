@@ -36,6 +36,7 @@ const NewProject            = lazy(() => import('./pages/pm/NewProject'))
 const ProjectDetail         = lazy(() => import('./pages/pm/ProjectDetail'))
 const ClientView            = lazy(() => import('./pages/pm/ClientView'))
 const JoinProject           = lazy(() => import('./pages/pm/JoinProject'))
+const ReferralPage          = lazy(() => import('./pages/pm/ReferralPage'))
 const PaymentDemo            = lazy(() => import('./pages/PaymentDemo'))
 const NotFound               = lazy(() => import('./pages/NotFound'))
 
@@ -97,6 +98,7 @@ export default function App() {
               <Route path="/pm/projects/:id"            element={<ProjectDetail />} />
               <Route path="/pm/share/:token"            element={<ClientView />} />
               <Route path="/pm/join/:projectId"         element={<JoinProject />} />
+              <Route path="/pm/refer"                       element={<ReferralPage />} />
               <Route path="/work/staffing-platform"       element={<CaseStudyStaffing />} />
               <Route path="/work/hso-cctv"           element={<CaseStudyHSO />} />
               <Route path="/work/rolex-ads"          element={<CaseStudyRolexAds />} />

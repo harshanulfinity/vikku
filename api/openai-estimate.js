@@ -81,4 +81,4 @@ Be realistic and conservative with estimates. Use actual current market rates fo
       message: error.message 
     });
   }
-};
+}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Sparkles, X, Check, Loader2, Lock } from 'lucide-react'
 import { planProject } from '../../lib/openaiService'
 import { bulkCreateTasks, bulkCreateMilestones } from '../../lib/pmService'
@@ -78,8 +79,8 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
         </button>
       )}
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      {open && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-2xl glass rounded-2xl flex flex-col max-h-[90vh]">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] flex-shrink-0">
@@ -179,7 +180,8 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )
