@@ -41,9 +41,9 @@ export default function TechStack() {
 
       {/* Fade edges */}
       <div className="absolute inset-y-0 left-0 w-20 pointer-events-none z-10"
-        style={{ background: 'linear-gradient(to right, #000 20%, transparent)' }} />
+        style={{ background: 'linear-gradient(to right, var(--page-bg) 20%, transparent)' }} />
       <div className="absolute inset-y-0 right-0 w-20 pointer-events-none z-10"
-        style={{ background: 'linear-gradient(to left, #000 20%, transparent)' }} />
+        style={{ background: 'linear-gradient(to left, var(--page-bg) 20%, transparent)' }} />
 
       {/* Row 1 - left */}
       <div className="mb-2" style={{ display: 'flex', gap: '10px', width: 'max-content', animation: 'techLeft 28s linear infinite' }}>
