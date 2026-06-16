@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, LayoutDashboard, Lock, Users, Gift } from 'lucide-react'
+import { Plus, LayoutDashboard, Lock, Users, Gift, CheckCircle, AlertTriangle, TrendingUp, Folder } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getProjects, getTasks, getSharedProjects } from '../../lib/pmService'
 import ProjectCard from '../../components/pm/ProjectCard'
@@ -74,6 +74,12 @@ export default function PMDashboard() {
   const done = projects.filter((p) => p.status === 'completed').length
   const atLimit = !isPro && projects.filter((p) => p.status !== 'archived').length >= FREE_PROJECT_LIMIT
 
+  // Aggregate stats across all projects
+  const allCounts = Object.values(taskCounts)
+  const totalTasks = allCounts.reduce((s, c) => s + Object.values(c).reduce((a, b) => a + b, 0), 0)
+  const doneTasks = allCounts.reduce((s, c) => s + (c.done || 0), 0)
+  const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
+
   return (
     <div className="min-h-screen bg-black text-white">
       {showUpgrade && (
@@ -134,6 +140,48 @@ export default function PMDashboard() {
             New Project
           </button>
         </div>
+
+        {/* Stats cards */}
+        {projects.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+            <div className="glass rounded-xl px-4 py-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
+                <Folder size={14} className="text-white/50" />
+              </div>
+              <div>
+                <p className="text-[10px] text-white/40 uppercase tracking-wider">Projects</p>
+                <p className="text-lg font-bold text-white">{projects.length}</p>
+              </div>
+            </div>
+            <div className="glass rounded-xl px-4 py-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
+                <CheckCircle size={14} className="text-green-400" />
+              </div>
+              <div>
+                <p className="text-[10px] text-white/40 uppercase tracking-wider">Tasks Done</p>
+                <p className="text-lg font-bold text-white">{doneTasks}<span className="text-xs text-white/30 font-normal ml-1">/ {totalTasks}</span></p>
+              </div>
+            </div>
+            <div className="glass rounded-xl px-4 py-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
+                <TrendingUp size={14} className="text-blue-400" />
+              </div>
+              <div>
+                <p className="text-[10px] text-white/40 uppercase tracking-wider">Completion</p>
+                <p className="text-lg font-bold text-white">{completionRate}%</p>
+              </div>
+            </div>
+            <div className="glass rounded-xl px-4 py-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
+                <AlertTriangle size={14} className="text-yellow-400" />
+              </div>
+              <div>
+                <p className="text-[10px] text-white/40 uppercase tracking-wider">Active</p>
+                <p className="text-lg font-bold text-white">{active}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Limit banner */}
         {atLimit && (
