@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
+import AdminGate              from './components/admin/AdminGate'
 import Navbar              from './components/Navbar'
 import Hero                from './components/Hero'
 import Clients             from './components/Clients'
@@ -43,6 +44,9 @@ const InvoiceGenerator      = lazy(() => import('./pages/pm/InvoiceGenerator'))
 const PublicShowcase        = lazy(() => import('./pages/pm/PublicShowcase'))
 const PaymentDemo            = lazy(() => import('./pages/PaymentDemo'))
 const NotFound               = lazy(() => import('./pages/NotFound'))
+const AdminDashboard         = lazy(() => import('./pages/admin/AdminDashboard'))
+const AdminUsers             = lazy(() => import('./pages/admin/AdminUsers'))
+const AdminBilling           = lazy(() => import('./pages/admin/AdminBilling'))
 
 function PMRedirect() {
   const { user, loading } = useAuth()
@@ -112,6 +116,9 @@ export default function App() {
               <Route path="/work/rolex-ads"          element={<CaseStudyRolexAds />} />
               <Route path="/work/media-manager"      element={<CaseStudyMediaManager />} />
               <Route path="/payment-demo"            element={<PaymentDemo />} />
+              <Route path="/admin"         element={<AdminGate><AdminDashboard /></AdminGate>} />
+              <Route path="/admin/users"   element={<AdminGate><AdminUsers /></AdminGate>} />
+              <Route path="/admin/billing" element={<AdminGate><AdminBilling /></AdminGate>} />
               <Route path="*"                        element={<NotFound />} />
             </Routes>
           </Suspense>
