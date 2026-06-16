@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { X, Sparkles, Loader2, AlertCircle } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { X, Sparkles, Loader2, AlertCircle, Check } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { openRazorpayCheckout } from '../../lib/razorpayService'
 
@@ -55,9 +56,9 @@ export default function UpgradeModal({ onClose, onUpgraded, reason }) {
     })
   }
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-lg bg-[#111] border border-white/10 rounded-2xl shadow-2xl">
+  const modal = (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }}>
+      <div className="w-full max-w-lg bg-[#111] border border-white/10 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08]">
@@ -106,7 +107,7 @@ export default function UpgradeModal({ onClose, onUpgraded, reason }) {
                 <ul className="space-y-2 flex-1 mb-4">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-start gap-1.5">
-                      <span className={`text-xs font-bold mt-px ${plan.highlight ? 'text-black/50' : 'text-green-400'}`}>✓</span>
+                      <Check size={11} className={`mt-0.5 flex-shrink-0 ${plan.highlight ? 'text-black/50' : 'text-green-400'}`} />
                       <span className={`text-xs leading-snug ${plan.highlight ? 'text-black/70' : 'text-white/60'}`}>{f}</span>
                     </li>
                   ))}
@@ -147,4 +148,6 @@ export default function UpgradeModal({ onClose, onUpgraded, reason }) {
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }

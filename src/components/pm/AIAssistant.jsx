@@ -79,10 +79,10 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
       )}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-2xl glass rounded-2xl overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-2xl glass rounded-2xl flex flex-col max-h-[90vh]">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] flex-shrink-0">
               <div className="flex items-center gap-2">
                 <Sparkles size={16} className="text-yellow-400" />
                 <h3 className="font-display font-semibold text-white">AI Project Planner</h3>
@@ -92,7 +92,7 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
               </button>
             </div>
 
-            <div className="p-6 max-h-[80vh] overflow-y-auto">
+            <div className="p-6 overflow-y-auto flex-1">
               {!preview ? (
                 <>
                   <p className="text-sm text-white/60 mb-4">

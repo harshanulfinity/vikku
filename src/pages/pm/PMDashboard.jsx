@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, LayoutDashboard, Lock } from 'lucide-react'
+import { Plus, LayoutDashboard, Lock, Users } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getProjects, getTasks } from '../../lib/pmService'
+import { getProjects, getTasks, getSharedProjects } from '../../lib/pmService'
 import ProjectCard from '../../components/pm/ProjectCard'
 import UpgradeModal from '../../components/pm/UpgradeModal'
 import useSubscription from '../../hooks/useSubscription'
@@ -14,6 +14,7 @@ export default function PMDashboard() {
   const { user, loading, signOut } = useAuth()
   const navigate = useNavigate()
   const [projects, setProjects] = useState([])
+  const [sharedProjects, setSharedProjects] = useState([])
   const [taskCounts, setTaskCounts] = useState({})
   const [fetching, setFetching] = useState(true)
   const [showUpgrade, setShowUpgrade] = useState(false)
@@ -27,11 +28,16 @@ export default function PMDashboard() {
     if (!user) return
     async function load() {
       setFetching(true)
-      const data = await getProjects(user.id)
+      const [data, shared] = await Promise.all([
+        getProjects(user.id),
+        getSharedProjects(user.id).catch(() => []),
+      ])
       setProjects(data)
+      setSharedProjects(shared)
       const counts = {}
+      const allProjects = [...data, ...shared]
       await Promise.all(
-        data.map(async (p) => {
+        allProjects.map(async (p) => {
           const tasks = await getTasks(p.id)
           counts[p.id] = tasks.reduce((acc, t) => {
             acc[t.status] = (acc[t.status] || 0) + 1
@@ -136,7 +142,7 @@ export default function PMDashboard() {
           </div>
         )}
 
-        {/* Projects grid */}
+        {/* My Projects grid */}
         {projects.length === 0 ? (
           <div className="glass rounded-2xl p-16 text-center">
             <div className="w-16 h-16 rounded-2xl glass flex items-center justify-center mx-auto mb-5">
@@ -167,6 +173,22 @@ export default function PMDashboard() {
                 {atLimit ? <Lock size={16} className="text-white/40" /> : <Plus size={18} className="text-white/40" />}
               </div>
               <p className="text-xs text-white/40">{atLimit ? 'Upgrade to add more' : 'New project'}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Shared with me */}
+        {sharedProjects.length > 0 && (
+          <div className="mt-12">
+            <div className="flex items-center gap-2 mb-4">
+              <Users size={14} className="text-white/30" />
+              <h2 className="font-display font-semibold text-white/60 text-sm">Shared with me</h2>
+              <span className="text-xs text-white/20">({sharedProjects.length})</span>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sharedProjects.map((p) => (
+                <ProjectCard key={p.id} project={p} taskCounts={taskCounts[p.id] || {}} />
+              ))}
             </div>
           </div>
         )}

@@ -10,6 +10,7 @@ import CalendarView from '../../components/pm/CalendarView'
 import AnalyticsPanel from '../../components/pm/AnalyticsPanel'
 import AIAssistant from '../../components/pm/AIAssistant'
 import InviteMemberModal from '../../components/pm/InviteMemberModal'
+import MembersPanel from '../../components/pm/MembersPanel'
 import useSubscription from '../../hooks/useSubscription'
 import UpgradeModal from '../../components/pm/UpgradeModal'
 import AppHeader from '../../components/AppHeader'
@@ -243,6 +244,14 @@ export default function ProjectDetail() {
           <div className="w-64 flex-shrink-0 space-y-4">
             <div className="glass rounded-2xl p-5">
               <MilestoneList projectId={id} milestones={milestones} onMilestonesChange={setMilestones} />
+            </div>
+
+            <div className="glass rounded-2xl p-5">
+              <MembersPanel
+                projectId={id}
+                ownerUserId={project.user_id}
+                currentUserId={user?.id}
+              />
             </div>
 
             {project.description && (

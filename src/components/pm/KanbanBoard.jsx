@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, ClipboardList, Zap, Eye, CheckCircle } from 'lucide-react'
 import TaskCard from './TaskCard'
 import { createTask, updateTask, deleteTask } from '../../lib/pmService'
 
@@ -11,10 +11,10 @@ const COLUMNS = [
 ]
 
 const EMPTY_STATE = {
-  todo:        { emoji: '📋', hint: 'Add tasks to get started' },
-  in_progress: { emoji: '⚡', hint: 'Drag tasks here to start working' },
-  review:      { emoji: '👀', hint: 'Move tasks here when ready to review' },
-  done:        { emoji: '✅', hint: 'Completed tasks will appear here' },
+  todo:        { Icon: ClipboardList, hint: 'Add tasks to get started' },
+  in_progress: { Icon: Zap,          hint: 'Drag tasks here to start working' },
+  review:      { Icon: Eye,          hint: 'Move tasks here when ready to review' },
+  done:        { Icon: CheckCircle,  hint: 'Completed tasks will appear here' },
 }
 
 export default function KanbanBoard({ projectId, tasks, onTasksChange }) {
@@ -146,7 +146,7 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange }) {
                       : 'border-white/[0.08] hover:border-white/20'
                   }`}
                 >
-                  <span className="text-xl opacity-30">{EMPTY_STATE[col.id].emoji}</span>
+                  {(() => { const { Icon } = EMPTY_STATE[col.id]; return <Icon size={16} className="text-white/20" /> })()}
                   <p className="text-[10px] text-white/25 text-center px-3">{EMPTY_STATE[col.id].hint}</p>
                 </div>
               )}

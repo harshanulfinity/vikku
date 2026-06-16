@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CheckCircle, XCircle } from 'lucide-react';
 import RazorpayCheckout from '../components/RazorpayCheckout';
 
 const PaymentDemo = () => {
@@ -73,7 +74,7 @@ const PaymentDemo = () => {
                     : 'text-red-400'
                 }`}
               >
-                {paymentStatus.type === 'success' ? '✓ Success' : '✗ Error'}
+                {paymentStatus.type === 'success' ? <><CheckCircle size={16} className="inline mr-1.5" />Success</> : <><XCircle size={16} className="inline mr-1.5" />Error</>}
               </h3>
               <p className="text-white mb-2">{paymentStatus.message}</p>
               {paymentStatus.details && (

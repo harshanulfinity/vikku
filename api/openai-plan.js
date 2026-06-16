@@ -1,10 +1,9 @@
-import OpenAI from 'openai';
+const OpenAI = require('openai').default;
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -69,4 +68,4 @@ Generate 10-15 tasks spread realistically across all 4 statuses. Generate 3-5 mi
       message: error.message 
     });
   }
-}
+};

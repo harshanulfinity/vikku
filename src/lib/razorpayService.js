@@ -36,6 +36,26 @@ export async function openRazorpayCheckout({ plan, user, onSuccess, onFailure })
   const planConfig = PLANS[plan]
   if (!planConfig) { onFailure?.('Invalid plan'); return }
 
+  // Create a server-side order first (required for UPI/QR payment callback to fire)
+  let orderId = null
+  try {
+    const res = await fetch('/api/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: planConfig.amount,
+        currency: planConfig.currency,
+        receipt: `sub_${plan}_${Date.now()}`,
+      }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      orderId = data.order_id
+    }
+  } catch {
+    // Fall through without order_id — card payments still work
+  }
+
   const options = {
     key: import.meta.env.VITE_RAZORPAY_KEY_ID,
     amount: planConfig.amount,
@@ -43,13 +63,30 @@ export async function openRazorpayCheckout({ plan, user, onSuccess, onFailure })
     name: 'Vikku PM',
     description: planConfig.description,
     image: '/logo.png',
+    ...(orderId ? { order_id: orderId } : {}),
     prefill: {
       email: user?.email || '',
     },
     theme: { color: '#ffffff' },
     handler: async (response) => {
-      // Payment successful — save to Supabase
       try {
+        // Verify signature if we have an order (UPI/QR flow)
+        if (orderId) {
+          const verifyRes = await fetch('/api/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          })
+          const verifyData = await verifyRes.json()
+          if (!verifyData.success) {
+            throw new Error(verifyData.error || 'Payment verification failed')
+          }
+        }
+
         await saveSubscription({
           userId: user.id,
           plan,
@@ -61,9 +98,7 @@ export async function openRazorpayCheckout({ plan, user, onSuccess, onFailure })
       }
     },
     modal: {
-      ondismiss: () => {
-        // User closed modal without paying
-      },
+      ondismiss: () => {},
     },
   }
 

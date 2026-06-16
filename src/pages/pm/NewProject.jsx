@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Square, Rocket, Globe, Megaphone, Map, BookOpen } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { createProject, bulkCreateTasks, bulkCreateMilestones } from '../../lib/pmService'
 import AppHeader from '../../components/AppHeader'
@@ -20,14 +21,14 @@ function daysFromNow(n) {
 const TEMPLATES = [
   {
     key: 'blank',
-    icon: '⬜',
+    Icon: Square,
     name: 'Blank',
     tasks: [],
     milestones: [],
   },
   {
     key: 'startup',
-    icon: '🚀',
+    Icon: Rocket,
     name: 'Startup Launch',
     description: '12 tasks · 4 milestones',
     tasks: [
@@ -53,7 +54,7 @@ const TEMPLATES = [
   },
   {
     key: 'webdev',
-    icon: '🌐',
+    Icon: Globe,
     name: 'Web Development',
     description: '14 tasks · 5 milestones',
     tasks: [
@@ -82,7 +83,7 @@ const TEMPLATES = [
   },
   {
     key: 'marketing',
-    icon: '📣',
+    Icon: Megaphone,
     name: 'Marketing Campaign',
     description: '10 tasks · 3 milestones',
     tasks: [
@@ -105,7 +106,7 @@ const TEMPLATES = [
   },
   {
     key: 'roadmap',
-    icon: '🗺️',
+    Icon: Map,
     name: 'Product Roadmap',
     description: '12 tasks · 5 milestones',
     tasks: [
@@ -132,7 +133,7 @@ const TEMPLATES = [
   },
   {
     key: 'course',
-    icon: '📚',
+    Icon: BookOpen,
     name: 'Personal Course',
     description: '8 tasks · 3 milestones',
     tasks: [
@@ -218,14 +219,14 @@ export default function NewProject() {
                     : 'border-white/[0.08] hover:border-white/25 hover:bg-white/[0.04]'
                 }`}
               >
-                <span className="text-xl">{t.icon}</span>
+                <t.Icon size={16} className={selectedTemplate === t.key ? 'text-white' : 'text-white/50'} />
                 <span className="text-[10px] text-white/70 leading-tight">{t.name}</span>
               </button>
             ))}
           </div>
           {template && template.key !== 'blank' && (
             <div className="mt-3 flex items-center gap-3 bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3">
-              <span className="text-lg">{template.icon}</span>
+              <template.Icon size={16} className="text-white/50 flex-shrink-0" />
               <div>
                 <p className="text-xs text-white font-medium">{template.name} template</p>
                 <p className="text-[10px] text-white/40">{template.description} will be created automatically</p>
