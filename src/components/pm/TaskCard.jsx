@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GripVertical, Calendar } from 'lucide-react'
+import { GripVertical, Calendar, CheckSquare } from 'lucide-react'
 import TaskEditModal from './TaskEditModal'
 
 const PRIORITY_STYLES = {
@@ -12,6 +12,11 @@ const PRIORITY_STYLES = {
 export default function TaskCard({ task, onDelete, onUpdate, draggable, onDragStart }) {
   const [editing, setEditing] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+
+  const assigneeInitial = task.assigned_to_email ? task.assigned_to_email[0].toUpperCase() : null
+  const subtotalDone = task._subtasksDone ?? null
+  const subtotalAll  = task._subtasksTotal ?? null
+  const hasSubtasks  = subtotalAll !== null && subtotalAll > 0
 
   return (
     <>
@@ -47,14 +52,27 @@ export default function TaskCard({ task, onDelete, onUpdate, draggable, onDragSt
               <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.medium}`}>
                 {task.priority}
               </span>
-              {task.due_date && (
-                <span className={`flex items-center gap-1 text-[9px] ${
-                  new Date(task.due_date) < new Date() ? 'text-red-400/70' : 'text-white/30'
-                }`}>
-                  <Calendar size={8} />
-                  {new Date(task.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                </span>
-              )}
+              <div className="flex items-center gap-2 ml-auto">
+                {hasSubtasks && (
+                  <span className={`flex items-center gap-1 text-[9px] ${subtotalDone === subtotalAll ? 'text-green-400/70' : 'text-white/30'}`}>
+                    <CheckSquare size={8} />
+                    {subtotalDone}/{subtotalAll}
+                  </span>
+                )}
+                {task.due_date && (
+                  <span className={`flex items-center gap-1 text-[9px] ${
+                    new Date(task.due_date) < new Date() ? 'text-red-400/70' : 'text-white/30'
+                  }`}>
+                    <Calendar size={8} />
+                    {new Date(task.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                  </span>
+                )}
+                {assigneeInitial && (
+                  <span className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center text-[8px] text-white/50 flex-shrink-0">
+                    {assigneeInitial}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>

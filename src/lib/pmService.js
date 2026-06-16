@@ -312,3 +312,67 @@ export async function logActivity(fields) {
     await supabase.from('pm_activity').insert(fields)
   } catch {}
 }
+
+// ── Subtasks ───────────────────────────────────────────────
+
+export async function getSubtasks(taskId) {
+  if (!supabase) return []
+  try {
+    const { data, error } = await supabase.from('pm_subtasks').select('*').eq('task_id', taskId).order('created_at', { ascending: true })
+    if (error) { console.error(error); return [] }
+    return data || []
+  } catch { return [] }
+}
+
+export async function createSubtask(fields) {
+  if (!supabase) throw new Error('Database not configured')
+  const { data, error } = await supabase.from('pm_subtasks').insert(fields).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function updateSubtask(id, fields) {
+  if (!supabase) throw new Error('Database not configured')
+  const { data, error } = await supabase.from('pm_subtasks').update(fields).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteSubtask(id) {
+  if (!supabase) throw new Error('Database not configured')
+  const { error } = await supabase.from('pm_subtasks').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ── Time Logs ──────────────────────────────────────────────
+
+export async function getTimeLogs(taskId) {
+  if (!supabase) return []
+  try {
+    const { data, error } = await supabase.from('pm_time_logs').select('*').eq('task_id', taskId).order('created_at', { ascending: false })
+    if (error) { console.error(error); return [] }
+    return data || []
+  } catch { return [] }
+}
+
+export async function createTimeLog(fields) {
+  if (!supabase) throw new Error('Database not configured')
+  const { data, error } = await supabase.from('pm_time_logs').insert(fields).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteTimeLog(id) {
+  if (!supabase) throw new Error('Database not configured')
+  const { error } = await supabase.from('pm_time_logs').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function getProjectTimeLogs(projectId) {
+  if (!supabase) return []
+  try {
+    const { data, error } = await supabase.from('pm_time_logs').select('*').eq('project_id', projectId).order('created_at', { ascending: false })
+    if (error) { console.error(error); return [] }
+    return data || []
+  } catch { return [] }
+}

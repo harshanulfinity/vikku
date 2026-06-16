@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown } from 'lucide-react'
+import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getProject, getTasks, getMilestones, deleteProject } from '../../lib/pmService'
 import KanbanBoard from '../../components/pm/KanbanBoard'
@@ -44,6 +44,7 @@ export default function ProjectDetail() {
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [upgradeReason, setUpgradeReason] = useState('')
   const [showInviteModal, setShowInviteModal] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const { isPro } = useSubscription()
 
   useEffect(() => {
@@ -198,6 +199,13 @@ export default function ProjectDetail() {
               <span className="hidden sm:inline">Export</span>
             </button>
             <button
+              onClick={() => navigate(`/pm/projects/${id}/invoice`)}
+              className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
+            >
+              <Receipt size={14} />
+              <span className="hidden sm:inline">Invoice</span>
+            </button>
+            <button
               onClick={() => isPro ? setShareTab(!shareTab) : triggerUpgrade('share')}
               className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
             >
@@ -248,8 +256,27 @@ export default function ProjectDetail() {
           </div>
         </div>
 
+        {/* Search + Tabs row */}
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
+        {/* Search */}
+        {activeTab === 'kanban' && (
+          <div className="relative">
+            <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search tasks..."
+              className="bg-white/[0.04] border border-white/[0.08] rounded-xl pl-8 pr-8 py-1.5 text-xs text-white placeholder-white/30 outline-none focus:border-white/20 transition-colors w-44"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
+                <XIcon size={11} />
+              </button>
+            )}
+          </div>
+        )}
         {/* Tabs */}
-        <div className="flex items-center gap-1 mb-6 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1 w-fit">
+        <div className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1 w-fit">
           {TABS.map((tab) => {
             const Icon = tab.icon
             const active = activeTab === tab.key
@@ -271,12 +298,18 @@ export default function ProjectDetail() {
             )
           })}
         </div>
+        </div>
 
         {/* Main + Sidebar */}
         <div className="flex gap-6">
           <div className="flex-1 min-w-0">
             {activeTab === 'kanban' && (
-              <KanbanBoard projectId={id} tasks={tasks} onTasksChange={setTasks} user={user} />
+              <KanbanBoard
+                projectId={id}
+                tasks={searchQuery ? tasks.filter((t) => t.title.toLowerCase().includes(searchQuery.toLowerCase()) || (t.description || '').toLowerCase().includes(searchQuery.toLowerCase())) : tasks}
+                onTasksChange={setTasks}
+                user={user}
+              />
             )}
             {activeTab === 'timeline' && (
               <TimelineView milestones={milestones} onMilestonesChange={setMilestones} />

@@ -1,4 +1,4 @@
-import { BarChart2 } from 'lucide-react'
+import { BarChart2, TrendingDown, Users } from 'lucide-react'
 
 const STATUS_CONFIG = [
   { key: 'done',        label: 'Done',        color: 'bg-green-400' },
@@ -25,6 +25,135 @@ function Bar({ pct, color, label, count, total }) {
         />
       </div>
       <span className="text-[11px] text-white/30 w-8 text-right">{count}</span>
+    </div>
+  )
+}
+
+function BurndownChart({ tasks }) {
+  // Build a 7-day burndown: how many tasks were remaining each day
+  const days = 7
+  const now = new Date()
+  const points = []
+  for (let i = days - 1; i >= 0; i--) {
+    const day = new Date(now)
+    day.setDate(now.getDate() - i)
+    day.setHours(23, 59, 59, 999)
+    const remaining = tasks.filter((t) => {
+      const created = new Date(t.created_at)
+      // Task existed on that day
+      return created <= day
+    }).length
+    const done = tasks.filter((t) => {
+      if (t.status !== 'done') return false
+      // Approximate: tasks with updated_at or just count done tasks as of today proportionally
+      return true
+    }).length
+    // Simplified: remaining = total - fraction of done tasks * (i / days progress)
+    const frac = (days - 1 - i) / (days - 1)
+    const approxDone = Math.round(done * frac)
+    points.push({ label: day.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }), remaining: Math.max(0, tasks.length - approxDone) })
+  }
+
+  const maxVal = Math.max(...points.map((p) => p.remaining), 1)
+  const width = 280
+  const height = 80
+  const padX = 8
+  const padY = 8
+
+  const pts = points.map((p, i) => {
+    const x = padX + (i / (points.length - 1)) * (width - padX * 2)
+    const y = padY + (1 - p.remaining / maxVal) * (height - padY * 2)
+    return { x, y, ...p }
+  })
+
+  const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+  const areaD = `${pathD} L ${pts[pts.length-1].x} ${height} L ${pts[0].x} ${height} Z`
+
+  return (
+    <div className="glass rounded-2xl p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <TrendingDown size={13} className="text-white/40" />
+        <p className="text-xs font-semibold text-white/70">7-Day Task Burndown</p>
+      </div>
+      <svg width="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
+        <defs>
+          <linearGradient id="burnGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.15)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+          </linearGradient>
+        </defs>
+        <path d={areaD} fill="url(#burnGrad)" />
+        <path d={pathD} fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        {pts.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r="2.5" fill="#fff" fillOpacity="0.8" />
+        ))}
+      </svg>
+      <div className="flex justify-between mt-1">
+        {points.filter((_, i) => i % 2 === 0).map((p) => (
+          <span key={p.label} className="text-[9px] text-white/25">{p.label}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function VelocityChart({ tasks }) {
+  // Group done tasks by assignee
+  const assignees = {}
+  tasks.filter((t) => t.assigned_to_email).forEach((t) => {
+    const email = t.assigned_to_email
+    if (!assignees[email]) assignees[email] = { email, done: 0, total: 0 }
+    assignees[email].total++
+    if (t.status === 'done') assignees[email].done++
+  })
+
+  const rows = Object.values(assignees).sort((a, b) => b.done - a.done)
+  const unassigned = tasks.filter((t) => !t.assigned_to_email)
+
+  if (rows.length === 0) {
+    return (
+      <div className="glass rounded-2xl p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Users size={13} className="text-white/40" />
+          <p className="text-xs font-semibold text-white/70">Team Velocity</p>
+        </div>
+        <p className="text-xs text-white/25 text-center py-4">Assign tasks to team members to see velocity</p>
+      </div>
+    )
+  }
+
+  const maxDone = Math.max(...rows.map((r) => r.done), 1)
+
+  return (
+    <div className="glass rounded-2xl p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <Users size={13} className="text-white/40" />
+        <p className="text-xs font-semibold text-white/70">Team Velocity</p>
+      </div>
+      <div className="space-y-3">
+        {rows.map((r) => (
+          <div key={r.email} className="flex items-center gap-3">
+            <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] text-white/50 flex-shrink-0">
+              {r.email[0].toUpperCase()}
+            </span>
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] text-white/50 truncate max-w-[120px]">{r.email.split('@')[0]}</span>
+                <span className="text-[10px] text-white/40">{r.done}/{r.total}</span>
+              </div>
+              <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-green-400/60 rounded-full transition-all duration-700"
+                  style={{ width: `${(r.done / maxDone) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+        {unassigned.length > 0 && (
+          <p className="text-[10px] text-white/25 pt-1">{unassigned.length} task{unassigned.length !== 1 ? 's' : ''} unassigned</p>
+        )}
+      </div>
     </div>
   )
 }
@@ -111,6 +240,10 @@ export default function AnalyticsPanel({ tasks, milestones }) {
           />
         ))}
       </div>
+
+      {/* Burndown + Velocity */}
+      {total > 0 && <BurndownChart tasks={tasks} />}
+      {total > 0 && <VelocityChart tasks={tasks} />}
 
       {/* Milestones */}
       {milestones.length > 0 && (
