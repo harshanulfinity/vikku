@@ -137,8 +137,11 @@ function ClientComments({ projectId, shareToken }) {
       })
       setComments((prev) => [...prev, comment])
       setContent('')
-    } catch {}
-    setPosting(false)
+    } catch (err) {
+      console.error('Failed to post comment:', err)
+    } finally {
+      setPosting(false)
+    }
   }
 
   return (

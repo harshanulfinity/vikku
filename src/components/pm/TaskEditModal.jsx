@@ -131,8 +131,11 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
       const st = await createSubtask({ task_id: task.id, title: newSubtask.trim(), completed: false })
       setSubtasks((prev) => [...prev, st])
       setNewSubtask('')
-    } catch {}
-    setAddingSubtask(false)
+    } catch (err) {
+      console.error('Failed to add subtask:', err)
+    } finally {
+      setAddingSubtask(false)
+    }
   }
 
   const handleToggleSubtask = async (st) => {

@@ -310,7 +310,9 @@ export async function logActivity(fields) {
   if (!supabase) return
   try {
     await supabase.from('pm_activity').insert(fields)
-  } catch {}
+  } catch (err) {
+    console.error('Failed to log activity:', err)
+  }
 }
 
 // ── Subtasks ───────────────────────────────────────────────

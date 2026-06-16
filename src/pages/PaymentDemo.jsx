@@ -7,7 +7,6 @@ const PaymentDemo = () => {
   const [amount, setAmount] = useState(50000);
 
   const handlePaymentSuccess = (response) => {
-    console.log('Payment successful:', response);
     setPaymentStatus({
       type: 'success',
       message: 'Payment successful!',

@@ -23,8 +23,11 @@ export default function ProjectCard({ project, taskCounts = {}, onDuplicated }) 
     try {
       const newProject = await duplicateProject(project.id)
       onDuplicated?.(newProject)
-    } catch {}
-    setDuplicating(false)
+    } catch (err) {
+      console.error('Failed to duplicate project:', err)
+    } finally {
+      setDuplicating(false)
+    }
   }
 
   return (

@@ -140,7 +140,7 @@ export default function ProjectDetail() {
       ['Task', 'Duration (min)', 'Note', 'Logged At'],
       ...logs.map((l) => [
         `"${(taskMap[l.task_id] || 'Unknown task').replace(/"/g, '""')}"`,
-        l.duration_minutes,
+        l.minutes,
         `"${(l.note || '').replace(/"/g, '""')}"`,
         new Date(l.created_at).toLocaleString('en-IN'),
       ]),
