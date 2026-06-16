@@ -69,6 +69,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const [logMinutes, setLogMinutes] = useState('')
   const [logDesc, setLogDesc] = useState('')
   const [loggingTime, setLoggingTime] = useState(false)
+  const [timeLogError, setTimeLogError] = useState('')
 
   const [attachments, setAttachments] = useState([])
   const [uploading, setUploading] = useState(false)
@@ -148,13 +149,17 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     const m = parseInt(mins)
     if (!m || m <= 0) return
     setLoggingTime(true)
+    setTimeLogError('')
     try {
       const log = await createTimeLog({ task_id: task.id, project_id: task.project_id, user_id: user?.id, minutes: m, note: logDesc.trim() || null })
       setTimeLogs((prev) => [log, ...prev])
       setLogMinutes('')
       setLogDesc('')
-    } catch {}
-    setLoggingTime(false)
+    } catch (err) {
+      setTimeLogError(err.message || 'Failed to log time')
+    } finally {
+      setLoggingTime(false)
+    }
   }
 
   const handleDeleteTimeLog = async (id) => {
@@ -406,18 +411,21 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
               </div>
               <div className="flex gap-1.5 mb-2">
                 {[15, 30, 60, 120].map((m) => (
-                  <button key={m} onClick={() => handleLogTime(m)} className="text-[10px] px-2 py-1 rounded-lg border border-white/[0.08] text-white/40 hover:border-white/20 hover:text-white/70 transition-all">
+                  <button type="button" key={m} onClick={() => handleLogTime(m)} disabled={loggingTime} className="text-[10px] px-2 py-1 rounded-lg border border-white/[0.08] text-white/40 hover:border-white/20 hover:text-white/70 transition-all disabled:opacity-40">
                     +{fmtMins(m)}
                   </button>
                 ))}
               </div>
-              <div className="flex gap-2 mb-3">
+              <div className="flex gap-2 mb-1">
                 <input type="number" min="1" value={logMinutes} onChange={(e) => setLogMinutes(e.target.value)} placeholder="Minutes" className="w-24 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors" />
                 <input value={logDesc} onChange={(e) => setLogDesc(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleLogTime(logMinutes) } }} placeholder="Note (optional)" className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors" />
-                <button onClick={() => handleLogTime(logMinutes)} disabled={loggingTime || !logMinutes} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all disabled:opacity-30">
+                <button type="button" onClick={() => handleLogTime(logMinutes)} disabled={loggingTime || !logMinutes} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all disabled:opacity-30">
                   {loggingTime ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
                 </button>
               </div>
+              {timeLogError && (
+                <p className="text-[10px] text-red-400 mb-2">{timeLogError}</p>
+              )}
               {timeLogs.length > 0 && (
                 <div className="space-y-1 max-h-24 overflow-y-auto">
                   {timeLogs.slice(0, 5).map((l) => (
