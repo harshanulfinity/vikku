@@ -410,6 +410,51 @@ export async function duplicateProject(projectId) {
   return newProject
 }
 
+// ── Task Attachments ───────────────────────────────────────────
+
+export async function getTaskAttachments(taskId) {
+  if (!supabase) return []
+  try {
+    const { data, error } = await supabase
+      .from('pm_task_attachments')
+      .select('*')
+      .eq('task_id', taskId)
+      .order('created_at', { ascending: true })
+    if (error) { console.error(error); return [] }
+    return data || []
+  } catch { return [] }
+}
+
+export async function uploadTaskAttachment(taskId, userId, file) {
+  if (!supabase) throw new Error('Database not configured')
+  const ext = file.name.split('.').pop()
+  const filePath = `${userId}/${taskId}/${Date.now()}.${ext}`
+  const { error: uploadError } = await supabase.storage
+    .from('pm-attachments')
+    .upload(filePath, file, { contentType: file.type, upsert: false })
+  if (uploadError) throw uploadError
+  const { data, error } = await supabase
+    .from('pm_task_attachments')
+    .insert({ task_id: taskId, user_id: userId, file_name: file.name, file_path: filePath, file_size: file.size, mime_type: file.type })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteTaskAttachment(id, filePath) {
+  if (!supabase) throw new Error('Database not configured')
+  await supabase.storage.from('pm-attachments').remove([filePath])
+  const { error } = await supabase.from('pm_task_attachments').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function getAttachmentUrl(filePath) {
+  if (!supabase) return null
+  const { data } = await supabase.storage.from('pm-attachments').createSignedUrl(filePath, 3600)
+  return data?.signedUrl || null
+}
+
 // ── Client Comments ────────────────────────────────────────────
 
 export async function getClientComments(shareToken) {

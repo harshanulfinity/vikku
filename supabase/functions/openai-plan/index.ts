@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,34 @@ serve(async (req) => {
   }
 
   try {
+    // Verify user and check Pro subscription
+    const authHeader = req.headers.get('Authorization') || ''
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    })
+    const { data: { user } } = await userClient.auth.getUser()
+
+    if (user) {
+      const adminClient = createClient(supabaseUrl, supabaseServiceKey)
+      const { data: sub } = await adminClient
+        .from('pm_subscriptions')
+        .select('plan')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      const plan = sub?.plan || 'free'
+      if (plan === 'free') {
+        return new Response(
+          JSON.stringify({ error: 'pro_required', message: 'AI Project Planner requires a Pro plan. Upgrade to unlock.' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
+
     const { description } = await req.json()
 
     if (!description || description.length < 10) {

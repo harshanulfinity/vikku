@@ -30,28 +30,25 @@ function Bar({ pct, color, label, count, total }) {
 }
 
 function BurndownChart({ tasks }) {
-  // Build a 7-day burndown: how many tasks were remaining each day
   const days = 7
   const now = new Date()
   const points = []
   for (let i = days - 1; i >= 0; i--) {
-    const day = new Date(now)
-    day.setDate(now.getDate() - i)
-    day.setHours(23, 59, 59, 999)
-    const remaining = tasks.filter((t) => {
-      const created = new Date(t.created_at)
-      // Task existed on that day
-      return created <= day
-    }).length
-    const done = tasks.filter((t) => {
+    const dayEnd = new Date(now)
+    dayEnd.setDate(now.getDate() - i)
+    dayEnd.setHours(23, 59, 59, 999)
+    // Tasks that existed on this day (created before end of day)
+    const existedCount = tasks.filter((t) => new Date(t.created_at) <= dayEnd).length
+    // Tasks actually completed by end of this day — use updated_at for done tasks
+    const doneCount = tasks.filter((t) => {
       if (t.status !== 'done') return false
-      // Approximate: tasks with updated_at or just count done tasks as of today proportionally
-      return true
+      const completedAt = new Date(t.updated_at || t.created_at)
+      return completedAt <= dayEnd
     }).length
-    // Simplified: remaining = total - fraction of done tasks * (i / days progress)
-    const frac = (days - 1 - i) / (days - 1)
-    const approxDone = Math.round(done * frac)
-    points.push({ label: day.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }), remaining: Math.max(0, tasks.length - approxDone) })
+    points.push({
+      label: dayEnd.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+      remaining: Math.max(0, existedCount - doneCount),
+    })
   }
 
   const maxVal = Math.max(...points.map((p) => p.remaining), 1)

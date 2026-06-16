@@ -3,11 +3,13 @@ import { createPortal } from 'react-dom'
 import {
   X, Trash2, Loader2, MessageCircle, Send, Trash,
   CheckSquare, Square, Plus, Clock, User, Timer, Link, ExternalLink,
+  Paperclip, Download, FileText,
 } from 'lucide-react'
 import {
   updateTask, deleteTask, getTaskComments, createTaskComment, deleteTaskComment,
   getSubtasks, createSubtask, updateSubtask, deleteSubtask,
   getTimeLogs, createTimeLog, deleteTimeLog, getProjectMembers,
+  getTaskAttachments, uploadTaskAttachment, deleteTaskAttachment, getAttachmentUrl,
 } from '../../lib/pmService'
 import { TASK_LABELS, LABEL_STYLES } from '../../lib/pmConstants'
 import { useAuth } from '../../contexts/AuthContext'
@@ -68,10 +70,14 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const [logDesc, setLogDesc] = useState('')
   const [loggingTime, setLoggingTime] = useState(false)
 
+  const [attachments, setAttachments] = useState([])
+  const [uploading, setUploading] = useState(false)
+
   useEffect(() => {
     getTaskComments(task.id).then(setComments)
     getSubtasks(task.id).then(setSubtasks)
     getTimeLogs(task.id).then(setTimeLogs)
+    getTaskAttachments(task.id).then(setAttachments)
     if (task.project_id) getProjectMembers(task.project_id).then(setMembers)
   }, [task.id, task.project_id])
 
@@ -154,6 +160,31 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const handleDeleteTimeLog = async (id) => {
     await deleteTimeLog(id)
     setTimeLogs((prev) => prev.filter((l) => l.id !== id))
+  }
+
+  const handleUploadAttachment = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+    setUploading(true)
+    try {
+      const att = await uploadTaskAttachment(task.id, user.id, file)
+      setAttachments((prev) => [...prev, att])
+    } catch (err) {
+      console.error('Upload failed:', err)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleDeleteAttachment = async (att) => {
+    await deleteTaskAttachment(att.id, att.file_path)
+    setAttachments((prev) => prev.filter((a) => a.id !== att.id))
+  }
+
+  const handleDownloadAttachment = async (att) => {
+    const url = await getAttachmentUrl(att.file_path)
+    if (url) window.open(url, '_blank')
   }
 
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done'
@@ -439,6 +470,48 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                   {sendingComment ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
                 </button>
               </div>
+            </div>
+
+            {/* Attachments */}
+            <div className="border-t border-white/[0.06] pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-1.5">
+                  <Paperclip size={12} className="text-white/30" />
+                  <label className="text-[10px] text-white/40 uppercase tracking-wider">
+                    Attachments {attachments.length > 0 && `(${attachments.length})`}
+                  </label>
+                </div>
+                <label className="flex items-center gap-1.5 text-[10px] text-white/40 hover:text-white/70 cursor-pointer transition-colors border border-white/[0.08] hover:border-white/20 px-2 py-1 rounded-lg">
+                  {uploading ? <Loader2 size={10} className="animate-spin" /> : <Plus size={10} />}
+                  {uploading ? 'Uploading...' : 'Add file'}
+                  <input type="file" className="hidden" onChange={handleUploadAttachment} disabled={uploading} />
+                </label>
+              </div>
+              {attachments.length > 0 ? (
+                <div className="space-y-1.5">
+                  {attachments.map((att) => (
+                    <div key={att.id} className="flex items-center gap-2 group bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-2">
+                      <FileText size={11} className="text-white/30 flex-shrink-0" />
+                      <span className="text-[11px] text-white/60 flex-1 truncate">{att.file_name}</span>
+                      {att.file_size && (
+                        <span className="text-[10px] text-white/20 flex-shrink-0">
+                          {att.file_size > 1024 * 1024
+                            ? `${(att.file_size / 1024 / 1024).toFixed(1)} MB`
+                            : `${Math.round(att.file_size / 1024)} KB`}
+                        </span>
+                      )}
+                      <button onClick={() => handleDownloadAttachment(att)} className="opacity-0 group-hover:opacity-100 text-white/30 hover:text-white transition-all flex-shrink-0">
+                        <Download size={11} />
+                      </button>
+                      <button onClick={() => handleDeleteAttachment(att)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all flex-shrink-0">
+                        <Trash size={10} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[10px] text-white/20 text-center py-2">No attachments yet. Add files, screenshots, or docs.</p>
+              )}
             </div>
           </div>
         </div>

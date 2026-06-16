@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, LayoutDashboard, Lock, Users, Gift, CheckCircle, AlertTriangle, TrendingUp, Folder, CalendarClock, ChevronDown, ChevronUp, Zap } from 'lucide-react'
+import { Plus, LayoutDashboard, Lock, Users, Gift, CheckCircle, AlertTriangle, TrendingUp, Folder, CalendarClock, ChevronDown, ChevronUp, Zap, Mail } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getProjects, getTasks, getSharedProjects } from '../../lib/pmService'
+import { sendWeeklyDigest } from '../../lib/openaiService'
 import ProjectCard from '../../components/pm/ProjectCard'
 import UpgradeModal from '../../components/pm/UpgradeModal'
 import QuickAdd from '../../components/pm/QuickAdd'
@@ -21,7 +22,22 @@ export default function PMDashboard() {
   const [fetching, setFetching] = useState(true)
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [showMyTasks, setShowMyTasks] = useState(true)
+  const [sendingDigest, setSendingDigest] = useState(false)
+  const [digestSent, setDigestSent] = useState(false)
   const { isPro, loading: subLoading } = useSubscription()
+
+  const handleSendDigest = async () => {
+    setSendingDigest(true)
+    try {
+      await sendWeeklyDigest(user.id)
+      setDigestSent(true)
+      setTimeout(() => setDigestSent(false), 4000)
+    } catch (err) {
+      console.error('Digest error:', err)
+    } finally {
+      setSendingDigest(false)
+    }
+  }
 
   useEffect(() => {
     if (!loading && !user) navigate('/login')
@@ -334,10 +350,22 @@ export default function PMDashboard() {
           </div>
         )}
 
-        {/* Quick Add hint */}
-        <div className="mt-8 flex items-center justify-center gap-2 text-white/20 text-xs">
-          <Zap size={11} />
-          <span>Press <kbd className="border border-white/10 rounded px-1 py-0.5 text-[10px]">{typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘K' : 'Ctrl+K'}</kbd> to quick-add a task anywhere</span>
+        {/* Quick Add hint + Weekly digest */}
+        <div className="mt-8 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-white/20 text-xs">
+            <Zap size={11} />
+            <span>Press <kbd className="border border-white/10 rounded px-1 py-0.5 text-[10px]">{typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘K' : 'Ctrl+K'}</kbd> to quick-add a task anywhere</span>
+          </div>
+          {projects.length > 0 && (
+            <button
+              onClick={handleSendDigest}
+              disabled={sendingDigest || digestSent}
+              className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 border border-white/[0.06] hover:border-white/20 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+            >
+              <Mail size={11} />
+              {digestSent ? 'Digest sent!' : sendingDigest ? 'Sending...' : 'Send weekly digest'}
+            </button>
+          )}
         </div>
       </div>
       <QuickAdd />

@@ -1,39 +1,23 @@
-// OpenAI calls are now handled by backend API endpoints for security
-// API keys are never exposed to the frontend
+// OpenAI calls are handled by Supabase edge functions — API keys never exposed to the frontend
 
-export async function estimateProjectCost(requirements, location = null) {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+import { supabase } from './supabaseClient'
 
-  try {
-    const response = await fetch(`${supabaseUrl}/functions/v1/openai-estimate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseKey}`,
-      },
-      body: JSON.stringify({ requirements, location })
-    })
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-    if (!response.ok) {
-      const err = await response.json()
-      throw new Error(err.error || 'Failed to generate cost estimate')
-    }
-
-    return await response.json()
-  } catch (error) {
-    throw new Error(`Failed to generate cost estimate: ${error.message}`)
-  }
+async function getUserToken() {
+  if (!supabase) return SUPABASE_ANON_KEY
+  const { data } = await supabase.auth.getSession()
+  return data?.session?.access_token || SUPABASE_ANON_KEY
 }
 
-async function callEdgeFunction(fnName, body) {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-  const response = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
+async function callEdgeFunction(fnName, body, useUserToken = false) {
+  const token = useUserToken ? await getUserToken() : SUPABASE_ANON_KEY
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/${fnName}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${supabaseKey}`,
+      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify(body),
   })
@@ -42,6 +26,14 @@ async function callEdgeFunction(fnName, body) {
     throw new Error(err.error || `${fnName} failed`)
   }
   return response.json()
+}
+
+export async function estimateProjectCost(requirements, location = null) {
+  try {
+    return await callEdgeFunction('openai-estimate', { requirements, location })
+  } catch (error) {
+    throw new Error(`Failed to generate cost estimate: ${error.message}`)
+  }
 }
 
 export async function calculateROI(inputs) {
@@ -69,26 +61,31 @@ export async function recommendStack(inputs) {
 }
 
 export async function planProject(description) {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
   try {
-    const response = await fetch(`${supabaseUrl}/functions/v1/openai-plan`, {
+    // Sends user JWT so the edge function can verify Pro subscription
+    return await callEdgeFunction('openai-plan', { description }, true)
+  } catch (error) {
+    throw new Error(error.message)
+  }
+}
+
+export async function sendWeeklyDigest(userId) {
+  try {
+    const token = await getUserToken()
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/weekly-digest`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseKey}`,
+        'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ description })
+      body: JSON.stringify({ user_id: userId }),
     })
-
     if (!response.ok) {
       const err = await response.json()
-      throw new Error(err.error || 'Failed to plan project')
+      throw new Error(err.error || 'Failed to send digest')
     }
-
-    return await response.json()
+    return response.json()
   } catch (error) {
-    throw new Error(`Failed to plan project: ${error.message}`)
+    throw new Error(`Failed to send digest: ${error.message}`)
   }
 }
