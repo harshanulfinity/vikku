@@ -2,30 +2,25 @@
 // API keys are never exposed to the frontend
 
 export async function estimateProjectCost(requirements, location = null) {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
   try {
-    const response = await fetch('/api/openai-estimate', {
+    const response = await fetch(`${supabaseUrl}/functions/v1/openai-estimate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseKey}`,
+      },
       body: JSON.stringify({ requirements, location })
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
-      let errorMessage = 'Failed to generate cost estimate'
-      try {
-        const errorJson = JSON.parse(errorText)
-        errorMessage = errorJson.error || errorMessage
-      } catch {
-        errorMessage = errorText || errorMessage
-      }
-      throw new Error(errorMessage)
+      const err = await response.json()
+      throw new Error(err.error || 'Failed to generate cost estimate')
     }
 
-    const text = await response.text()
-    if (!text) {
-      throw new Error('Empty response from server')
-    }
-    return JSON.parse(text)
+    return await response.json()
   } catch (error) {
     throw new Error(`Failed to generate cost estimate: ${error.message}`)
   }

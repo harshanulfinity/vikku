@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, DollarSign, Clock, AlertTriangle, Lightbulb, Loader2, MapPin, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Clock, AlertTriangle, Lightbulb, Loader2, MapPin, ChevronDown } from 'lucide-react'
 import { estimateProjectCost } from '../lib/openaiService'
 
 const REGIONS = [
@@ -15,6 +15,11 @@ const REGIONS = [
   { label: 'Philippines', country: 'Philippines' },
   { label: 'Pakistan', country: 'Pakistan' },
 ]
+
+function formatCurrency(amount, country, symbol) {
+  const locale = country === 'India' ? 'en-IN' : 'en-US'
+  return (symbol || '$') + new Intl.NumberFormat(locale).format(amount)
+}
 
 export default function CostEstimator() {
   const navigate = useNavigate()
@@ -222,13 +227,10 @@ export default function CostEstimator() {
             <div className="glass-strong rounded-2xl p-8 mb-6">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl glass flex items-center justify-center">
-                    <DollarSign size={24} className="text-white" />
-                  </div>
                   <div>
                     <p className="text-xs text-white/60 uppercase tracking-wider">Estimated Cost</p>
                     <p className="text-3xl font-bold text-white">
-                      {result.currencySymbol || '$'}{result.totalCostMin.toLocaleString()} – {result.currencySymbol || '$'}{result.totalCostMax.toLocaleString()}
+                      {formatCurrency(result.totalCostMin, location?.country, result.currencySymbol)} – {formatCurrency(result.totalCostMax, location?.country, result.currencySymbol)}
                     </p>
                     {result.currency && result.currency !== 'USD' && (
                       <p className="text-xs text-white/40 mt-1">{result.currency}</p>
@@ -272,7 +274,7 @@ export default function CostEstimator() {
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-semibold text-white text-sm">{item.category}</h4>
                       <p className="text-sm text-white font-medium">
-                        {result.currencySymbol || '$'}{item.costMin.toLocaleString()} – {result.currencySymbol || '$'}{item.costMax.toLocaleString()}
+                        {formatCurrency(item.costMin, location?.country, result.currencySymbol)} – {formatCurrency(item.costMax, location?.country, result.currencySymbol)}
                       </p>
                     </div>
                     <p className="text-xs text-white/60">{item.description}</p>
