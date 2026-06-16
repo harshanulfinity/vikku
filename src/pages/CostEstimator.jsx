@@ -19,10 +19,7 @@ export default function CostEstimator() {
     setError('')
     setResult(null)
 
-    if (requirements.length < 50) {
-      setError('Please provide more detailed requirements (at least 50 characters)')
-      return
-    }
+    if (!requirements.trim()) return
 
     setLoading(true)
     try {
@@ -65,19 +62,13 @@ export default function CostEstimator() {
             <div className="glass rounded-2xl p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-xs text-white/60 mb-2 uppercase tracking-wider">
-                    Project Requirements
-                  </label>
                   <textarea
                     value={requirements}
                     onChange={(e) => setRequirements(e.target.value)}
                     className="w-full glass rounded-xl px-4 py-4 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/20 transition-colors min-h-[200px] resize-none"
-                    placeholder="Describe your project — type of app, key features, tech needs, design complexity..."
+                    placeholder="Describe your project - type of app, key features, tech needs, design complexity..."
                     required
                   />
-                  <p className="text-xs text-white/40 mt-2">
-                    {requirements.length} / 50 characters minimum
-                  </p>
                 </div>
 
                 {error && (
