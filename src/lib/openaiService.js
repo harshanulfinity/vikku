@@ -26,20 +26,27 @@ export async function estimateProjectCost(requirements, location = null) {
   }
 }
 
+async function callEdgeFunction(fnName, body) {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+  const response = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${supabaseKey}`,
+    },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    const err = await response.json()
+    throw new Error(err.error || `${fnName} failed`)
+  }
+  return response.json()
+}
+
 export async function calculateROI(inputs) {
   try {
-    const response = await fetch('/api/openai-roi', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(inputs)
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to calculate ROI')
-    }
-
-    return await response.json()
+    return await callEdgeFunction('openai-roi', inputs)
   } catch (error) {
     throw new Error(`Failed to calculate ROI: ${error.message}`)
   }
@@ -47,18 +54,7 @@ export async function calculateROI(inputs) {
 
 export async function calculateTimeline(inputs) {
   try {
-    const response = await fetch('/api/openai-timeline', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(inputs)
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to calculate timeline')
-    }
-
-    return await response.json()
+    return await callEdgeFunction('openai-timeline', inputs)
   } catch (error) {
     throw new Error(`Failed to calculate timeline: ${error.message}`)
   }
@@ -66,18 +62,7 @@ export async function calculateTimeline(inputs) {
 
 export async function recommendStack(inputs) {
   try {
-    const response = await fetch('/api/openai-stack', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(inputs)
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to recommend stack')
-    }
-
-    return await response.json()
+    return await callEdgeFunction('openai-stack', inputs)
   } catch (error) {
     throw new Error(`Failed to recommend stack: ${error.message}`)
   }
