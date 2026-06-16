@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { CheckCircle2, Circle, Clock, Flag, ThumbsUp, ThumbsDown } from 'lucide-react'
-import { getProjectByToken, getTasks, getMilestones, updateMilestone } from '../../lib/pmService'
+import { CheckCircle2, Circle, Clock, Flag, ThumbsUp, ThumbsDown, MessageSquare, Send, Loader2 } from 'lucide-react'
+import { getProjectByToken, getTasks, getMilestones, updateMilestone, getClientComments, createClientComment } from '../../lib/pmService'
 
 const STATUS_LABELS = {
   todo: 'To Do',
@@ -111,6 +111,93 @@ function MilestoneApproval({ milestones, onUpdate }) {
   )
 }
 
+function ClientComments({ projectId, shareToken }) {
+  const [comments, setComments] = useState([])
+  const [name, setName] = useState('')
+  const [content, setContent] = useState('')
+  const [posting, setPosting] = useState(false)
+  const [loadingComments, setLoadingComments] = useState(true)
+
+  useEffect(() => {
+    getClientComments(shareToken).then((data) => {
+      setComments(data)
+      setLoadingComments(false)
+    })
+  }, [shareToken])
+
+  const handlePost = async () => {
+    if (!name.trim() || !content.trim()) return
+    setPosting(true)
+    try {
+      const comment = await createClientComment({
+        project_id: projectId,
+        share_token: shareToken,
+        author_name: name.trim(),
+        content: content.trim(),
+      })
+      setComments((prev) => [...prev, comment])
+      setContent('')
+    } catch {}
+    setPosting(false)
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <MessageSquare size={14} className="text-white/60" />
+        <h2 className="text-xs font-semibold text-white/80">Leave a comment</h2>
+        {comments.length > 0 && <span className="text-[10px] text-white/30">({comments.length})</span>}
+      </div>
+
+      {/* Existing comments */}
+      {!loadingComments && comments.length > 0 && (
+        <div className="space-y-3 mb-4">
+          {comments.map((c) => (
+            <div key={c.id} className="glass rounded-xl px-4 py-3">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] text-white/60 font-semibold flex-shrink-0">
+                  {c.author_name[0].toUpperCase()}
+                </div>
+                <span className="text-xs font-medium text-white/70">{c.author_name}</span>
+                <span className="text-[10px] text-white/25 ml-auto">
+                  {new Date(c.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                </span>
+              </div>
+              <p className="text-xs text-white/60 leading-relaxed pl-7">{c.content}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Comment form */}
+      <div className="glass rounded-xl p-4 space-y-3">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Your name"
+          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white placeholder-white/30 outline-none focus:border-white/20 transition-colors"
+        />
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handlePost() }}
+          placeholder="Write a comment..."
+          rows={3}
+          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white placeholder-white/30 outline-none focus:border-white/20 transition-colors resize-none"
+        />
+        <button
+          onClick={handlePost}
+          disabled={posting || !name.trim() || !content.trim()}
+          className="flex items-center gap-1.5 text-xs px-4 py-2 rounded-lg bg-white text-black font-semibold hover:bg-white/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+        >
+          {posting ? <Loader2 size={12} className="animate-spin" /> : <Send size={11} />}
+          Post comment
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function ClientView() {
   const { token } = useParams()
   const [project, setProject] = useState(null)
@@ -158,37 +245,54 @@ export default function ClientView() {
 
   const nextMilestone = milestones.find((m) => !m.completed)
 
+  const lastUpdated = (() => {
+    const dates = tasks.map((t) => t.updated_at || t.created_at).filter(Boolean)
+    if (!dates.length) return null
+    const latest = new Date(Math.max(...dates.map((d) => new Date(d).getTime())))
+    const diff = Date.now() - latest.getTime()
+    if (diff < 60 * 60 * 1000) return `${Math.floor(diff / 60000)}m ago`
+    if (diff < 24 * 60 * 60 * 1000) return `${Math.floor(diff / 3600000)}h ago`
+    return latest.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+  })()
+
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* Accent bar */}
+      <div className="h-1" style={{ background: `linear-gradient(90deg, ${project.color || '#ffffff'}40, ${project.color || '#ffffff'}10)` }} />
+
       {/* Header */}
-      <div className="border-b border-white/[0.05] px-6 py-5">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: project.color }} />
-            <div>
-              <h1 className="font-display font-semibold text-white">{project.name}</h1>
+      <div className="border-b border-white/[0.05] px-4 sm:px-6 py-4 sm:py-5">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: `${project.color || '#ffffff'}20` }}>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color || '#ffffff' }} />
+            </div>
+            <div className="min-w-0">
+              <h1 className="font-display font-semibold text-white text-sm sm:text-base truncate">{project.name}</h1>
               {project.client_name && (
-                <p className="text-xs text-white/40 mt-0.5">For {project.client_name}</p>
+                <p className="text-xs text-white/40 mt-0.5 truncate">For {project.client_name}</p>
               )}
             </div>
           </div>
-          <div className="text-xs text-white/30 text-right">
-            <p>Project update</p>
-            <p>{new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+          <div className="text-right flex-shrink-0">
+            <div className="text-[10px] text-white/50 font-medium capitalize px-2 py-0.5 rounded-full border border-white/10 inline-block">{project.status || 'active'}</div>
+            {lastUpdated && (
+              <p className="text-[10px] text-white/25 mt-1">Updated {lastUpdated}</p>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6 sm:space-y-8">
         {/* Summary stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Overall Progress', value: `${progress}%`, sub: `${doneTasks} of ${totalTasks} tasks done` },
-            { label: 'In Progress', value: inProgress, sub: 'tasks being worked on' },
-            { label: 'Next Milestone', value: nextMilestone ? new Date(nextMilestone.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—', sub: nextMilestone?.title || 'All milestones done' },
+            { label: 'Progress', value: `${progress}%`, sub: `${doneTasks} of ${totalTasks} tasks done` },
+            { label: 'In Progress', value: inProgress, sub: 'tasks active' },
+            { label: 'Next Due', value: nextMilestone ? new Date(nextMilestone.due_date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—', sub: nextMilestone?.title || 'All milestones done' },
           ].map((stat) => (
-            <div key={stat.label} className="glass rounded-2xl p-5 text-center">
-              <p className="text-2xl font-bold text-white mb-1">{stat.value}</p>
+            <div key={stat.label} className="glass rounded-2xl p-4 sm:p-5 text-center">
+              <p className="text-xl sm:text-2xl font-bold text-white mb-1">{stat.value}</p>
               <p className="text-[10px] text-white/40 leading-tight">{stat.sub}</p>
             </div>
           ))}
@@ -258,9 +362,12 @@ export default function ClientView() {
           } />
         )}
 
+        {/* Client comments */}
+        <ClientComments projectId={project.id} shareToken={token} />
+
         {/* Footer */}
         <div className="text-center pt-6 border-t border-white/[0.05]">
-          <p className="text-xs text-white/20">Powered by <span className="text-white/40">Vikku PM</span></p>
+          <p className="text-xs text-white/20">Powered by <a href="https://vikku.in/pm" className="text-white/40 hover:text-white/60 transition-colors">Vikku PM</a></p>
         </div>
       </div>
     </div>

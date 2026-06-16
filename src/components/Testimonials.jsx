@@ -1,25 +1,25 @@
 const testimonials = [
   {
     quote: "Vikku took our entire staffing workflow from WhatsApp groups and Excel sheets into a proper platform. Our team went from spending hours on manual tracking to having everything in one place. The delivery was fast and exactly what we needed.",
-    name: "Rajesh Kumar",
+    name: "Jagan",
     role: "Director",
     company: "Jobly Solutions",
   },
   {
-    quote: "Before Vikku, we had zero online presence. Now we're getting enquiries directly from our website every week — people who found us on Google. The catalog they built lets customers browse all our products before they even call us.",
-    name: "Suresh Reddy",
+    quote: "Before Vikku, we had zero online presence. Now we're getting enquiries directly from our website every week - people who found us on Google. The catalog they built lets customers browse all our products before they even call us.",
+    name: "Sainath",
     role: "Owner",
     company: "HSO CCTV",
   },
   {
-    quote: "Our leads literally 4x'd within a few months of launching. Clients now come to us — we don't have to rely on word of mouth anymore. Having a professional website completely changed how people perceive us.",
-    name: "Anil Sharma",
+    quote: "Our leads literally 4x'd within a few months of launching. Clients now come to us - we don't have to rely on word of mouth anymore. Having a professional website completely changed how people perceive us.",
+    name: "Rahamath Thullaa",
     role: "Founder",
     company: "Rolex Ads",
   },
   {
-    quote: "We went from zero to 6 paying clients within months of our website going live. It works like a 24/7 salesperson — prospects visit, read about our services, and reach out already knowing what they want.",
-    name: "Priya Nair",
+    quote: "We went from zero to 6 paying clients within months of our website going live. It works like a 24/7 salesperson - prospects visit, read about our services, and reach out already knowing what they want.",
+    name: "Mohan Manjunath Reddy",
     role: "Co-founder",
     company: "Media Manager 4U",
   },

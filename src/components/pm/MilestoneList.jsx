@@ -66,7 +66,7 @@ export default function MilestoneList({ projectId, milestones, onMilestonesChang
                 <p className={`text-[10px] mt-0.5 ${
                   m.completed ? 'text-white/20' : isPast ? 'text-red-400/60' : 'text-white/40'
                 }`}>
-                  {isPast && !m.completed ? 'Overdue — ' : ''}
+                  {isPast && !m.completed ? 'Overdue - ' : ''}
                   {new Date(m.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
               </div>

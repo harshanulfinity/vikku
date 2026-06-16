@@ -35,7 +35,7 @@ const roles = [
       { icon: GitBranch, title: 'Project Oversight', desc: 'View and manage every employee-client project assignment across the org.' },
       { icon: ClipboardList, title: 'Timesheet Control', desc: 'Access, review, approve or reject any timesheet across all employees.' },
       { icon: Receipt, title: 'Invoicing & Billing', desc: 'Full invoice generation, status management, and payment tracking.' },
-      { icon: BarChart2, title: 'All Reports', desc: 'Access every report type — employee, client, financial, and operational.' },
+      { icon: BarChart2, title: 'All Reports', desc: 'Access every report type - employee, client, financial, and operational.' },
       { icon: UserCheck, title: 'User Management', desc: 'Create portal users, assign roles, and manage permissions system-wide.' },
       { icon: ShieldCheck, title: 'System Settings', desc: 'Configure notifications, data retention, compliance policies, and audit logs.' },
     ],
@@ -155,7 +155,7 @@ export default function CaseStudyStaffing() {
             <span className="text-white">Management Platform</span>
           </h1>
           <p className="text-white text-base leading-relaxed max-w-2xl">
-            End-to-end workforce management for staffing agencies — employee onboarding, client contracts, timesheets, invoicing, and analytics.
+            End-to-end workforce management for staffing agencies - employee onboarding, client contracts, timesheets, invoicing, and analytics.
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8">
@@ -214,10 +214,10 @@ export default function CaseStudyStaffing() {
         <div className="mb-14">
           <h2 className="font-display font-bold text-lg text-white mb-2">Role-Based Access</h2>
           <p className="text-white text-sm mb-8">
-            Each role sees exactly what they need — no more, no less.
+            Each role sees exactly what they need - no more, no less.
           </p>
           <div className="glass rounded-xl p-4">
-            <p className="text-[10px] text-white uppercase tracking-widest mb-4">Key Users — click a role to explore</p>
+            <p className="text-[10px] text-white uppercase tracking-widest mb-4">Key Users - click a role to explore</p>
             <div className="flex flex-wrap gap-2 mb-3">
               {roles.map((role) => {
                 const Icon = role.icon

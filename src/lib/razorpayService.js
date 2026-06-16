@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient'
 const PLANS = {
   pro: {
     name: 'Vikku PM Pro',
-    amount: 1000, // ₹10 in paise
+    amount: 49900, // ₹499 in paise
     currency: 'INR',
     description: 'Unlimited projects, AI planning, client share links',
   },
@@ -53,7 +53,7 @@ export async function openRazorpayCheckout({ plan, user, onSuccess, onFailure })
       orderId = data.order_id
     }
   } catch {
-    // Fall through without order_id — card payments still work
+    // Fall through without order_id - card payments still work
   }
 
   const options = {

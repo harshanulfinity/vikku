@@ -173,11 +173,17 @@ export default function NewProject() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.name.trim()) { setError('Project name is required'); return }
+    const trimmedName = form.name.trim()
+    if (!trimmedName) { setError('Project name is required'); return }
+    if (trimmedName.length > 100) { setError('Project name must be under 100 characters'); return }
+    if (form.client_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.client_email)) {
+      setError('Please enter a valid client email address')
+      return
+    }
     setSaving(true)
     setError('')
     try {
-      const project = await createProject({ ...form, user_id: user.id })
+      const project = await createProject({ ...form, name: trimmedName, user_id: user.id })
 
       if (template && template.tasks.length > 0) {
         await bulkCreateTasks(template.tasks.map((t) => ({ ...t, project_id: project.id })))
@@ -191,7 +197,8 @@ export default function NewProject() {
         })))
       }
 
-      navigate(`/pm/projects/${project.id}`)
+      const isBlank = !template || template.tasks.length === 0
+      navigate(`/pm/projects/${project.id}${isBlank ? '?onboard=1' : ''}`)
     } catch (err) {
       setError(err.message)
       setSaving(false)

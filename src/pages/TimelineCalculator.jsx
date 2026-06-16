@@ -24,16 +24,16 @@ const FEATURE_OPTIONS = [
 ]
 
 const DESIGN_OPTIONS = [
-  { label: 'Simple — clean & minimal', value: 'Simple — clean, minimal design with few custom elements' },
-  { label: 'Moderate — branded UI', value: 'Moderate — branded with custom components and animations' },
-  { label: 'Complex — custom illustrations, lots of animations', value: 'Complex — extensive custom design, illustrations, and micro-animations' },
+  { label: 'Simple - clean & minimal', value: 'Simple - clean, minimal design with few custom elements' },
+  { label: 'Moderate - branded UI', value: 'Moderate - branded with custom components and animations' },
+  { label: 'Complex - custom illustrations, lots of animations', value: 'Complex - extensive custom design, illustrations, and micro-animations' },
 ]
 
 const REVISION_OPTIONS = ['1 round', '2–3 rounds', '4+ rounds']
 const AVAILABILITY_OPTIONS = [
-  { label: 'High — I\'ll review within 24 hours', value: 'High (responds within 24 hours)' },
-  { label: 'Medium — 2–3 days to review', value: 'Medium (2–3 days to review feedback)' },
-  { label: 'Low — 1 week+ response time', value: 'Low (1+ week response time)' },
+  { label: 'High - I\'ll review within 24 hours', value: 'High (responds within 24 hours)' },
+  { label: 'Medium - 2–3 days to review', value: 'Medium (2–3 days to review feedback)' },
+  { label: 'Low - 1 week+ response time', value: 'Low (1+ week response time)' },
 ]
 
 export default function TimelineCalculator() {
@@ -131,7 +131,7 @@ export default function TimelineCalculator() {
                 <div>
                   <label className="block text-xs text-white/60 mb-2 uppercase tracking-wider">Do you already have design assets / brand kit?</label>
                   <div className="grid grid-cols-3 gap-2">
-                    {['Yes — logos, colors, fonts ready', 'Partial — have logo only', 'No — starting from scratch'].map(opt => (
+                    {['Yes - logos, colors, fonts ready', 'Partial - have logo only', 'No - starting from scratch'].map(opt => (
                       <button key={opt} type="button"
                         onClick={() => setForm(f => ({ ...f, hasDesign: opt }))}
                         className={`glass rounded-xl px-4 py-3 text-xs text-left transition-all ${

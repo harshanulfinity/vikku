@@ -167,7 +167,7 @@ export default function PublicShowcase() {
           </div>
         )}
 
-        {/* Tasks highlight — in progress */}
+        {/* Tasks highlight - in progress */}
         {inProgress > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-4">

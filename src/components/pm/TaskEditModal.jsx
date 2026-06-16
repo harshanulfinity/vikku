@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import {
   X, Trash2, Loader2, MessageCircle, Send, Trash,
-  CheckSquare, Square, Plus, Clock, User, Timer,
+  CheckSquare, Square, Plus, Clock, User, Timer, Link, ExternalLink,
 } from 'lucide-react'
 import {
   updateTask, deleteTask, getTaskComments, createTaskComment, deleteTaskComment,
   getSubtasks, createSubtask, updateSubtask, deleteSubtask,
   getTimeLogs, createTimeLog, deleteTimeLog, getProjectMembers,
 } from '../../lib/pmService'
+import { TASK_LABELS, LABEL_STYLES } from '../../lib/pmConstants'
 import { useAuth } from '../../contexts/AuthContext'
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent']
@@ -45,25 +46,23 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     priority: task.priority || 'medium',
     due_date: task.due_date || '',
     assigned_to_email: task.assigned_to_email || '',
+    label: task.label || '',
+    task_link: task.task_link || '',
   })
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
-  // Comments
   const [comments, setComments] = useState([])
   const [newComment, setNewComment] = useState('')
   const [sendingComment, setSendingComment] = useState(false)
 
-  // Members (for assignee dropdown)
   const [members, setMembers] = useState([])
   const [showAssigneeMenu, setShowAssigneeMenu] = useState(false)
 
-  // Subtasks
   const [subtasks, setSubtasks] = useState([])
   const [newSubtask, setNewSubtask] = useState('')
   const [addingSubtask, setAddingSubtask] = useState(false)
 
-  // Time tracking
   const [timeLogs, setTimeLogs] = useState([])
   const [logMinutes, setLogMinutes] = useState('')
   const [logDesc, setLogDesc] = useState('')
@@ -73,12 +72,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     getTaskComments(task.id).then(setComments)
     getSubtasks(task.id).then(setSubtasks)
     getTimeLogs(task.id).then(setTimeLogs)
-    if (task.project_id) {
-      getProjectMembers(task.project_id).then((m) => {
-        // Add owner context if user email available
-        setMembers(m)
-      })
-    }
+    if (task.project_id) getProjectMembers(task.project_id).then(setMembers)
   }, [task.id, task.project_id])
 
   const totalLogged = timeLogs.reduce((s, l) => s + (l.minutes || 0), 0)
@@ -93,6 +87,8 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
       priority: form.priority,
       due_date: form.due_date || null,
       assigned_to_email: form.assigned_to_email || null,
+      label: form.label || null,
+      task_link: form.task_link.trim() || null,
     })
     setSaving(false)
     onUpdated({ ...task, ...form })
@@ -110,12 +106,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const handleSendComment = async () => {
     if (!newComment.trim() || !user) return
     setSendingComment(true)
-    const comment = await createTaskComment({
-      task_id: task.id,
-      user_id: user.id,
-      user_email: user.email,
-      content: newComment.trim(),
-    })
+    const comment = await createTaskComment({ task_id: task.id, user_id: user.id, user_email: user.email, content: newComment.trim() })
     setComments((prev) => [...prev, comment])
     setNewComment('')
     setSendingComment(false)
@@ -152,13 +143,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     if (!m || m <= 0) return
     setLoggingTime(true)
     try {
-      const log = await createTimeLog({
-        task_id: task.id,
-        project_id: task.project_id,
-        user_id: user?.id,
-        minutes: m,
-        note: logDesc.trim() || null,
-      })
+      const log = await createTimeLog({ task_id: task.id, project_id: task.project_id, user_id: user?.id, minutes: m, note: logDesc.trim() || null })
       setTimeLogs((prev) => [log, ...prev])
       setLogMinutes('')
       setLogDesc('')
@@ -172,6 +157,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   }
 
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done'
+  const labelStyle = form.label ? LABEL_STYLES[form.label] : null
 
   const modal = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
@@ -179,16 +165,17 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] flex-shrink-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Task</p>
-            {isOverdue && (
-              <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded font-medium">
-                OVERDUE
-              </span>
-            )}
+            {isOverdue && <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded font-medium">OVERDUE</span>}
             {totalLogged > 0 && (
               <span className="text-[9px] bg-white/[0.06] text-white/40 px-1.5 py-0.5 rounded flex items-center gap-1">
                 <Timer size={8} /> {fmtMins(totalLogged)}
+              </span>
+            )}
+            {form.label && labelStyle && (
+              <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${labelStyle.bg} ${labelStyle.text} ${labelStyle.border}`}>
+                {form.label}
               </span>
             )}
           </div>
@@ -225,7 +212,36 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
               />
             </div>
 
-            {/* Priority + Due date + Assignee */}
+            {/* Label */}
+            <div>
+              <label className="text-[10px] text-white/40 mb-1.5 block uppercase tracking-wider">Label</label>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setForm({ ...form, label: '' })}
+                  className={`text-[10px] px-2 py-1 rounded-lg border font-medium transition-all ${
+                    !form.label ? 'bg-white/10 text-white/60 border-white/20' : 'border-white/[0.08] text-white/25 hover:border-white/20'
+                  }`}
+                >
+                  None
+                </button>
+                {TASK_LABELS.map((lbl) => {
+                  const s = LABEL_STYLES[lbl]
+                  return (
+                    <button
+                      key={lbl}
+                      onClick={() => setForm({ ...form, label: form.label === lbl ? '' : lbl })}
+                      className={`text-[10px] px-2 py-1 rounded-lg border font-medium transition-all ${
+                        form.label === lbl ? `${s.bg} ${s.text} ${s.border}` : 'border-white/[0.08] text-white/30 hover:border-white/20'
+                      }`}
+                    >
+                      {lbl}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Priority + Due date */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[10px] text-white/40 mb-1.5 block uppercase tracking-wider">Priority</label>
@@ -273,32 +289,16 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
               </button>
               {showAssigneeMenu && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-10 overflow-hidden">
-                  <button
-                    onClick={() => { setForm({ ...form, assigned_to_email: '' }); setShowAssigneeMenu(false) }}
-                    className="w-full text-left px-3 py-2 text-xs text-white/40 hover:bg-white/[0.05] transition-colors"
-                  >
-                    Unassigned
-                  </button>
+                  <button onClick={() => { setForm({ ...form, assigned_to_email: '' }); setShowAssigneeMenu(false) }} className="w-full text-left px-3 py-2 text-xs text-white/40 hover:bg-white/[0.05] transition-colors">Unassigned</button>
                   {user?.email && (
-                    <button
-                      onClick={() => { setForm({ ...form, assigned_to_email: user.email }); setShowAssigneeMenu(false) }}
-                      className="w-full text-left px-3 py-2 text-xs text-white/70 hover:bg-white/[0.05] transition-colors flex items-center gap-2"
-                    >
-                      <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] text-white/50">
-                        {user.email[0].toUpperCase()}
-                      </span>
+                    <button onClick={() => { setForm({ ...form, assigned_to_email: user.email }); setShowAssigneeMenu(false) }} className="w-full text-left px-3 py-2 text-xs text-white/70 hover:bg-white/[0.05] transition-colors flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px]">{user.email[0].toUpperCase()}</span>
                       {user.email} <span className="text-white/30 ml-auto">me</span>
                     </button>
                   )}
                   {members.filter((m) => m.email !== user?.email).map((m) => (
-                    <button
-                      key={m.id}
-                      onClick={() => { setForm({ ...form, assigned_to_email: m.email }); setShowAssigneeMenu(false) }}
-                      className="w-full text-left px-3 py-2 text-xs text-white/70 hover:bg-white/[0.05] transition-colors flex items-center gap-2"
-                    >
-                      <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] text-white/50">
-                        {(m.email || '?')[0].toUpperCase()}
-                      </span>
+                    <button key={m.id} onClick={() => { setForm({ ...form, assigned_to_email: m.email }); setShowAssigneeMenu(false) }} className="w-full text-left px-3 py-2 text-xs text-white/70 hover:bg-white/[0.05] transition-colors flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px]">{(m.email || '?')[0].toUpperCase()}</span>
                       {m.email}
                     </button>
                   ))}
@@ -306,50 +306,51 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
               )}
             </div>
 
+            {/* External Link */}
+            <div>
+              <label className="text-[10px] text-white/40 mb-1.5 block uppercase tracking-wider">External Link</label>
+              <div className="relative">
+                <Link size={11} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25 pointer-events-none" />
+                <input
+                  value={form.task_link}
+                  onChange={(e) => setForm({ ...form, task_link: e.target.value })}
+                  placeholder="https://github.com/... or Figma, Notion link"
+                  className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl pl-8 pr-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
+                />
+              </div>
+              {form.task_link && (
+                <a href={form.task_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-blue-400/70 hover:text-blue-400 mt-1 transition-colors">
+                  <ExternalLink size={9} /> Open link
+                </a>
+              )}
+            </div>
+
             {/* Subtasks */}
             <div className="border-t border-white/[0.06] pt-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-1.5">
-                  <CheckSquare size={12} className="text-white/30" />
-                  <label className="text-[10px] text-white/40 uppercase tracking-wider">
-                    Subtasks {subtasks.length > 0 && `(${subtasksDone}/${subtasks.length})`}
-                  </label>
-                </div>
+              <div className="flex items-center gap-1.5 mb-3">
+                <CheckSquare size={12} className="text-white/30" />
+                <label className="text-[10px] text-white/40 uppercase tracking-wider">
+                  Subtasks {subtasks.length > 0 && `(${subtasksDone}/${subtasks.length})`}
+                </label>
               </div>
-
               {subtasks.length > 0 && (
-                <div className="space-y-1.5 mb-3">
-                  {/* progress bar */}
-                  {subtasks.length > 0 && (
-                    <div className="h-1 bg-white/[0.06] rounded-full overflow-hidden mb-2">
-                      <div
-                        className="h-full bg-green-400/60 rounded-full transition-all duration-300"
-                        style={{ width: `${(subtasksDone / subtasks.length) * 100}%` }}
-                      />
-                    </div>
-                  )}
-                  {subtasks.map((st) => (
-                    <div key={st.id} className="flex items-center gap-2 group">
-                      <button onClick={() => handleToggleSubtask(st)} className="flex-shrink-0 text-white/40 hover:text-white/80 transition-colors">
-                        {st.completed
-                          ? <CheckSquare size={13} className="text-green-400" />
-                          : <Square size={13} />
-                        }
-                      </button>
-                      <span className={`text-xs flex-1 leading-snug ${st.completed ? 'line-through text-white/30' : 'text-white/70'}`}>
-                        {st.title}
-                      </span>
-                      <button
-                        onClick={() => handleDeleteSubtask(st.id)}
-                        className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all"
-                      >
-                        <Trash size={10} />
-                      </button>
-                    </div>
-                  ))}
+                <div className="mb-3">
+                  <div className="h-1 bg-white/[0.06] rounded-full overflow-hidden mb-2">
+                    <div className="h-full bg-green-400/60 rounded-full transition-all duration-300" style={{ width: `${(subtasksDone / subtasks.length) * 100}%` }} />
+                  </div>
+                  <div className="space-y-1.5">
+                    {subtasks.map((st) => (
+                      <div key={st.id} className="flex items-center gap-2 group">
+                        <button onClick={() => handleToggleSubtask(st)} className="flex-shrink-0 text-white/40 hover:text-white/80 transition-colors">
+                          {st.completed ? <CheckSquare size={13} className="text-green-400" /> : <Square size={13} />}
+                        </button>
+                        <span className={`text-xs flex-1 leading-snug ${st.completed ? 'line-through text-white/30' : 'text-white/70'}`}>{st.title}</span>
+                        <button onClick={() => handleDeleteSubtask(st.id)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all"><Trash size={10} /></button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
-
               <div className="flex gap-2">
                 <input
                   value={newSubtask}
@@ -358,11 +359,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                   placeholder="Add subtask..."
                   className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
                 />
-                <button
-                  onClick={handleAddSubtask}
-                  disabled={addingSubtask || !newSubtask.trim()}
-                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all disabled:opacity-30"
-                >
+                <button onClick={handleAddSubtask} disabled={addingSubtask || !newSubtask.trim()} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all disabled:opacity-30">
                   {addingSubtask ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
                 </button>
               </div>
@@ -376,59 +373,27 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                   Time Logged {totalLogged > 0 && `· ${fmtMins(totalLogged)} total`}
                 </label>
               </div>
-
-              {/* Quick log buttons */}
               <div className="flex gap-1.5 mb-2">
                 {[15, 30, 60, 120].map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => handleLogTime(m)}
-                    className="text-[10px] px-2 py-1 rounded-lg border border-white/[0.08] text-white/40 hover:border-white/20 hover:text-white/70 transition-all"
-                  >
+                  <button key={m} onClick={() => handleLogTime(m)} className="text-[10px] px-2 py-1 rounded-lg border border-white/[0.08] text-white/40 hover:border-white/20 hover:text-white/70 transition-all">
                     +{fmtMins(m)}
                   </button>
                 ))}
               </div>
-
-              {/* Custom log */}
               <div className="flex gap-2 mb-3">
-                <input
-                  type="number"
-                  min="1"
-                  value={logMinutes}
-                  onChange={(e) => setLogMinutes(e.target.value)}
-                  placeholder="Minutes"
-                  className="w-24 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
-                />
-                <input
-                  value={logDesc}
-                  onChange={(e) => setLogDesc(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleLogTime(logMinutes) } }}
-                  placeholder="Note (optional)"
-                  className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
-                />
-                <button
-                  onClick={() => handleLogTime(logMinutes)}
-                  disabled={loggingTime || !logMinutes}
-                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all disabled:opacity-30"
-                >
+                <input type="number" min="1" value={logMinutes} onChange={(e) => setLogMinutes(e.target.value)} placeholder="Minutes" className="w-24 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors" />
+                <input value={logDesc} onChange={(e) => setLogDesc(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleLogTime(logMinutes) } }} placeholder="Note (optional)" className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors" />
+                <button onClick={() => handleLogTime(logMinutes)} disabled={loggingTime || !logMinutes} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all disabled:opacity-30">
                   {loggingTime ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
                 </button>
               </div>
-
-              {/* Log history */}
               {timeLogs.length > 0 && (
                 <div className="space-y-1 max-h-24 overflow-y-auto">
                   {timeLogs.slice(0, 5).map((l) => (
                     <div key={l.id} className="flex items-center gap-2 group">
                       <span className="text-[10px] text-white/50 font-medium w-10 flex-shrink-0">{fmtMins(l.minutes)}</span>
                       <span className="text-[10px] text-white/30 flex-1 truncate">{l.note || timeAgo(l.created_at)}</span>
-                      <button
-                        onClick={() => handleDeleteTimeLog(l.id)}
-                        className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all"
-                      >
-                        <Trash size={10} />
-                      </button>
+                      <button onClick={() => handleDeleteTimeLog(l.id)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all"><Trash size={10} /></button>
                     </div>
                   ))}
                 </div>
@@ -439,11 +404,8 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
             <div className="border-t border-white/[0.06] pt-4">
               <div className="flex items-center gap-1.5 mb-3">
                 <MessageCircle size={12} className="text-white/30" />
-                <label className="text-[10px] text-white/40 uppercase tracking-wider">
-                  Comments {comments.length > 0 && `(${comments.length})`}
-                </label>
+                <label className="text-[10px] text-white/40 uppercase tracking-wider">Comments {comments.length > 0 && `(${comments.length})`}</label>
               </div>
-
               {comments.length > 0 && (
                 <div className="space-y-2 mb-3 max-h-40 overflow-y-auto">
                   {comments.map((c) => (
@@ -456,12 +418,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                           <span className="text-[10px] text-white/40">{c.user_email?.split('@')[0]}</span>
                           <span className="text-[10px] text-white/20">{timeAgo(c.created_at)}</span>
                           {c.user_id === user?.id && (
-                            <button
-                              onClick={() => handleDeleteComment(c.id)}
-                              className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all ml-auto"
-                            >
-                              <Trash size={10} />
-                            </button>
+                            <button onClick={() => handleDeleteComment(c.id)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all ml-auto"><Trash size={10} /></button>
                           )}
                         </div>
                         <p className="text-xs text-white/70 leading-relaxed mt-0.5">{c.content}</p>
@@ -470,7 +427,6 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                   ))}
                 </div>
               )}
-
               <div className="flex gap-2">
                 <input
                   value={newComment}
@@ -479,37 +435,22 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                   placeholder="Add a comment..."
                   className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
                 />
-                <button
-                  onClick={handleSendComment}
-                  disabled={sendingComment || !newComment.trim()}
-                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all disabled:opacity-30"
-                >
+                <button onClick={handleSendComment} disabled={sendingComment || !newComment.trim()} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all disabled:opacity-30">
                   {sendingComment ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
                 </button>
               </div>
             </div>
-
           </div>
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between px-5 py-4 border-t border-white/[0.08] flex-shrink-0">
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="flex items-center gap-1.5 text-xs text-red-400/60 hover:text-red-400 transition-colors disabled:opacity-40"
-          >
+          <button onClick={handleDelete} disabled={deleting} className="flex items-center gap-1.5 text-xs text-red-400/60 hover:text-red-400 transition-colors disabled:opacity-40">
             <Trash2 size={12} /> {deleting ? 'Deleting...' : 'Delete task'}
           </button>
           <div className="flex gap-2">
-            <button onClick={onClose} className="text-xs text-white/30 hover:text-white/60 transition-colors px-3 py-1.5">
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving || !form.title.trim()}
-              className="flex items-center gap-1.5 text-xs bg-white text-black font-semibold px-4 py-1.5 rounded-lg hover:bg-white/90 transition-colors disabled:opacity-40"
-            >
+            <button onClick={onClose} className="text-xs text-white/30 hover:text-white/60 transition-colors px-3 py-1.5">Cancel</button>
+            <button onClick={handleSave} disabled={saving || !form.title.trim()} className="flex items-center gap-1.5 text-xs bg-white text-black font-semibold px-4 py-1.5 rounded-lg hover:bg-white/90 transition-colors disabled:opacity-40">
               {saving ? <><Loader2 size={11} className="animate-spin" /> Saving...</> : 'Save'}
             </button>
           </div>

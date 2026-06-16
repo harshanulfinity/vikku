@@ -17,7 +17,7 @@ const navLinks = [
   { label: 'Process',  href: '#process' },
   { label: 'About',    href: '#about' },
   { label: 'PM Tool',  href: '/pm', isRoute: true },
-  { label: 'Pricing',  href: '/pricing', isRoute: true },
+  { label: 'Tools',    href: '/tools', isRoute: true },
   { label: 'Contact',  href: '#contact' },
 ]
 
@@ -73,6 +73,7 @@ export default function Navbar() {
   }
 
   return (
+    <>
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
@@ -222,82 +223,75 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile menu */}
-      <div
-        className={`md:hidden transition-all duration-300 overflow-hidden ${
-          menuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
-        }`}
-      >
-        <div className="mx-4 mt-2 mb-3 glass rounded-xl overflow-hidden">
-          {navLinks.map(({ label, href, dropdown, isRoute }) => (
-            <div key={label} className="border-b border-white/[0.05] last:border-0">
-              <button
-                onClick={() => isRoute ? (navigate(href), setMenuOpen(false)) : handleNav(href)}
-                className="w-full text-left px-4 py-3 text-xs text-white font-medium active:bg-white/[0.05] transition-colors"
-              >
-                {label}
-              </button>
-              {dropdown && (
-                <div className="bg-white/[0.02] border-t border-white/[0.04]">
-                  {dropdown.map(({ label: dl, path }) => (
-                    <button
-                      key={dl}
-                      onClick={() => { navigate(path); setMenuOpen(false) }}
-                      className="w-full text-left px-4 py-3 text-[10px] text-white/70 active:bg-white/[0.06] active:text-white transition-colors border-b border-white/[0.03] last:border-0 flex items-center gap-2"
-                    >
-                      <span className="w-1 h-1 rounded-full bg-white/30 flex-shrink-0" />
-                      {dl}
-                    </button>
-                  ))}
+    </header>
+
+      {/* Mobile menu - full screen overlay */}
+      {menuOpen && (
+        <div className="md:hidden fixed inset-0 z-40 bg-black/95 backdrop-blur-xl flex flex-col pt-16">
+          <div className="overflow-y-auto flex-1 px-4 py-4">
+            <div className="glass rounded-2xl overflow-hidden mb-4">
+              {navLinks.map(({ label, href, dropdown, isRoute }) => (
+                <div key={label} className="border-b border-white/[0.05] last:border-0">
+                  <button
+                    onClick={() => isRoute ? (navigate(href), setMenuOpen(false)) : handleNav(href)}
+                    className="w-full text-left px-5 py-4 text-sm text-white font-medium active:bg-white/[0.05] transition-colors"
+                  >
+                    {label}
+                  </button>
+                  {dropdown && (
+                    <div className="bg-white/[0.02] border-t border-white/[0.04]">
+                      {dropdown.map(({ label: dl, path }) => (
+                        <button
+                          key={dl}
+                          onClick={() => { navigate(path); setMenuOpen(false) }}
+                          className="w-full text-left px-5 py-3.5 text-xs text-white/60 active:bg-white/[0.06] active:text-white transition-colors border-b border-white/[0.03] last:border-0 flex items-center gap-2"
+                        >
+                          <span className="w-1 h-1 rounded-full bg-white/30 flex-shrink-0" />
+                          {dl}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
+              ))}
+            </div>
+
+            <div className="space-y-2.5">
+              {user ? (
+                <>
+                  <button
+                    onClick={() => { navigate('/dashboard'); setMenuOpen(false) }}
+                    className="glass w-full py-3.5 rounded-xl text-sm text-white font-medium"
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={async () => { await signOut(); navigate('/'); setMenuOpen(false) }}
+                    className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm text-white/50 border border-white/[0.08]"
+                  >
+                    <LogOut size={14} /> Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => { navigate('/login'); setMenuOpen(false) }}
+                    className="glass w-full py-3.5 rounded-xl text-sm text-white font-medium"
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => { navigate('/signup'); setMenuOpen(false) }}
+                    className="bg-white text-black w-full py-3.5 rounded-xl text-sm font-semibold hover:bg-white/90 transition-colors"
+                  >
+                    Sign Up
+                  </button>
+                </>
               )}
             </div>
-          ))}
-          <div className="p-4 space-y-2">
-            <button
-              onClick={() => handleNav('#solution')}
-              className="btn-ghost active:scale-95 w-full justify-center rounded-lg py-3 active:opacity-80 text-xs"
-            >
-              View Work
-            </button>
-            {user ? (
-              <>
-                <button
-                  onClick={() => { navigate('/dashboard'); setMenuOpen(false) }}
-                  className="glass active:scale-95 w-full justify-center rounded-lg py-3 active:opacity-80 text-xs text-white"
-                >
-                  Dashboard
-                </button>
-                <button
-                  onClick={async () => {
-                    await signOut()
-                    navigate('/')
-                    setMenuOpen(false)
-                  }}
-                  className="flex items-center justify-center gap-2 glass active:scale-95 w-full rounded-lg py-3 active:opacity-80 text-xs text-white/60"
-                >
-                  <LogOut size={14} /> Sign Out
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => { navigate('/login'); setMenuOpen(false) }}
-                  className="glass active:scale-95 w-full justify-center rounded-lg py-3 active:opacity-80 text-xs text-white"
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => { navigate('/signup'); setMenuOpen(false) }}
-                  className="bg-white text-black active:scale-95 w-full justify-center rounded-lg py-3 active:opacity-80 text-xs font-medium"
-                >
-                  Sign Up
-                </button>
-              </>
-            )}
           </div>
         </div>
-      </div>
-    </header>
+      )}
+    </>
   )
 }

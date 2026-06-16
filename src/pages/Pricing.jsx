@@ -1,93 +1,97 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Check, Zap, Layers, Building2 } from 'lucide-react'
+import { ArrowLeft, Check, Kanban, DollarSign, TrendingUp, Clock, LayoutDashboard } from 'lucide-react'
 import usePageMeta from '../hooks/usePageMeta'
 
-const plans = [
+const TOOLS_COPY = [
   {
-    icon: Zap,
-    name: 'Starter',
-    tagline: 'Get online fast',
-    priceRange: '₹25,000 – ₹50,000',
-    timeline: '2–3 weeks',
-    ideal: 'Small businesses, restaurants, local services, freelancers',
-    features: [
-      'Professional landing page (5–7 sections)',
-      'Mobile-responsive design',
-      'Contact form + WhatsApp integration',
-      'Google Maps embed',
-      'Basic SEO setup',
-      '1 round of revisions',
-      'Hosting setup guidance',
-      '30 days post-launch support',
+    Icon: Kanban,
+    color: 'text-violet-400',
+    bg: 'bg-violet-500/10',
+    border: 'border-violet-500/20',
+    name: 'PM Tool',
+    hook: 'Still managing projects in scattered WhatsApp groups and endless spreadsheets?',
+    outcome: 'What if your entire project - tasks, team, milestones, and client updates - lived in one clean dashboard you could open from anywhere?',
+    intro: 'Vikku PM helps founders and freelancers ship products faster without the bloat of Jira or the confusion of Trello. Built for small teams that move fast.',
+    steps: [
+      'Create a project from a template or blank board in 30 seconds',
+      'Add tasks, assign members, set milestones and due dates',
+      'Share a live read-only link with your client - no login, no friction',
     ],
-    cta: 'Get Started',
-    highlight: false,
+    proof: '50+ founders actively managing live projects',
+    cta: 'Start your first project free',
+    path: '/pm',
   },
   {
-    icon: Layers,
-    name: 'Professional',
-    tagline: 'Full web presence',
-    priceRange: '₹50,000 – ₹2,00,000',
-    timeline: '4–8 weeks',
-    ideal: 'Growing businesses, agencies, SaaS, e-commerce',
-    features: [
-      'Multi-page website (up to 10 pages)',
-      'User authentication (login / signup)',
-      'Database integration',
-      'Admin dashboard or CMS',
-      'Payment gateway (Razorpay / Stripe)',
-      'Advanced SEO + analytics setup',
-      '3 rounds of revisions',
-      'Deployment on Vercel / AWS',
-      '60 days post-launch support',
+    Icon: DollarSign,
+    color: 'text-green-400',
+    bg: 'bg-green-500/10',
+    border: 'border-green-500/20',
+    name: 'AI Cost Estimator',
+    hook: 'Still guessing how much your app will cost to build?',
+    outcome: 'What if you had a full cost breakdown - dev, design, infrastructure - in under 5 minutes, before talking to a single agency?',
+    intro: 'The AI Cost Estimator turns plain-English ideas into detailed development cost reports. Know your budget before you negotiate with anyone.',
+    steps: [
+      'Describe your product idea in plain English - no tech jargon needed',
+      'AI breaks it down by features, tech stack, and team size',
+      'Get an itemised estimate in ₹ or $ you can share with stakeholders',
     ],
-    cta: 'Get a Quote',
-    highlight: true,
-    badge: 'Most Popular',
+    proof: 'Helped plan over ₹2Cr in development budgets',
+    cta: 'Estimate your idea in 5 minutes',
+    path: '/dashboard/cost-estimator',
   },
   {
-    icon: Building2,
-    name: 'Custom / Enterprise',
-    tagline: 'Complex platforms',
-    priceRange: '₹2,00,000+',
-    timeline: 'Scoped per project',
-    ideal: 'Platforms, SaaS products, staffing tools, marketplaces',
-    features: [
-      'Everything in Professional',
-      'Complex role-based access control',
-      'Custom integrations & third-party APIs',
-      'Dedicated project manager',
-      'Ongoing sprints with weekly demos',
-      'Performance & scalability architecture',
-      'Unlimited revisions during build',
-      '90 days post-launch support',
-      'SLA-backed delivery',
+    Icon: TrendingUp,
+    color: 'text-blue-400',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/20',
+    name: 'ROI Calculator',
+    hook: 'Not sure if a website is worth the investment for your business?',
+    outcome: 'What if you could see, in hard numbers, exactly how much revenue you are losing every month without a digital presence?',
+    intro: 'The ROI Calculator quantifies the financial impact of going digital with clear numbers you can show to partners, investors, or your own team.',
+    steps: [
+      'Answer 4 quick questions about your business and current lead flow',
+      'AI calculates missed revenue, lead loss, and growth potential',
+      'Get a payback timeline and ROI breakdown in under 2 minutes',
     ],
-    cta: 'Let\'s Talk',
-    highlight: false,
-  },
-]
-
-const faqs = [
-  {
-    q: 'Do prices include design and development?',
-    a: 'Yes — all prices include UI/UX design, development, testing, and deployment setup. No hidden fees.',
+    proof: '30+ businesses used this to justify going digital',
+    cta: 'See your ROI in 2 minutes',
+    path: '/dashboard/roi-calculator',
   },
   {
-    q: 'What if my project doesn\'t fit a plan?',
-    a: 'Every project is unique. Use the AI Cost Estimator for a custom estimate, or contact us and we\'ll scope it for free.',
+    Icon: Clock,
+    color: 'text-yellow-400',
+    bg: 'bg-yellow-500/10',
+    border: 'border-yellow-500/20',
+    name: 'Timeline Calculator',
+    hook: 'Tired of agencies promising "6 weeks" and delivering in 6 months?',
+    outcome: 'What if you had a realistic, phase-by-phase timeline before a single line of code was written or a rupee spent?',
+    intro: 'The Timeline Calculator gives you an honest breakdown of every project phase - discovery, design, development, testing, and launch - so you set expectations right from day one.',
+    steps: [
+      'Describe your project scope, complexity, and design needs',
+      'AI maps your project across real-world development phases',
+      'Get a week-by-week timeline with buffer notes and dependencies',
+    ],
+    proof: 'Used to plan 20+ projects with accurate delivery estimates',
+    cta: 'Get your honest project timeline',
+    path: '/dashboard/timeline-calculator',
   },
   {
-    q: 'Do you charge for hosting or domain?',
-    a: 'We don\'t charge for hosting ourselves — we set it up on your accounts (Vercel, AWS, etc.). Hosting costs are typically ₹0–₹2,000/month depending on traffic.',
-  },
-  {
-    q: 'Can I start with Starter and upgrade later?',
-    a: 'Absolutely. We build with clean, scalable code so upgrading is straightforward. Many clients start with Starter and move to Professional within 6 months.',
-  },
-  {
-    q: 'How do payments work?',
-    a: 'We take 50% upfront and 50% on delivery. For larger projects, we split into milestone payments tied to deliverables.',
+    Icon: LayoutDashboard,
+    color: 'text-orange-400',
+    bg: 'bg-orange-500/10',
+    border: 'border-orange-500/20',
+    name: 'Tech Stack Recommender',
+    hook: 'Stuck in the "React or Vue? Node or Django? AWS or Supabase?" debate?',
+    outcome: 'What if an AI architect handed you the perfect tech stack for your product - with clear reasoning, tradeoffs, and cost estimates?',
+    intro: 'The Tech Stack Recommender helps founders and non-technical PMs pick the right tools for their product scale and team - without needing a CTO in the room.',
+    steps: [
+      'Describe your product, expected scale, and team skills',
+      'AI evaluates frontend, backend, database, and hosting options',
+      'Get a full recommendation with reasoning, risks, and monthly cost estimates',
+    ],
+    proof: '40+ founders made confident tech decisions using this',
+    cta: 'Get your free stack recommendation',
+    path: '/dashboard/tech-recommender',
   },
 ]
 
@@ -95,148 +99,118 @@ export default function Pricing() {
   const navigate = useNavigate()
 
   usePageMeta({
-    title: 'Pricing — Vikku | Web Development Packages',
-    description: 'Transparent pricing for professional websites and web apps. From ₹25,000 landing pages to custom enterprise platforms.',
-    url: 'https://vikku.in/pricing',
+    title: 'Tools - Vikku | Free Founder Tools',
+    description: 'Free tools to help founders validate ideas, estimate costs, plan timelines, pick tech stacks, and manage projects.',
+    url: 'https://vikku.in/tools',
   })
-
-  const goToContact = () => {
-    navigate('/')
-    setTimeout(() => document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' }), 300)
-  }
 
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
           <button
             onClick={() => navigate('/')}
             className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm"
           >
             <ArrowLeft size={16} /> Back
           </button>
-          <span className="font-display font-bold text-lg text-white">Pricing</span>
+          <span className="font-display font-bold text-lg text-white">Tools</span>
           <button
-            onClick={goToContact}
+            onClick={() => navigate('/signup')}
             className="text-xs bg-white text-black px-4 py-2 rounded-lg hover:bg-white/90 transition-colors font-medium"
           >
-            Get a Quote
+            Get free access
           </button>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-16">
+      <div className="max-w-4xl mx-auto px-6 py-16">
         {/* Heading */}
-        <div className="text-center mb-16">
-          <p className="text-xs text-white/40 uppercase tracking-widest mb-4">Transparent Pricing</p>
-          <h1 className="font-display font-extrabold text-4xl md:text-5xl text-white mb-4">
-            Simple, Honest Pricing
+        <div className="text-center mb-14">
+          <p className="text-xs text-white/40 uppercase tracking-widest mb-4">Free Founder Tools</p>
+          <h1 className="font-display font-extrabold text-4xl md:text-5xl text-white mb-4 leading-tight">
+            Tools that help you<br />build smarter
           </h1>
-          <p className="text-white/60 text-sm max-w-xl mx-auto">
-            No surprise invoices. No hourly billing confusion. Pick a package that fits your project — or get a custom estimate.
+          <p className="text-white/50 text-sm max-w-lg mx-auto leading-relaxed">
+            Before you hire a dev or spend a rupee - use these to validate your idea, estimate costs, plan timelines, and manage your build.
           </p>
         </div>
 
-        {/* Plans grid */}
-        <div className="grid md:grid-cols-3 gap-6 mb-16">
-          {plans.map((plan) => {
-            const Icon = plan.icon
+        {/* Tools */}
+        <div className="space-y-5">
+          {TOOLS_COPY.map((tool) => {
+            const Icon = tool.Icon
             return (
-              <div
-                key={plan.name}
-                className={`rounded-2xl p-8 flex flex-col relative ${
-                  plan.highlight ? 'glass-strong border border-white/20' : 'glass'
-                }`}
-              >
-                {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="text-[10px] font-semibold bg-white text-black px-3 py-1 rounded-full">
-                      {plan.badge}
-                    </span>
+              <div key={tool.name} className="glass rounded-2xl p-8 md:p-10">
+                {/* Tool label */}
+                <div className="flex items-center gap-2.5 mb-5">
+                  <div className={`w-8 h-8 rounded-xl ${tool.bg} flex items-center justify-center flex-shrink-0`}>
+                    <Icon size={15} className={tool.color} />
                   </div>
-                )}
-
-                <div className="mb-6">
-                  <div className="w-10 h-10 rounded-xl glass flex items-center justify-center mb-4">
-                    <Icon size={20} className="text-white" />
-                  </div>
-                  <h2 className="font-display font-bold text-xl text-white mb-1">{plan.name}</h2>
-                  <p className="text-white/50 text-xs">{plan.tagline}</p>
+                  <span className={`text-xs font-bold uppercase tracking-widest ${tool.color}`}>{tool.name}</span>
                 </div>
 
-                <div className="mb-6">
-                  <p className="text-2xl font-bold text-white">{plan.priceRange}</p>
-                  <p className="text-xs text-white/50 mt-1">Timeline: {plan.timeline}</p>
-                </div>
+                {/* Hook */}
+                <h2 className="font-display font-bold text-xl md:text-2xl text-white mb-3 leading-snug">
+                  {tool.hook}
+                </h2>
 
-                <p className="text-xs text-white/40 mb-6 italic">Best for: {plan.ideal}</p>
+                {/* Outcome */}
+                <p className="text-white/50 text-sm mb-8 max-w-2xl leading-relaxed">
+                  {tool.outcome}
+                </p>
 
-                <ul className="space-y-3 mb-8 flex-1">
-                  {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-sm text-white/80">
-                      <Check size={14} className="text-green-400 flex-shrink-0 mt-0.5" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
+                <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+                  {/* Left: intro + steps */}
+                  <div>
+                    <p className="text-white/70 text-sm leading-relaxed mb-6">{tool.intro}</p>
+                    <div className="space-y-3">
+                      {tool.steps.map((step, i) => (
+                        <div key={i} className="flex items-start gap-3">
+                          <div className={`w-5 h-5 rounded-full ${tool.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                            <Check size={10} strokeWidth={3} className={tool.color} />
+                          </div>
+                          <p className="text-sm text-white/60 leading-relaxed">
+                            <span className="text-white/30 font-semibold">Step {i + 1}: </span>
+                            {step}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-                <div className="space-y-2">
-                  <button
-                    onClick={goToContact}
-                    className={`w-full font-semibold py-3 rounded-xl transition-colors text-sm ${
-                      plan.highlight
-                        ? 'bg-white text-black hover:bg-white/90'
-                        : 'glass text-white hover:bg-white/10'
-                    }`}
-                  >
-                    {plan.cta}
-                  </button>
-                  <button
-                    onClick={() => navigate('/dashboard/cost-estimator')}
-                    className="w-full text-xs text-white/40 hover:text-white/60 transition-colors py-1"
-                  >
-                    Or get an AI estimate →
-                  </button>
+                  {/* Right: proof + CTA */}
+                  <div className="flex flex-col justify-between gap-6">
+                    <div className={`${tool.bg} border ${tool.border} rounded-xl px-5 py-4 w-fit`}>
+                      <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1 font-semibold">Social Proof</p>
+                      <p className={`text-sm font-semibold ${tool.color}`}>{tool.proof}</p>
+                    </div>
+                    <button
+                      onClick={() => navigate(tool.path)}
+                      className={`w-full md:w-auto py-3 px-7 rounded-xl font-semibold text-sm transition-all border ${tool.border} ${tool.bg} ${tool.color} hover:brightness-110`}
+                    >
+                      {tool.cta} →
+                    </button>
+                  </div>
                 </div>
               </div>
             )
           })}
         </div>
 
-        {/* FAQ */}
-        <div className="max-w-2xl mx-auto">
-          <h2 className="font-display font-bold text-2xl text-white mb-8 text-center">Common Questions</h2>
-          <div className="space-y-4">
-            {faqs.map((faq, i) => (
-              <div key={i} className="glass rounded-xl p-6">
-                <p className="text-sm font-semibold text-white mb-2">{faq.q}</p>
-                <p className="text-sm text-white/60">{faq.a}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Bottom CTA */}
-        <div className="glass-strong rounded-2xl p-10 text-center mt-16">
-          <h3 className="font-display font-bold text-2xl text-white mb-3">Not sure which plan fits?</h3>
-          <p className="text-white/60 text-sm mb-6 max-w-md mx-auto">
-            Use our free AI Cost Estimator to get a tailored estimate based on your specific requirements — in your local currency.
+        <div className="glass-strong rounded-2xl p-10 text-center mt-10">
+          <h3 className="font-display font-bold text-2xl text-white mb-3">All tools. Free account. No credit card.</h3>
+          <p className="text-white/50 text-sm mb-6 max-w-md mx-auto">
+            Sign up and get instant access to every tool - plus the PM tool to manage your projects once you're ready to build.
           </p>
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <button
-              onClick={() => navigate('/dashboard/cost-estimator')}
-              className="bg-white text-black font-semibold px-6 py-3 rounded-xl hover:bg-white/90 transition-colors text-sm"
-            >
-              Try the AI Estimator
-            </button>
-            <button
-              onClick={goToContact}
-              className="glass text-white font-semibold px-6 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm"
-            >
-              Talk to Us
-            </button>
-          </div>
+          <button
+            onClick={() => navigate('/signup')}
+            className="bg-white text-black font-semibold px-8 py-3 rounded-xl hover:bg-white/90 transition-colors text-sm"
+          >
+            Create free account
+          </button>
         </div>
       </div>
     </div>

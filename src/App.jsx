@@ -6,6 +6,7 @@ import Hero                from './components/Hero'
 import Clients             from './components/Clients'
 import Services            from './components/Services'
 import Solution            from './components/Solution'
+import FounderTools        from './components/FounderTools'
 import Process             from './components/Process'
 import TechStack           from './components/TechStack'
 import About               from './components/About'
@@ -50,7 +51,7 @@ function PMRedirect() {
 
 function Home() {
   usePageMeta({
-    title:       'Vikku — Software & Tech Agency | Web Apps, Platforms & Digital Products',
+    title:       'Vikku - Software & Tech Agency | Web Apps, Platforms & Digital Products',
     description: 'Vikku is a software & tech agency that builds web apps, staffing platforms, e-commerce stores, and custom digital products. Based in India, serving clients globally.',
     url:         'https://vikku.in/',
   })
@@ -63,6 +64,7 @@ function Home() {
         <Hero />
         <Clients />
         <Services />
+        <FounderTools />
         <Solution />
         <Process />
         <TechStack />
@@ -93,7 +95,7 @@ export default function App() {
               <Route path="/dashboard/roi-calculator"     element={<ROICalculator />} />
               <Route path="/dashboard/timeline-calculator" element={<TimelineCalculator />} />
               <Route path="/dashboard/tech-recommender"   element={<TechRecommender />} />
-              <Route path="/pricing"                      element={<Pricing />} />
+              <Route path="/tools"                        element={<Pricing />} />
               <Route path="/pm"                          element={<PMRedirect />} />
               <Route path="/pm/dashboard"               element={<PMDashboard />} />
               <Route path="/pm/projects/new"            element={<NewProject />} />

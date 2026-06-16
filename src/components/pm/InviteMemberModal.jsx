@@ -1,10 +1,32 @@
-import { useState } from 'react'
-import { X, Users, Copy, Check, Link } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { X, Users, Copy, Check, Link, Lock, Loader2 } from 'lucide-react'
+import { getProjectMembers } from '../../lib/pmService'
+import { getSubscription } from '../../lib/razorpayService'
 
-export default function InviteMemberModal({ projectId, projectName, onClose }) {
+const MEMBER_LIMITS = { free: 3, pro: 10, team: Infinity }
+
+export default function InviteMemberModal({ projectId, projectName, ownerUserId, onClose }) {
   const [copied, setCopied] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [memberCount, setMemberCount] = useState(0)
+  const [limit, setLimit] = useState(MEMBER_LIMITS.free)
 
   const joinUrl = `${window.location.origin}/pm/join/${projectId}`
+  const total = memberCount + 1 // +1 for owner
+  const remaining = limit === Infinity ? Infinity : limit - total
+  const atLimit = remaining <= 0
+
+  useEffect(() => {
+    Promise.all([
+      getProjectMembers(projectId),
+      ownerUserId ? getSubscription(ownerUserId) : Promise.resolve({ plan: 'free' }),
+    ])
+      .then(([mems, sub]) => {
+        setMemberCount(mems.length)
+        setLimit(MEMBER_LIMITS[sub?.plan] ?? MEMBER_LIMITS.free)
+      })
+      .finally(() => setLoading(false))
+  }, [projectId, ownerUserId])
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(joinUrl)
@@ -22,7 +44,9 @@ export default function InviteMemberModal({ projectId, projectName, onClose }) {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-white">Invite to {projectName || 'Project'}</h2>
-              <p className="text-xs text-white/40">Share a link — anyone with it can join</p>
+              <p className="text-xs text-white/40">
+                {loading ? 'Loading…' : limit === Infinity ? `${total} members` : `${total} / ${limit} members used`}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
@@ -30,33 +54,58 @@ export default function InviteMemberModal({ projectId, projectName, onClose }) {
           </button>
         </div>
 
-        <div className="space-y-4">
-          <div className="bg-white/[0.04] border border-white/[0.08] rounded-xl p-4">
-            <p className="text-[11px] text-white/40 mb-2 flex items-center gap-1.5">
-              <Link size={10} /> Invite link
-            </p>
-            <p className="text-xs text-white/70 font-mono break-all leading-relaxed">{joinUrl}</p>
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="animate-spin text-white/30" size={20} />
           </div>
+        ) : atLimit ? (
+          <div className="space-y-4">
+            <div className="bg-yellow-400/5 border border-yellow-400/10 rounded-xl p-4 flex items-start gap-3">
+              <Lock size={14} className="text-yellow-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-white mb-1">Member limit reached</p>
+                <p className="text-xs text-white/50">
+                  Your project is at the {limit}-member limit for the {limit === 3 ? 'Free' : 'Pro'} plan.
+                  Upgrade to {limit === 3 ? 'Pro (10 members)' : 'Team (unlimited)'} to invite more people.
+                </p>
+              </div>
+            </div>
+            <button onClick={onClose} className="w-full text-sm text-white/40 hover:text-white transition-colors py-2">
+              Close
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="bg-white/[0.04] border border-white/[0.08] rounded-xl p-4">
+              <p className="text-[11px] text-white/40 mb-2 flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><Link size={10} /> Invite link</span>
+                {limit !== Infinity && (
+                  <span className="text-white/30">{remaining} slot{remaining !== 1 ? 's' : ''} remaining</span>
+                )}
+              </p>
+              <p className="text-xs text-white/70 font-mono break-all leading-relaxed">{joinUrl}</p>
+            </div>
 
-          <button
-            onClick={handleCopy}
-            className="w-full flex items-center justify-center gap-2 bg-white text-black font-semibold text-sm px-4 py-3 rounded-xl hover:bg-white/90 transition-colors"
-          >
-            {copied ? (
-              <><Check className="w-4 h-4 text-green-600" /> Copied!</>
-            ) : (
-              <><Copy className="w-4 h-4" /> Copy invite link</>
-            )}
-          </button>
+            <button
+              onClick={handleCopy}
+              className="w-full flex items-center justify-center gap-2 bg-white text-black font-semibold text-sm px-4 py-3 rounded-xl hover:bg-white/90 transition-colors"
+            >
+              {copied ? (
+                <><Check className="w-4 h-4 text-green-600" /> Copied!</>
+              ) : (
+                <><Copy className="w-4 h-4" /> Copy invite link</>
+              )}
+            </button>
 
-          <p className="text-[11px] text-white/30 text-center">
-            Teammates must be logged in to join. Each person visits the link once to get access.
-          </p>
+            <p className="text-[11px] text-white/30 text-center">
+              Teammates must be logged in to join. Each person visits the link once to get access.
+            </p>
 
-          <button onClick={onClose} className="w-full text-sm text-white/40 hover:text-white transition-colors py-1">
-            Done
-          </button>
-        </div>
+            <button onClick={onClose} className="w-full text-sm text-white/40 hover:text-white transition-colors py-1">
+              Done
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

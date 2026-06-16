@@ -38,7 +38,7 @@ export default function Dashboard() {
     {
       icon: TrendingUp,
       title: 'ROI Calculator',
-      description: 'See how much revenue you\'re losing without a website — and how fast it pays back',
+      description: 'See how much revenue you\'re losing without a website - and how fast it pays back',
       status: 'Available',
       comingSoon: false,
       path: '/dashboard/roi-calculator',
@@ -85,7 +85,7 @@ export default function Dashboard() {
             </div>
             <div>
               <div className="flex items-center gap-2 mb-0.5">
-                <h3 className="font-display font-semibold text-white">Vikku PM — Project Management</h3>
+                <h3 className="font-display font-semibold text-white">Vikku PM - Project Management</h3>
                 <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full text-white/60">New</span>
               </div>
               <p className="text-sm text-white/50">Manage client projects, tasks & milestones. AI planning + client share links.</p>

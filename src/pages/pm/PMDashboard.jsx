@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, LayoutDashboard, Lock, Users, Gift, CheckCircle, AlertTriangle, TrendingUp, Folder } from 'lucide-react'
+import { Plus, LayoutDashboard, Lock, Users, Gift, CheckCircle, AlertTriangle, TrendingUp, Folder, CalendarClock, ChevronDown, ChevronUp, Zap } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getProjects, getTasks, getSharedProjects } from '../../lib/pmService'
 import ProjectCard from '../../components/pm/ProjectCard'
 import UpgradeModal from '../../components/pm/UpgradeModal'
+import QuickAdd from '../../components/pm/QuickAdd'
 import useSubscription from '../../hooks/useSubscription'
 import AppHeader from '../../components/AppHeader'
 
@@ -16,8 +17,10 @@ export default function PMDashboard() {
   const [projects, setProjects] = useState([])
   const [sharedProjects, setSharedProjects] = useState([])
   const [taskCounts, setTaskCounts] = useState({})
+  const [allTasks, setAllTasks] = useState([])
   const [fetching, setFetching] = useState(true)
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [showMyTasks, setShowMyTasks] = useState(true)
   const { isPro, loading: subLoading } = useSubscription()
 
   useEffect(() => {
@@ -35,6 +38,7 @@ export default function PMDashboard() {
       setProjects(data)
       setSharedProjects(shared)
       const counts = {}
+      const collected = []
       const allProjects = [...data, ...shared]
       await Promise.all(
         allProjects.map(async (p) => {
@@ -43,9 +47,11 @@ export default function PMDashboard() {
             acc[t.status] = (acc[t.status] || 0) + 1
             return acc
           }, {})
+          tasks.forEach((t) => collected.push({ ...t, _projectName: p.name }))
         })
       )
       setTaskCounts(counts)
+      setAllTasks(collected)
       setFetching(false)
     }
     load()
@@ -69,6 +75,21 @@ export default function PMDashboard() {
   }
 
   if (!user) return null
+
+  // My Tasks grouping
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const nextWeekStr = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const pendingTasks = allTasks.filter((t) => t.status !== 'done')
+  const overdueGroup = pendingTasks.filter((t) => t.due_date && t.due_date < todayStr)
+  const todayGroup = pendingTasks.filter((t) => t.due_date === todayStr)
+  const weekGroup = pendingTasks.filter((t) => t.due_date && t.due_date > todayStr && t.due_date <= nextWeekStr)
+  const unscheduledGroup = pendingTasks.filter((t) => !t.due_date)
+  const myTaskGroups = [
+    { label: 'Overdue', tasks: overdueGroup, color: 'text-red-400', dotColor: 'bg-red-400' },
+    { label: 'Due Today', tasks: todayGroup, color: 'text-yellow-400', dotColor: 'bg-yellow-400' },
+    { label: 'This Week', tasks: weekGroup, color: 'text-blue-400', dotColor: 'bg-blue-400' },
+    { label: 'Unscheduled', tasks: unscheduledGroup, color: 'text-white/40', dotColor: 'bg-white/30' },
+  ].filter((g) => g.tasks.length > 0)
 
   const active = projects.filter((p) => p.status === 'active').length
   const done = projects.filter((p) => p.status === 'completed').length
@@ -218,7 +239,12 @@ export default function PMDashboard() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {projects.map((p) => (
-              <ProjectCard key={p.id} project={p} taskCounts={taskCounts[p.id] || {}} />
+              <ProjectCard
+                key={p.id}
+                project={p}
+                taskCounts={taskCounts[p.id] || {}}
+                onDuplicated={(newP) => setProjects((prev) => [newP, ...prev])}
+              />
             ))}
             {/* Add new card */}
             <div
@@ -248,7 +274,73 @@ export default function PMDashboard() {
             </div>
           </div>
         )}
+
+        {/* My Tasks - cross-project task view */}
+        {pendingTasks.length > 0 && (
+          <div className="mt-12">
+            <button
+              onClick={() => setShowMyTasks((v) => !v)}
+              className="flex items-center gap-2 mb-5 group w-full"
+            >
+              <CalendarClock size={14} className="text-white/30" />
+              <h2 className="font-display font-semibold text-white/60 text-sm group-hover:text-white/80 transition-colors">My Tasks</h2>
+              <span className="text-xs text-white/20">({pendingTasks.length} pending)</span>
+              <div className="ml-auto text-white/20 group-hover:text-white/40 transition-colors">
+                {showMyTasks ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </div>
+            </button>
+
+            {showMyTasks && (
+              <div className="space-y-6">
+                {myTaskGroups.map(({ label, tasks, color, dotColor }) => (
+                  <div key={label}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                      <span className={`text-xs font-semibold ${color}`}>{label}</span>
+                      <span className="text-[10px] text-white/20">({tasks.length})</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {tasks.map((t) => (
+                        <div
+                          key={t.id}
+                          onClick={() => navigate(`/pm/projects/${t.project_id}`)}
+                          className="glass rounded-xl px-4 py-2.5 flex items-center gap-3 cursor-pointer hover:border-white/20 transition-all group/task"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-white font-medium truncate">{t.title}</p>
+                          </div>
+                          <span className="text-[10px] text-white/25 flex-shrink-0 group-hover/task:text-white/50 transition-colors">
+                            {t._projectName}
+                          </span>
+                          {t.due_date && (
+                            <span className={`text-[10px] flex-shrink-0 ${t.due_date < todayStr ? 'text-red-400/70' : 'text-white/30'}`}>
+                              {new Date(t.due_date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                            </span>
+                          )}
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${
+                            t.status === 'in_progress' ? 'bg-blue-500/15 text-blue-400'
+                            : t.status === 'review' ? 'bg-yellow-500/15 text-yellow-400'
+                            : 'bg-white/[0.06] text-white/30'
+                          }`}>
+                            {t.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Quick Add hint */}
+        <div className="mt-8 flex items-center justify-center gap-2 text-white/20 text-xs">
+          <Zap size={11} />
+          <span>Press <kbd className="border border-white/10 rounded px-1 py-0.5 text-[10px]">{typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘K' : 'Ctrl+K'}</kbd> to quick-add a task anywhere</span>
+        </div>
       </div>
+      <QuickAdd />
     </div>
   )
 }

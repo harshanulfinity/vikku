@@ -12,7 +12,7 @@ const stats = [
 const founder = {
   name:    'Harsha Vardhan Reddy Sanikommu',
   photo:   '/founder.JPG',
-  bio:     "I'm an AI/ML student passionate about building products, solving business problems, and turning ideas into scalable digital solutions. Over the past few years I've worked on 8+ real-world projects across India and the USA — collaborating directly with businesses to design, develop, and launch impactful products spanning AI applications, automation, web development, and digital transformation. I love working at the intersection of technology, business, and product thinking: understanding user problems, spotting opportunities, and building solutions that create measurable value.",
+  bio:     "I'm an AI/ML student passionate about building products, solving business problems, and turning ideas into scalable digital solutions. Over the past few years I've worked on 8+ real-world projects across India and the USA - collaborating directly with businesses to design, develop, and launch impactful products spanning AI applications, automation, web development, and digital transformation. I love working at the intersection of technology, business, and product thinking: understanding user problems, spotting opportunities, and building solutions that create measurable value.",
   focus:   ['AI & Machine Learning', 'Product Development', 'Automation & AI Workflows', 'Web Applications', 'Digital Strategy', 'Problem Solving'],
   linkedin: 'https://www.linkedin.com/in/harsha-vardhan-reddy-sanikommu/',
   instagram: 'https://www.instagram.com/theharshasanikommu/',

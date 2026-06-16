@@ -18,7 +18,7 @@ const BUSINESS_TYPES = [
 ]
 
 const LEAD_OPTIONS = [
-  { label: '0 — No leads at all', value: '0 (none — entirely word of mouth or walk-ins)' },
+  { label: '0 - No leads at all', value: '0 (none - entirely word of mouth or walk-ins)' },
   { label: '1–5 per month', value: '1–5 per month' },
   { label: '6–20 per month', value: '6–20 per month' },
   { label: '20+ per month', value: '20+ per month' },
@@ -144,7 +144,7 @@ export default function ROICalculator() {
                 How Much Are You Losing Without a Website?
               </h2>
               <p className="text-white/60 text-sm max-w-xl">
-                Answer 4 quick questions and we'll show you exactly how much revenue you're missing out on — and how fast a website pays for itself.
+                Answer 4 quick questions and we'll show you exactly how much revenue you're missing out on - and how fast a website pays for itself.
               </p>
             </div>
 

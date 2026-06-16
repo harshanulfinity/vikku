@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt, Timer, Sparkles } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getProject, getTasks, getMilestones, deleteProject } from '../../lib/pmService'
+import { getProject, getTasks, getMilestones, deleteProject, getProjectTimeLogs } from '../../lib/pmService'
 import KanbanBoard from '../../components/pm/KanbanBoard'
 import MilestoneList from '../../components/pm/MilestoneList'
 import TimelineView from '../../components/pm/TimelineView'
@@ -24,15 +24,17 @@ const TABS = [
 ]
 
 const UPGRADE_REASONS = {
-  share:     'Client share links are Pro-only. Share a read-only link with clients — no login needed.',
+  share:     'Client share links are Pro-only. Share a read-only link with clients - no login needed.',
   ai:        'AI Project Planner is a Pro feature. Describe your project and get tasks + milestones in seconds.',
   analytics: 'Project analytics are available on Pro. Track completion rates, priority breakdown, and more.',
 }
 
 export default function ProjectDetail() {
   const { id } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user, loading } = useAuth()
   const navigate = useNavigate()
+  const aiRef = useRef(null)
   const [project, setProject] = useState(null)
   const [tasks, setTasks] = useState([])
   const [milestones, setMilestones] = useState([])
@@ -45,6 +47,7 @@ export default function ProjectDetail() {
   const [upgradeReason, setUpgradeReason] = useState('')
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showOnboard, setShowOnboard] = useState(false)
   const { isPro } = useSubscription()
 
   useEffect(() => {
@@ -61,6 +64,10 @@ export default function ProjectDetail() {
       setTasks(t)
       setMilestones(m)
       setFetching(false)
+      if (searchParams.get('onboard') === '1') {
+        setShowOnboard(true)
+        setSearchParams({}, { replace: true })
+      }
     }
     load()
   }, [user, id, navigate])
@@ -88,7 +95,7 @@ export default function ProjectDetail() {
     const total = tasks.length
     const pct = total > 0 ? Math.round((done / total) * 100) : 0
     const win = window.open('', '_blank')
-    win.document.write(`<!DOCTYPE html><html><head><title>${project.name} — Project Report</title>
+    win.document.write(`<!DOCTYPE html><html><head><title>${project.name} - Project Report</title>
     <style>
       body{font-family:system-ui,sans-serif;background:#fff;color:#111;padding:40px;max-width:700px;margin:0 auto}
       h1{font-size:24px;font-weight:800;margin-bottom:4px}
@@ -122,6 +129,30 @@ export default function ProjectDetail() {
     ${milestones.length>0?`<h2>Milestones</h2>${milestones.map(m=>`<div class="milestone"><span>${m.completed?'✓ ':''} ${m.title}</span><span style="color:#888">${new Date(m.due_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span></div>`).join('')}`:''}
     <script>window.onload=()=>window.print()</script></body></html>`)
     win.document.close()
+  }
+
+  const handleTimeCSV = async () => {
+    const logs = await getProjectTimeLogs(id)
+    if (!logs.length) { alert('No time logs recorded for this project yet.'); return }
+    const taskMap = {}
+    tasks.forEach((t) => { taskMap[t.id] = t.title })
+    const rows = [
+      ['Task', 'Duration (min)', 'Note', 'Logged At'],
+      ...logs.map((l) => [
+        `"${(taskMap[l.task_id] || 'Unknown task').replace(/"/g, '""')}"`,
+        l.duration_minutes,
+        `"${(l.note || '').replace(/"/g, '""')}"`,
+        new Date(l.created_at).toLocaleString('en-IN'),
+      ]),
+    ]
+    const csv = rows.map((r) => r.join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${project.name.replace(/\s+/g, '_')}_time_logs.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const handleDelete = async () => {
@@ -159,10 +190,8 @@ export default function ProjectDetail() {
         <InviteMemberModal
           projectId={id}
           projectName={project.name}
+          ownerUserId={project.user_id}
           onClose={() => setShowInviteModal(false)}
-          onInvited={() => {
-            setShowInviteModal(false)
-          }}
         />
       )}
 
@@ -199,6 +228,14 @@ export default function ProjectDetail() {
               <span className="hidden sm:inline">Export</span>
             </button>
             <button
+              onClick={handleTimeCSV}
+              className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
+              title="Download time logs as CSV"
+            >
+              <Timer size={14} />
+              <span className="hidden sm:inline">Time CSV</span>
+            </button>
+            <button
               onClick={() => navigate(`/pm/projects/${id}/invoice`)}
               className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
             >
@@ -221,7 +258,7 @@ export default function ProjectDetail() {
       {shareTab && (
         <div className="border-b border-white/[0.05] bg-white/[0.02] px-6 py-4">
           <div className="max-w-7xl mx-auto">
-            <p className="text-xs text-white/50 mb-2">Client share link — anyone with this link can view the project (read-only, no login needed)</p>
+            <p className="text-xs text-white/50 mb-2">Client share link - anyone with this link can view the project (read-only, no login needed)</p>
             <div className="flex items-center gap-2">
               <code className="flex-1 text-xs text-white/70 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 truncate">
                 {shareUrl}
@@ -231,6 +268,45 @@ export default function ProjectDetail() {
                 className="flex items-center gap-1.5 text-xs bg-white text-black px-3 py-2 rounded-lg font-medium hover:bg-white/90 transition-colors flex-shrink-0"
               >
                 {copied ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy link</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Onboarding banner */}
+      {showOnboard && (
+        <div className="border-b border-white/[0.05] bg-gradient-to-r from-purple-500/10 to-blue-500/10 px-6 py-4">
+          <div className="max-w-7xl mx-auto flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              <Sparkles size={16} className="text-purple-400 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-white">Project created! Add tasks to get started.</p>
+                <p className="text-xs text-white/50">Use AI to generate a task plan instantly, or add tasks manually.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span ref={aiRef} />
+              {isPro ? (
+                <button
+                  onClick={() => { setShowOnboard(false); aiRef.current?.previousSibling?.click?.() }}
+                  className="flex items-center gap-1.5 text-xs bg-white text-black font-semibold px-3 py-1.5 rounded-lg hover:bg-white/90 transition-colors"
+                >
+                  <Sparkles size={11} /> Plan with AI
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setShowOnboard(false); triggerUpgrade('ai') }}
+                  className="flex items-center gap-1.5 text-xs bg-white text-black font-semibold px-3 py-1.5 rounded-lg hover:bg-white/90 transition-colors"
+                >
+                  <Sparkles size={11} /> Plan with AI (Pro)
+                </button>
+              )}
+              <button
+                onClick={() => setShowOnboard(false)}
+                className="text-white/30 hover:text-white/60 transition-colors"
+              >
+                <XIcon size={14} />
               </button>
             </div>
           </div>

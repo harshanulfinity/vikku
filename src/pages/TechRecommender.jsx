@@ -17,10 +17,10 @@ const PROJECT_TYPES = [
 ]
 
 const SCALE_OPTIONS = [
-  { label: 'MVP — under 100 users', value: 'MVP (under 100 users, validate the idea fast)' },
-  { label: 'Small — up to 1,000 users', value: 'Small scale (up to 1,000 users)' },
-  { label: 'Medium — up to 50,000 users', value: 'Medium scale (up to 50,000 users)' },
-  { label: 'Large — 100,000+ users', value: 'Large scale (100,000+ users, needs to be highly scalable)' },
+  { label: 'MVP - under 100 users', value: 'MVP (under 100 users, validate the idea fast)' },
+  { label: 'Small - up to 1,000 users', value: 'Small scale (up to 1,000 users)' },
+  { label: 'Medium - up to 50,000 users', value: 'Medium scale (up to 50,000 users)' },
+  { label: 'Large - 100,000+ users', value: 'Large scale (100,000+ users, needs to be highly scalable)' },
 ]
 
 const BUDGET_OPTIONS = [
@@ -101,7 +101,7 @@ export default function TechRecommender() {
             <div className="mb-10">
               <h2 className="font-display font-extrabold text-3xl text-white mb-3">What Tech Should You Build With?</h2>
               <p className="text-white/60 text-sm max-w-xl">
-                Get an AI architect's recommendation for the best tech stack — with reasoning, costs, and tradeoffs.
+                Get an AI architect's recommendation for the best tech stack - with reasoning, costs, and tradeoffs.
               </p>
             </div>
 
@@ -148,9 +148,9 @@ export default function TechRecommender() {
                   <label className="block text-xs text-white/60 mb-2 uppercase tracking-wider">Do you have an in-house development team?</label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { label: 'Yes — senior devs', value: 'Yes — experienced senior developers' },
-                      { label: 'Partial — junior devs', value: 'Partial — junior developers who need guidance' },
-                      { label: 'No — outsourcing fully', value: 'No — fully outsourcing to an agency' },
+                      { label: 'Yes - senior devs', value: 'Yes - experienced senior developers' },
+                      { label: 'Partial - junior devs', value: 'Partial - junior developers who need guidance' },
+                      { label: 'No - outsourcing fully', value: 'No - fully outsourcing to an agency' },
                     ].map(opt => (
                       <button key={opt.value} type="button"
                         onClick={() => setForm(f => ({ ...f, hasDevTeam: opt.value }))}

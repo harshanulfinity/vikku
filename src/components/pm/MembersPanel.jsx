@@ -1,22 +1,41 @@
 import { useEffect, useState } from 'react'
-import { Users, Copy, Check, X, Link } from 'lucide-react'
+import { Users, Copy, Check, X, Link, Lock } from 'lucide-react'
 import { getProjectMembers, removeProjectMember } from '../../lib/pmService'
+import { getSubscription } from '../../lib/razorpayService'
+
+const MEMBER_LIMITS = { free: 3, pro: 10, team: Infinity }
+
+const ROLE_STYLES = {
+  admin:  'text-yellow-400/80',
+  editor: 'text-blue-400/80',
+  member: 'text-white/30',
+  viewer: 'text-white/30',
+}
 
 export default function MembersPanel({ projectId, ownerUserId, currentUserId }) {
   const [members, setMembers] = useState([])
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [limit, setLimit] = useState(MEMBER_LIMITS.free)
 
   const isOwner = currentUserId === ownerUserId
   const joinUrl = `${window.location.origin}/pm/join/${projectId}`
+  const total = members.length + 1 // +1 for owner
+  const atLimit = total >= limit
 
   useEffect(() => {
     if (!projectId) return
-    getProjectMembers(projectId)
-      .then(setMembers)
+    Promise.all([
+      getProjectMembers(projectId),
+      ownerUserId ? getSubscription(ownerUserId) : Promise.resolve({ plan: 'free' }),
+    ])
+      .then(([mems, sub]) => {
+        setMembers(mems)
+        setLimit(MEMBER_LIMITS[sub?.plan] ?? MEMBER_LIMITS.free)
+      })
       .catch(() => setMembers([]))
       .finally(() => setLoading(false))
-  }, [projectId])
+  }, [projectId, ownerUserId])
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(joinUrl)
@@ -37,7 +56,9 @@ export default function MembersPanel({ projectId, ownerUserId, currentUserId }) 
           <Users size={11} />
           Team
         </p>
-        <span className="text-[10px] text-white/20">{members.length + 1} member{members.length !== 0 ? 's' : ''}</span>
+        <span className={`text-[10px] ${atLimit ? 'text-yellow-400/70' : 'text-white/20'}`}>
+          {total}/{limit === Infinity ? '∞' : limit}
+        </span>
       </div>
 
       {/* Owner */}
@@ -45,7 +66,8 @@ export default function MembersPanel({ projectId, ownerUserId, currentUserId }) 
         <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] text-white/60 font-medium flex-shrink-0">
           O
         </div>
-        <span className="text-xs text-white/60 truncate">You (owner)</span>
+        <span className="text-xs text-white/60 truncate flex-1">You (owner)</span>
+        <span className="text-[9px] text-yellow-400/60">owner</span>
       </div>
 
       {/* Members */}
@@ -55,6 +77,7 @@ export default function MembersPanel({ projectId, ownerUserId, currentUserId }) 
             {(m.email?.[0] || 'M').toUpperCase()}
           </div>
           <span className="text-xs text-white/50 truncate flex-1">{m.email || 'Member'}</span>
+          <span className={`text-[9px] ${ROLE_STYLES[m.role] || ROLE_STYLES.member}`}>{m.role || 'member'}</span>
           {isOwner && (
             <button
               onClick={() => handleRemove(m)}
@@ -66,8 +89,16 @@ export default function MembersPanel({ projectId, ownerUserId, currentUserId }) 
         </div>
       ))}
 
+      {/* Limit warning */}
+      {atLimit && limit !== Infinity && (
+        <div className="flex items-center gap-1.5 mt-2 mb-1 text-[10px] text-yellow-400/60">
+          <Lock size={9} />
+          <span>Member limit reached - upgrade to add more</span>
+        </div>
+      )}
+
       {/* Invite link */}
-      {isOwner && (
+      {isOwner && !atLimit && (
         <button
           onClick={handleCopyLink}
           className="mt-3 w-full flex items-center justify-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 border border-white/[0.07] hover:border-white/20 rounded-lg py-2 transition-all"

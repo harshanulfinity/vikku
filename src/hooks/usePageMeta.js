@@ -23,7 +23,7 @@ export default function usePageMeta({ title, description, url }) {
     setMeta('meta[name="twitter:description"]', description)
 
     return () => {
-      document.title = 'Vikku — Software & Tech Agency | Web Apps, Platforms & Digital Products'
+      document.title = 'Vikku - Software & Tech Agency | Web Apps, Platforms & Digital Products'
     }
   }, [title, description, url])
 }

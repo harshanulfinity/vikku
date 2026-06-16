@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Search, AlertTriangle, CheckCircle, Users } from 'lucide-react'
+import { Search, AlertTriangle, CheckCircle, Users, Lock } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getProject, getProjectMembers, joinProject } from '../../lib/pmService'
+import { getSubscription } from '../../lib/razorpayService'
+
+const MEMBER_LIMITS = { free: 3, pro: 10, team: Infinity }
 
 export default function JoinProject() {
   const { projectId } = useParams()
   const { user, loading } = useAuth()
   const navigate = useNavigate()
-  const [status, setStatus] = useState('loading') // loading | joining | already | done | error | notfound
+  const [status, setStatus] = useState('loading') // loading | joining | already | done | error | notfound | full
   const [project, setProject] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -43,6 +46,15 @@ export default function JoinProject() {
         return
       }
 
+      // Check member limit based on owner's plan
+      const ownerSub = await getSubscription(p.user_id)
+      const limit = MEMBER_LIMITS[ownerSub.plan] ?? MEMBER_LIMITS.free
+      // +1 for owner who is not in pm_project_members
+      if (members.length + 1 >= limit) {
+        setStatus('full')
+        return
+      }
+
       setStatus('joining')
       await joinProject(projectId, user.id, user.email)
       setStatus('done')
@@ -51,6 +63,25 @@ export default function JoinProject() {
       setErrorMsg(err.message || 'Something went wrong')
       setStatus('error')
     }
+  }
+
+  if (status === 'full') {
+    return (
+      <Screen>
+        <div className="text-center">
+          <div className="w-14 h-14 rounded-2xl bg-yellow-500/10 flex items-center justify-center mx-auto mb-5">
+            <Lock size={24} className="text-yellow-400" />
+          </div>
+          <h2 className="text-lg font-semibold text-white mb-2">Project is full</h2>
+          <p className="text-sm text-white/40 mb-6">
+            This project has reached its member limit. Ask the project owner to upgrade to Pro or Team for more members.
+          </p>
+          <button onClick={() => navigate('/pm/dashboard')} className="bg-white text-black font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-white/90 transition-colors">
+            Go to Dashboard
+          </button>
+        </div>
+      </Screen>
+    )
   }
 
   if (status === 'notfound') {

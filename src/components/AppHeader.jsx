@@ -7,9 +7,9 @@ import NotificationBell from './pm/NotificationBell'
  * Shared app header for all authenticated pages.
  *
  * Props:
- *   breadcrumbs: [{ label, href? }]  — shown after the logo
- *   actions: ReactNode                — optional right-side buttons (e.g. AI + Share)
- *   badge: ReactNode                  — optional badge next to user email (e.g. plan pill)
+ *   breadcrumbs: [{ label, href? }]  - shown after the logo
+ *   actions: ReactNode                - optional right-side buttons (e.g. AI + Share)
+ *   badge: ReactNode                  - optional badge next to user email (e.g. plan pill)
  */
 export default function AppHeader({ breadcrumbs = [], actions, badge }) {
   const { user, signOut } = useAuth()

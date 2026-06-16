@@ -376,3 +376,56 @@ export async function getProjectTimeLogs(projectId) {
     return data || []
   } catch { return [] }
 }
+
+// ── Project Duplication ────────────────────────────────────────
+
+export async function duplicateProject(projectId) {
+  if (!supabase) throw new Error('Database not configured')
+  const { data: orig, error: pe } = await supabase.from('pm_projects').select('*').eq('id', projectId).single()
+  if (pe || !orig) throw new Error('Project not found')
+  const { data: newProject, error: ne } = await supabase
+    .from('pm_projects')
+    .insert({
+      user_id: orig.user_id, name: `${orig.name} (copy)`, description: orig.description,
+      status: 'active', client_name: orig.client_name, client_email: orig.client_email, color: orig.color,
+    })
+    .select().single()
+  if (ne) throw ne
+  const { data: tasks } = await supabase.from('pm_tasks').select('*').eq('project_id', projectId)
+  if (tasks && tasks.length > 0) {
+    await supabase.from('pm_tasks').insert(
+      tasks.map((t) => ({
+        project_id: newProject.id, title: t.title, description: t.description,
+        status: t.status, priority: t.priority, due_date: t.due_date,
+        label: t.label, task_link: t.task_link,
+      }))
+    )
+  }
+  const { data: milestones } = await supabase.from('pm_milestones').select('*').eq('project_id', projectId)
+  if (milestones && milestones.length > 0) {
+    await supabase.from('pm_milestones').insert(
+      milestones.map((m) => ({ project_id: newProject.id, title: m.title, due_date: m.due_date, completed: false }))
+    )
+  }
+  return newProject
+}
+
+// ── Client Comments ────────────────────────────────────────────
+
+export async function getClientComments(shareToken) {
+  if (!supabase) return []
+  try {
+    const { data, error } = await supabase
+      .from('pm_client_comments').select('*').eq('share_token', shareToken)
+      .order('created_at', { ascending: true })
+    if (error) { console.error(error); return [] }
+    return data || []
+  } catch { return [] }
+}
+
+export async function createClientComment(fields) {
+  if (!supabase) throw new Error('Database not configured')
+  const { data, error } = await supabase.from('pm_client_comments').insert(fields).select().single()
+  if (error) throw error
+  return data
+}
