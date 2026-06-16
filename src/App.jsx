@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import Navbar              from './components/Navbar'
 import Hero                from './components/Hero'
 import Clients             from './components/Clients'
@@ -82,6 +83,7 @@ function Home() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ThemeProvider>
       <AuthProvider>
         <RouteTracker />
         <ErrorBoundary>
@@ -115,6 +117,7 @@ export default function App() {
           </Suspense>
         </ErrorBoundary>
       </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }

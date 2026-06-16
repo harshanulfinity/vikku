@@ -80,3 +80,90 @@
     text-wrap: balance;
   }
 }
+
+/* ── Light theme overrides ─────────────────────────────────────── */
+html.light body {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+html.light .glass {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+html.light .glass-strong {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.10);
+}
+
+html.light .gradient-text {
+  background: linear-gradient(135deg, #0f172a 0%, #475569 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+html.light .section-tag {
+  background: rgba(59, 111, 240, 0.08);
+  border-color: rgba(59, 111, 240, 0.20);
+  color: #1e40af;
+}
+
+html.light .divider {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* bg-black → light gray */
+html.light .bg-black {
+  background-color: #f1f5f9 !important;
+}
+html.light .bg-black\/70 {
+  background-color: rgba(241, 245, 249, 0.70) !important;
+}
+html.light .bg-black\/95 {
+  background-color: rgba(241, 245, 249, 0.97) !important;
+}
+
+/* TaskEditModal dark bg */
+html.light .bg-\[\#111\] {
+  background-color: #ffffff !important;
+}
+
+/* text-white opacity ladder → slate-900 */
+html.light .text-white        { color: #0f172a !important; }
+html.light .text-white\/90    { color: rgba(15,23,42,0.90) !important; }
+html.light .text-white\/80    { color: rgba(15,23,42,0.80) !important; }
+html.light .text-white\/70    { color: rgba(15,23,42,0.70) !important; }
+html.light .text-white\/60    { color: rgba(15,23,42,0.60) !important; }
+html.light .text-white\/50    { color: rgba(15,23,42,0.50) !important; }
+html.light .text-white\/40    { color: rgba(15,23,42,0.40) !important; }
+html.light .text-white\/30    { color: rgba(15,23,42,0.30) !important; }
+html.light .text-white\/25    { color: rgba(15,23,42,0.25) !important; }
+html.light .text-white\/20    { color: rgba(15,23,42,0.20) !important; }
+html.light .text-white\/10    { color: rgba(15,23,42,0.10) !important; }
+
+/* border-white/* → dark borders */
+html.light [class*="border-white"] {
+  border-color: rgba(0, 0, 0, 0.10) !important;
+}
+
+/* bg-white/[0.0x] subtle panel tints → very light dark tint */
+html.light [class*="bg-white\/\[0\.0"] {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Sign Up button: bg-white text-black keeps contrast in both modes */
+html.light .bg-white.text-black {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+/* mobile menu overlay */
+html.light .bg-black\/95.backdrop-blur-xl {
+  background-color: rgba(241, 245, 249, 0.97) !important;
+}

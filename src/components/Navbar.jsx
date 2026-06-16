@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Menu, X, ChevronDown, LogOut } from 'lucide-react'
+import { Menu, X, ChevronDown, LogOut, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 
 const navLinks = [
   { label: 'Services', href: '#services' },
@@ -30,6 +31,7 @@ export default function Navbar() {
   const navigate  = useNavigate()
   const location  = useLocation()
   const { user, signOut } = useAuth()
+  const { theme, toggle } = useTheme()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -177,6 +179,13 @@ export default function Navbar() {
 
         {/* Auth buttons */}
         <div className="hidden md:flex items-center gap-3">
+          <button
+            onClick={toggle}
+            aria-label="Toggle theme"
+            className="flex items-center justify-center w-7 h-7 rounded-lg text-white/50 hover:text-white/80 hover:bg-white/[0.06] transition-all"
+          >
+            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
           {user ? (
             <>
               <button
@@ -255,6 +264,14 @@ export default function Navbar() {
                 </div>
               ))}
             </div>
+
+            <button
+              onClick={toggle}
+              className="flex items-center gap-3 w-full px-5 py-3.5 glass rounded-xl text-sm text-white font-medium mb-2.5"
+            >
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              {theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            </button>
 
             <div className="space-y-2.5">
               {user ? (
