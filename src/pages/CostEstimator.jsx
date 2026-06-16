@@ -1,24 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Clock, AlertTriangle, Lightbulb, Loader2, MapPin, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Clock, AlertTriangle, Lightbulb, Loader2 } from 'lucide-react'
 import { estimateProjectCost } from '../lib/openaiService'
 
-const REGIONS = [
-  { label: 'India', country: 'India' },
-  { label: 'United States', country: 'United States' },
-  { label: 'United Kingdom', country: 'United Kingdom' },
-  { label: 'Canada', country: 'Canada' },
-  { label: 'Australia', country: 'Australia' },
-  { label: 'Singapore', country: 'Singapore' },
-  { label: 'UAE', country: 'United Arab Emirates' },
-  { label: 'Germany', country: 'Germany' },
-  { label: 'Philippines', country: 'Philippines' },
-  { label: 'Pakistan', country: 'Pakistan' },
-]
-
-function formatCurrency(amount, country, symbol) {
-  const locale = country === 'India' ? 'en-IN' : 'en-US'
-  return (symbol || '$') + new Intl.NumberFormat(locale).format(amount)
+function formatCurrency(amount, symbol) {
+  return (symbol || '₹') + new Intl.NumberFormat('en-IN').format(amount)
 }
 
 export default function CostEstimator() {
@@ -27,42 +13,6 @@ export default function CostEstimator() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
-  const [location, setLocation] = useState(null)
-  const [locationStatus, setLocationStatus] = useState('detecting') // 'detecting' | 'detected' | 'denied'
-  const [showRegionPicker, setShowRegionPicker] = useState(false)
-
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocationStatus('denied')
-      return
-    }
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const { latitude, longitude } = pos.coords
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-            { headers: { 'User-Agent': 'vikku-agency-cost-estimator' } }
-          )
-          const data = await res.json()
-          const country = data.address?.country || ''
-          const city = data.address?.city || data.address?.town || data.address?.state || ''
-          setLocation({ city, country })
-          setLocationStatus('detected')
-        } catch {
-          setLocationStatus('denied')
-        }
-      },
-      () => setLocationStatus('denied'),
-      { timeout: 8000 }
-    )
-  }, [])
-
-  const handleRegionSelect = (region) => {
-    setLocation({ city: '', country: region.country })
-    setLocationStatus('detected')
-    setShowRegionPicker(false)
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -75,9 +25,8 @@ export default function CostEstimator() {
     }
 
     setLoading(true)
-
     try {
-      const estimate = await estimateProjectCost(requirements, location)
+      const estimate = await estimateProjectCost(requirements, null)
       setResult(estimate)
     } catch (err) {
       setError(err.message)
@@ -115,59 +64,6 @@ export default function CostEstimator() {
 
             <div className="glass rounded-2xl p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Location pill */}
-                <div className="relative">
-                  <label className="block text-xs text-white/60 mb-2 uppercase tracking-wider">
-                    Your Region
-                  </label>
-                  {locationStatus === 'detecting' && (
-                    <div className="flex items-center gap-2 text-sm text-white/50">
-                      <Loader2 size={14} className="animate-spin" />
-                      Detecting your location...
-                    </div>
-                  )}
-                  {(locationStatus === 'detected' || locationStatus === 'denied') && (
-                    <div className="flex items-center gap-3 flex-wrap">
-                      {locationStatus === 'detected' && location && (
-                        <div className="flex items-center gap-1.5 glass rounded-lg px-3 py-1.5 text-sm text-green-400">
-                          <MapPin size={13} />
-                          {location.city ? `${location.city}, ` : ''}{location.country}
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setShowRegionPicker(v => !v)}
-                        className="flex items-center gap-1.5 glass rounded-lg px-3 py-1.5 text-sm text-white/60 hover:text-white transition-colors"
-                      >
-                        {locationStatus === 'denied' ? (
-                          <><MapPin size={13} /> Select your region</>
-                        ) : (
-                          <>Change <ChevronDown size={13} /></>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                  {showRegionPicker && (
-                    <div className="absolute top-full mt-1 left-0 z-20 glass rounded-xl p-2 flex flex-wrap gap-1.5 w-full max-w-sm shadow-xl">
-                      {REGIONS.map((r) => (
-                        <button
-                          key={r.country}
-                          type="button"
-                          onClick={() => handleRegionSelect(r)}
-                          className="text-xs px-3 py-1.5 rounded-lg glass hover:bg-white/10 text-white/80 hover:text-white transition-colors"
-                        >
-                          {r.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {locationStatus === 'detected' && location && (
-                    <p className="text-xs text-white/40 mt-1.5">
-                      Estimates will reflect market rates for {location.country}
-                    </p>
-                  )}
-                </div>
-
                 <div>
                   <label className="block text-xs text-white/60 mb-2 uppercase tracking-wider">
                     Project Requirements
@@ -176,14 +72,7 @@ export default function CostEstimator() {
                     value={requirements}
                     onChange={(e) => setRequirements(e.target.value)}
                     className="w-full glass rounded-xl px-4 py-4 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/20 transition-colors min-h-[200px] resize-none"
-                    placeholder="Describe your project in detail. Include:
-• What type of application (web app, mobile app, e-commerce, etc.)
-• Key features and functionality
-• User authentication requirements
-• Payment processing needs
-• Third-party integrations
-• Design complexity
-• Any specific technical requirements"
+                    placeholder="Describe your project — type of app, key features, tech needs, design complexity..."
                     required
                   />
                   <p className="text-xs text-white/40 mt-2">
@@ -204,9 +93,7 @@ export default function CostEstimator() {
                   className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {loading ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" /> Analyzing...
-                    </>
+                    <><Loader2 size={18} className="animate-spin" /> Analyzing...</>
                   ) : (
                     'Generate Estimate'
                   )}
@@ -226,16 +113,14 @@ export default function CostEstimator() {
             {/* Total Cost Card */}
             <div className="glass-strong rounded-2xl p-8 mb-6">
               <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <p className="text-xs text-white/60 uppercase tracking-wider">Estimated Cost</p>
-                    <p className="text-3xl font-bold text-white">
-                      {formatCurrency(result.totalCostMin, location?.country, result.currencySymbol)} – {formatCurrency(result.totalCostMax, location?.country, result.currencySymbol)}
-                    </p>
-                    {result.currency && result.currency !== 'USD' && (
-                      <p className="text-xs text-white/40 mt-1">{result.currency}</p>
-                    )}
-                  </div>
+                <div>
+                  <p className="text-xs text-white/60 uppercase tracking-wider">Estimated Cost</p>
+                  <p className="text-3xl font-bold text-white">
+                    {formatCurrency(result.totalCostMin, result.currencySymbol)} – {formatCurrency(result.totalCostMax, result.currencySymbol)}
+                  </p>
+                  {result.currency && result.currency !== 'INR' && (
+                    <p className="text-xs text-white/40 mt-1">{result.currency}</p>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-white/60 uppercase tracking-wider">Timeline</p>
@@ -245,23 +130,15 @@ export default function CostEstimator() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-white/60">Complexity:</span>
-                  <span className={`text-xs font-semibold ${
-                    result.complexity === 'Low' ? 'text-green-400' :
-                    result.complexity === 'Medium' ? 'text-yellow-400' :
-                    'text-red-400'
-                  }`}>
-                    {result.complexity}
-                  </span>
-                </div>
-                {location && (
-                  <div className="flex items-center gap-1.5 text-xs text-white/50">
-                    <MapPin size={11} />
-                    Rates for: {location.city ? `${location.city}, ` : ''}{location.country}
-                  </div>
-                )}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-white/60">Complexity:</span>
+                <span className={`text-xs font-semibold ${
+                  result.complexity === 'Low' ? 'text-green-400' :
+                  result.complexity === 'Medium' ? 'text-yellow-400' :
+                  'text-red-400'
+                }`}>
+                  {result.complexity}
+                </span>
               </div>
             </div>
 
@@ -274,7 +151,7 @@ export default function CostEstimator() {
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-semibold text-white text-sm">{item.category}</h4>
                       <p className="text-sm text-white font-medium">
-                        {formatCurrency(item.costMin, location?.country, result.currencySymbol)} – {formatCurrency(item.costMax, location?.country, result.currencySymbol)}
+                        {formatCurrency(item.costMin, result.currencySymbol)} – {formatCurrency(item.costMax, result.currencySymbol)}
                       </p>
                     </div>
                     <p className="text-xs text-white/60">{item.description}</p>
@@ -315,9 +192,7 @@ export default function CostEstimator() {
 
             {/* CTA */}
             <div className="glass-strong rounded-2xl p-8 text-center">
-              <h3 className="font-display font-semibold text-lg text-white mb-3">
-                Need a detailed quote?
-              </h3>
+              <h3 className="font-display font-semibold text-lg text-white mb-3">Need a detailed quote?</h3>
               <p className="text-white/60 text-sm mb-6 max-w-md mx-auto">
                 Get a comprehensive project proposal with detailed scope, timeline, and deliverables.
               </p>
@@ -331,11 +206,7 @@ export default function CostEstimator() {
 
             <div className="mt-6 text-center">
               <button
-                onClick={() => {
-                  setResult(null)
-                  setRequirements('')
-                  setError('')
-                }}
+                onClick={() => { setResult(null); setRequirements(''); setError('') }}
                 className="text-white/60 hover:text-white transition-colors text-sm"
               >
                 Estimate Another Project
