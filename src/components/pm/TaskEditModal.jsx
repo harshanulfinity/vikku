@@ -18,6 +18,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import useSubscription from '../../hooks/useSubscription'
 import TaskTimer from './TaskTimer'
 import UpgradeModal from './UpgradeModal'
+import { notifyTaskAssigned } from '../../lib/notificationService'
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent']
 
@@ -129,6 +130,15 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     }).catch((err) => {
       console.error('updateTask failed:', err)
     })
+    const prevEmail = task.assigned_to_email
+    if (form.assigned_to_email && form.assigned_to_email !== prevEmail && form.assigned_to_email !== user?.email) {
+      notifyTaskAssigned({
+        taskTitle: form.title.trim(),
+        projectName: task._projectName || '',
+        assigneeEmail: form.assigned_to_email,
+        dueDate: form.due_date || undefined,
+      })
+    }
   }
 
   const handleDelete = async () => {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { CheckCircle2, Circle, Clock, Flag, ThumbsUp, ThumbsDown, MessageSquare, Send, Loader2, Lock } from 'lucide-react'
 import { getProjectByToken, getTasks, getMilestones, updateMilestone, getClientComments, createClientComment, verifySharePin, approveTaskAsClient } from '../../lib/pmService'
+import { notifyClientComment, notifyClientApproval, notifyMilestoneApproval } from '../../lib/notificationService'
 
 const STATUS_LABELS = {
   todo: 'To Do',
@@ -17,7 +18,7 @@ const STATUS_COLORS = {
   done: 'text-green-400',
 }
 
-function MilestoneApproval({ milestones, onUpdate }) {
+function MilestoneApproval({ milestones, onUpdate, token }) {
   const [approving, setApproving] = useState({})
   const [notes, setNotes] = useState({})
   const [showNote, setShowNote] = useState({})
@@ -31,6 +32,7 @@ function MilestoneApproval({ milestones, onUpdate }) {
     onUpdate(updated)
     setApproving((prev) => ({ ...prev, [m.id]: false }))
     setShowNote((prev) => ({ ...prev, [m.id]: false }))
+    if (token) notifyMilestoneApproval({ shareToken: token, milestoneTitle: m.title, status, note: notes[m.id] })
   }
 
   return (
@@ -137,6 +139,7 @@ function ClientComments({ projectId, shareToken }) {
       })
       setComments((prev) => [...prev, comment])
       setContent('')
+      notifyClientComment({ shareToken, authorName: name.trim(), comment: content.trim() })
     } catch (err) {
       console.error('Failed to post comment:', err)
     } finally {
@@ -217,6 +220,7 @@ function TaskApprovals({ tasks, token }) {
       await approveTaskAsClient(task.id, token, status, notes[task.id] || null)
       setApprovalMap((prev) => ({ ...prev, [task.id]: { status, note: notes[task.id] || null } }))
       setShowNote((prev) => ({ ...prev, [task.id]: false }))
+      notifyClientApproval({ shareToken: token, taskTitle: task.title, status, note: notes[task.id] })
     } catch (err) {
       setErrors((prev) => ({ ...prev, [task.id]: err?.message || 'Failed' }))
     }
@@ -516,7 +520,7 @@ export default function ClientView() {
 
         {/* Milestones */}
         {milestones.length > 0 && (
-          <MilestoneApproval milestones={milestones} onUpdate={(updated) =>
+          <MilestoneApproval milestones={milestones} token={token} onUpdate={(updated) =>
             setMilestones((prev) => prev.map((m) => m.id === updated.id ? updated : m))
           } />
         )}
