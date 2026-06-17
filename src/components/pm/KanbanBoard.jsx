@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Plus, X, ClipboardList, Zap, Eye, CheckCircle, Trash2, MousePointer, List, Columns } from 'lucide-react'
 import TaskCard from './TaskCard'
 import TaskCreateModal from './TaskCreateModal'
@@ -25,6 +25,8 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
   const [dragOverCol, setDragOverCol] = useState(null)
   const [dragOverTaskId, setDragOverTaskId] = useState(null)
   const [dragInsertBefore, setDragInsertBefore] = useState(true)
+  const dragOverTaskIdRef = useRef(null)
+  const dragInsertBeforeRef = useRef(true)
   const [labelFilter, setLabelFilter] = useState('')
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState(new Set())
@@ -77,11 +79,19 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
     e.preventDefault()
     e.stopPropagation()
     const rect = e.currentTarget.getBoundingClientRect()
+    const before = e.clientY < rect.top + rect.height / 2
+    dragOverTaskIdRef.current = taskId
+    dragInsertBeforeRef.current = before
     setDragOverTaskId(taskId)
-    setDragInsertBefore(e.clientY < rect.top + rect.height / 2)
+    setDragInsertBefore(before)
   }
 
   const handleDrop = async (newStatus) => {
+    // Read from refs — state may already be cleared by dragLeave before drop fires
+    const overTaskId = dragOverTaskIdRef.current
+    const insertBefore = dragInsertBeforeRef.current
+    dragOverTaskIdRef.current = null
+
     setDragOverCol(null)
     setDragOverTaskId(null)
     if (!dragTaskId) return
@@ -90,13 +100,13 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
 
     const sameCol = task.status === newStatus
 
-    if (dragOverTaskId && dragOverTaskId !== dragTaskId) {
-      // Reorder: insert dragged task before/after the hovered task within the new column
+    if (overTaskId && overTaskId !== dragTaskId) {
+      // Reorder: insert dragged task before/after the hovered task
       const colTasks = tasks
         .filter((t) => t.status === newStatus && t.id !== dragTaskId)
         .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-      const targetIdx = colTasks.findIndex((t) => t.id === dragOverTaskId)
-      const insertAt = targetIdx === -1 ? colTasks.length : (dragInsertBefore ? targetIdx : targetIdx + 1)
+      const targetIdx = colTasks.findIndex((t) => t.id === overTaskId)
+      const insertAt = targetIdx === -1 ? colTasks.length : (insertBefore ? targetIdx : targetIdx + 1)
       colTasks.splice(insertAt, 0, { ...task, status: newStatus })
       const positioned = colTasks.map((t, i) => ({ ...t, position: i * 100 }))
       onTasksChange(tasks.map((t) => {
@@ -244,7 +254,13 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
                 isOver ? 'bg-white/[0.04] ring-1 ring-white/20' : ''
               }`}
               onDragOver={(e) => { e.preventDefault(); setDragOverCol(col.id) }}
-              onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverCol(null) }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget)) {
+                  setDragOverCol(null)
+                  setDragOverTaskId(null)
+                  dragOverTaskIdRef.current = null
+                }
+              }}
               onDrop={() => handleDrop(col.id)}
             >
               <div className="flex items-center justify-between mb-3">
@@ -267,7 +283,6 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
                   <div
                     key={task.id}
                     onDragOver={(e) => handleTaskDragOver(e, task.id)}
-                    onDragLeave={() => setDragOverTaskId(null)}
                     className="relative"
                   >
                     {dragOverTaskId === task.id && dragInsertBefore && (

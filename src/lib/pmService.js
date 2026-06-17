@@ -97,6 +97,7 @@ export async function getTasks(projectId) {
       .from('pm_tasks')
       .select('*')
       .eq('project_id', projectId)
+      .order('position', { ascending: true })
       .order('created_at', { ascending: true })
     if (error) {
       console.error('Error fetching tasks:', error)
