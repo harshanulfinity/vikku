@@ -370,7 +370,11 @@ export default function ClientView() {
 
         {/* Footer */}
         <div className="text-center pt-6 border-t border-white/[0.05]">
-          <p className="text-xs text-white/20">Powered by <a href="https://vikku.in/pm" className="text-white/40 hover:text-white/60 transition-colors">Vikku PM</a></p>
+          {project.client_brand_name ? (
+            <p className="text-xs text-white/20">Shared by <span className="text-white/40">{project.client_brand_name}</span></p>
+          ) : (
+            <p className="text-xs text-white/20">Powered by <a href="https://vikku.in/pm" className="text-white/40 hover:text-white/60 transition-colors">Vikku PM</a></p>
+          )}
         </div>
       </div>
     </div>

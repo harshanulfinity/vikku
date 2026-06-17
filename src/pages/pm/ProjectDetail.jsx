@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt, Timer, Sparkles, MessageSquare, AlertCircle } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getProject, getTasks, getMilestones, deleteProject, getProjectTimeLogs, getClientComments } from '../../lib/pmService'
+import { getProject, getTasks, getMilestones, deleteProject, getProjectTimeLogs, getClientComments, updateProject } from '../../lib/pmService'
 import { supabase } from '../../lib/supabaseClient'
 import KanbanBoard from '../../components/pm/KanbanBoard'
 import MilestoneList from '../../components/pm/MilestoneList'
@@ -20,14 +20,13 @@ import AppHeader from '../../components/AppHeader'
 const TABS = [
   { key: 'kanban',    label: 'Kanban',    icon: LayoutDashboard },
   { key: 'timeline',  label: 'Timeline',  icon: GitBranch },
-  { key: 'analytics', label: 'Analytics', icon: BarChart2, pro: true },
+  { key: 'analytics', label: 'Analytics', icon: BarChart2 },
   { key: 'calendar',  label: 'Calendar',  icon: Calendar },
 ]
 
 const UPGRADE_REASONS = {
   share:     'Client share links are Pro-only. Share a read-only link with clients - no login needed.',
   ai:        'AI Project Planner is a Pro feature. Describe your project and get tasks + milestones in seconds.',
-  analytics: 'Project analytics are available on Pro. Track completion rates, priority breakdown, and more.',
 }
 
 export default function ProjectDetail() {
@@ -282,19 +281,40 @@ export default function ProjectDetail() {
       {/* Share panel */}
       {shareTab && (
         <div className="border-b border-white/[0.05] bg-white/[0.02] px-6 py-4">
-          <div className="max-w-7xl mx-auto">
-            <p className="text-xs text-white/50 mb-2">Client share link - anyone with this link can view the project (read-only, no login needed)</p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 text-xs text-white/70 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 truncate">
-                {shareUrl}
-              </code>
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-1.5 text-xs bg-white text-black px-3 py-2 rounded-lg font-medium hover:bg-white/90 transition-colors flex-shrink-0"
-              >
-                {copied ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy link</>}
-              </button>
+          <div className="max-w-7xl mx-auto space-y-3">
+            <div>
+              <p className="text-xs text-white/50 mb-2">Client share link - anyone with this link can view the project (read-only, no login needed)</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-xs text-white/70 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 truncate">
+                  {shareUrl}
+                </code>
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1.5 text-xs bg-white text-black px-3 py-2 rounded-lg font-medium hover:bg-white/90 transition-colors flex-shrink-0"
+                >
+                  {copied ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy link</>}
+                </button>
+              </div>
             </div>
+            {isPro && (
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] text-white/30 whitespace-nowrap">Brand name</label>
+                <input
+                  type="text"
+                  defaultValue={project?.client_brand_name || ''}
+                  placeholder="e.g. Acme Studio (replaces 'Vikku PM' on client page)"
+                  onBlur={(e) => {
+                    const val = e.target.value.trim()
+                    if (val !== (project?.client_brand_name || '')) {
+                      updateProject(project.id, { client_brand_name: val || null })
+                        .then((updated) => setProject(updated))
+                        .catch(() => {})
+                    }
+                  }}
+                  className="flex-1 text-xs bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

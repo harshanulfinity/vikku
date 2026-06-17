@@ -10,11 +10,14 @@ const FEATURE_GROUPS = [
   {
     title: 'Pro Features',
     rows: [
-      ['AI Project Planner',      false,        true,         true],
-      ['Client share links',      false,        true,         true],
-      ['Client comments on share', false,       true,         true],
-      ['Time log CSV export',     false,        true,         true],
-      ['Priority email support',  false,        true,         true],
+      ['AI Project Planner',       '6/month',    'Unlimited',  'Unlimited'],
+      ['Client share links',       false,        true,         true],
+      ['Client comments on share', false,        true,         true],
+      ['Client portal branding',   false,        true,         true],
+      ['Milestone client approvals', false,      true,         true],
+      ['Task email reminders',     false,        true,         true],
+      ['Time log CSV export',      false,        true,         true],
+      ['Priority email support',   false,        true,         true],
     ],
   },
   {

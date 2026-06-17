@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import {
   X, Trash2, Loader2, MessageCircle, Send, Trash,
   CheckSquare, Square, Plus, Clock, User, Timer, Link, ExternalLink,
-  Paperclip, Download, FileText,
+  Paperclip, Download, FileText, Bell, BellOff,
 } from 'lucide-react'
 import {
   updateTask, deleteTask, getTaskComments, createTaskComment, deleteTaskComment,
@@ -51,6 +51,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     description: task.description || '',
     priority: task.priority || 'medium',
     due_date: task.due_date || '',
+    reminder_enabled: task.reminder_enabled || false,
     assigned_to_email: task.assigned_to_email || '',
     label: task.label || '',
     task_link: task.task_link || '',
@@ -100,6 +101,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
       description: form.description.trim(),
       priority: form.priority,
       due_date: form.due_date || null,
+      reminder_enabled: form.due_date ? form.reminder_enabled : false,
       assigned_to_email: form.assigned_to_email || null,
       label: form.label || null,
       task_link: form.task_link.trim() || null,
@@ -328,9 +330,18 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                   className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 outline-none focus:border-white/20 transition-colors [color-scheme:dark]"
                 />
                 {form.due_date && (
-                  <button onClick={() => setForm({ ...form, due_date: '' })} className="text-[10px] text-white/30 hover:text-white/60 mt-1 transition-colors">
-                    Clear date
-                  </button>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <button onClick={() => setForm({ ...form, due_date: '' })} className="text-[10px] text-white/30 hover:text-white/60 transition-colors">
+                      Clear date
+                    </button>
+                    <button
+                      onClick={() => setForm({ ...form, reminder_enabled: !form.reminder_enabled })}
+                      className={`flex items-center gap-1 text-[10px] transition-colors ${form.reminder_enabled ? 'text-blue-400' : 'text-white/30 hover:text-white/60'}`}
+                    >
+                      {form.reminder_enabled ? <Bell size={10} /> : <BellOff size={10} />}
+                      {form.reminder_enabled ? 'Reminder on' : 'Remind me'}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

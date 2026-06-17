@@ -3,9 +3,27 @@ import { createPortal } from 'react-dom'
 import { Sparkles, X, Check, Loader2, Lock } from 'lucide-react'
 import { planProject } from '../../lib/openaiService'
 import { bulkCreateTasks, bulkCreateMilestones } from '../../lib/pmService'
+import { useAuth } from '../../contexts/AuthContext'
 import UpgradeModal from './UpgradeModal'
 
+const FREE_LIMIT = 6
+
+function getUsageKey(userId) {
+  const month = new Date().toISOString().slice(0, 7)
+  return `vikku_ai_uses_${userId}_${month}`
+}
+
+function getUsageCount(userId) {
+  return parseInt(localStorage.getItem(getUsageKey(userId)) || '0', 10)
+}
+
+function incrementUsage(userId) {
+  const key = getUsageKey(userId)
+  localStorage.setItem(key, String(getUsageCount(userId) + 1))
+}
+
 export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
+  const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
@@ -14,8 +32,12 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
   const [adding, setAdding] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
 
+  const usedCount = user ? getUsageCount(user.id) : 0
+  const remaining = Math.max(0, FREE_LIMIT - usedCount)
+  const freeExhausted = !isPro && remaining === 0
+
   const handleOpen = () => {
-    if (!isPro) { setShowUpgrade(true); return }
+    if (freeExhausted) { setShowUpgrade(true); return }
     setOpen(true)
   }
 
@@ -26,6 +48,7 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
     try {
       const result = await planProject(`${projectName}: ${description}`)
       setPreview(result)
+      if (!isPro && user) incrementUsage(user.id)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -58,7 +81,7 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
     <>
       {showUpgrade && (
         <UpgradeModal
-          reason="AI Project Planner is a Pro feature. Upgrade to generate tasks + milestones instantly."
+          reason="You've used all 6 free AI plans this month. Upgrade to Pro for unlimited AI project planning."
           onClose={() => setShowUpgrade(false)}
           onUpgraded={() => { setShowUpgrade(false); setOpen(true) }}
         />
@@ -71,11 +94,17 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
         >
           {isPro ? (
             <Sparkles size={14} className="text-yellow-400" />
-          ) : (
+          ) : freeExhausted ? (
             <Lock size={13} className="text-white/40" />
+          ) : (
+            <Sparkles size={14} className="text-white/60" />
           )}
           Plan with AI
-          {!isPro && <span className="text-[10px] text-yellow-400/60 ml-0.5">Pro</span>}
+          {isPro ? null : freeExhausted ? (
+            <span className="text-[10px] text-yellow-400/60 ml-0.5">Upgrade</span>
+          ) : (
+            <span className="text-[10px] text-white/30 ml-0.5">{remaining}/{FREE_LIMIT} free</span>
+          )}
         </button>
       )}
 
