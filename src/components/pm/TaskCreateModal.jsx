@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X, User, Link, ExternalLink } from 'lucide-react'
-import { createTask, getProjectMembers, logActivity } from '../../lib/pmService'
+import { getProjectMembers } from '../../lib/pmService'
 import { TASK_LABELS, LABEL_STYLES } from '../../lib/pmConstants'
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent']
@@ -20,7 +20,7 @@ const STATUS_LABELS = {
   done:        'Done',
 }
 
-export default function TaskCreateModal({ projectId, initialStatus, user, onCreated, onClose }) {
+export default function TaskCreateModal({ projectId, initialStatus, user, onSubmit, onClose }) {
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -39,26 +39,16 @@ export default function TaskCreateModal({ projectId, initialStatus, user, onCrea
 
   const handleCreate = () => {
     if (!form.title.trim()) return
-    const fields = {
-      project_id: projectId,
+    onSubmit({
       title: form.title.trim(),
       description: form.description.trim() || null,
       priority: form.priority,
-      status: initialStatus,
       due_date: form.due_date || null,
       assigned_to_email: form.assigned_to_email || null,
       label: form.label || null,
       task_link: form.task_link.trim() || null,
-    }
-    const tempId = `temp-${Date.now()}`
-    onCreated({ id: tempId, ...fields, created_at: new Date().toISOString() }, tempId)
-    onClose()
-    createTask(fields).then((task) => {
-      onCreated(task, tempId)
-      if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_created', entity_type: 'task', entity_title: fields.title })
-    }).catch(() => {
-      onCreated(null, tempId)
     })
+    onClose()
   }
 
   const labelStyle = form.label ? LABEL_STYLES[form.label] : null

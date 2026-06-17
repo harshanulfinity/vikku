@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Plus, X, ClipboardList, Zap, Eye, CheckCircle, Trash2, MousePointer, List, Columns } from 'lucide-react'
 import TaskCard from './TaskCard'
 import TaskCreateModal from './TaskCreateModal'
-import { updateTask, deleteTask, logActivity } from '../../lib/pmService'
+import { createTask, updateTask, deleteTask, logActivity } from '../../lib/pmService'
 import { LABEL_STYLES } from '../../lib/pmConstants'
 
 const COLUMNS = [
@@ -37,13 +37,17 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
 
   const usedLabels = [...new Set(tasks.map((t) => t.label).filter(Boolean))]
 
-  const handleCreated = (task, tempId) => {
-    if (task === null) {
-      onTasksChange((prev) => prev.filter((t) => t.id !== tempId))
-    } else if (task.id === tempId) {
-      onTasksChange((prev) => [...prev, task])
-    } else {
+  const handleCreateSubmit = async (fields) => {
+    const status = createModalStatus
+    const tempId = `temp-${Date.now()}`
+    const tempTask = { id: tempId, project_id: projectId, status, priority: 'medium', created_at: new Date().toISOString(), ...fields }
+    onTasksChange((prev) => [...prev, tempTask])
+    try {
+      const task = await createTask({ project_id: projectId, status, ...fields })
       onTasksChange((prev) => prev.map((t) => t.id === tempId ? task : t))
+      if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_created', entity_type: 'task', entity_title: fields.title })
+    } catch {
+      onTasksChange((prev) => prev.filter((t) => t.id !== tempId))
     }
   }
 
@@ -254,7 +258,7 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
           projectId={projectId}
           initialStatus={createModalStatus}
           user={user}
-          onCreated={handleCreated}
+          onSubmit={handleCreateSubmit}
           onClose={() => setCreateModalStatus(null)}
         />
       )}
