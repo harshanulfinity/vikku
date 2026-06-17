@@ -18,7 +18,9 @@ export default function Signup() {
 
   useEffect(() => {
     if (refCode) sessionStorage.setItem('vikku_ref', refCode)
-  }, [refCode])
+    const plan = searchParams.get('plan')
+    if (plan === 'pro' || plan === 'team') sessionStorage.setItem('vikku_pending_plan', plan)
+  }, [refCode, searchParams])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

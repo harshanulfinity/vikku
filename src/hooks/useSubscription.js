@@ -19,5 +19,5 @@ export default function useSubscription() {
   const isTeam = subscription.plan === 'team'
   const plan = subscription.plan || 'free'
 
-  return { subscription, loading, isPro, isTeam, plan, setSubscription }
+  return { subscription, setSubscription, loading, isPro, isTeam, plan }
 }

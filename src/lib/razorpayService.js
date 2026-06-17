@@ -137,23 +137,45 @@ export async function getSubscription(userId) {
       .eq('user_id', userId)
       .single()
 
-    if (error) {
-      console.error('Error fetching subscription:', error)
+    if (error || !data) return { plan: 'free' }
+
+    // Immediately cancelled — no access
+    if (data.status === 'cancelled') return { ...data, plan: 'free' }
+
+    // Period has ended — auto-downgrade in DB and return free
+    if (data.current_period_end && new Date(data.current_period_end) < new Date()) {
+      await supabase
+        .from('user_subscriptions')
+        .update({ plan: 'free', status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('user_id', userId)
       return { plan: 'free' }
     }
-    return data || { plan: 'free' }
+
+    // Cancelling but still within paid period — keep access
+    return data
   } catch (err) {
     console.error('Failed to fetch subscription:', err)
     return { plan: 'free' }
   }
 }
 
+// Sets status to 'cancelling' — user keeps Pro access until current_period_end
 export async function cancelSubscription(userId) {
   if (!supabase) throw new Error('Database not configured')
-  
+
+  const { data: sub, error: fetchErr } = await supabase
+    .from('user_subscriptions')
+    .select('current_period_end')
+    .eq('user_id', userId)
+    .single()
+
+  if (fetchErr) throw fetchErr
+
   const { error } = await supabase
     .from('user_subscriptions')
-    .update({ plan: 'free', status: 'cancelled', updated_at: new Date().toISOString() })
+    .update({ status: 'cancelling', updated_at: new Date().toISOString() })
     .eq('user_id', userId)
+
   if (error) throw error
+  return { accessUntil: sub?.current_period_end }
 }

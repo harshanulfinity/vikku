@@ -1,4 +1,8 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import useSubscription from '../hooks/useSubscription'
+import UpgradeModal from './pm/UpgradeModal'
 import {
   Kanban, Users, Clock, BarChart2, FileText, Zap, Share2, CheckCircle,
   ArrowRight, Star,
@@ -18,7 +22,7 @@ const FEATURES = [
     bg: 'bg-blue-500/10',
     title: 'Client Portal — no login needed',
     desc: 'Share a live project view with your client via a PIN-protected link. They see tasks, milestones, and can approve or leave comments.',
-    badge: 'Unique to Vikku',
+    badge: 'Pro',
   },
   {
     icon: Users,
@@ -26,6 +30,7 @@ const FEATURES = [
     bg: 'bg-green-500/10',
     title: 'Team Collaboration',
     desc: "Invite teammates, assign tasks, mention members in comments, track who's doing what across every project.",
+    badge: 'Team',
   },
   {
     icon: Clock,
@@ -33,6 +38,7 @@ const FEATURES = [
     bg: 'bg-yellow-500/10',
     title: 'Time Tracking',
     desc: 'Built-in timer on every task. Log billable hours, set estimates, and generate time reports per project or team member.',
+    badge: 'Pro',
   },
   {
     icon: BarChart2,
@@ -54,6 +60,7 @@ const FEATURES = [
     bg: 'bg-cyan-500/10',
     title: 'Workflow Automation',
     desc: 'Auto-move tasks between statuses, trigger reminders, and set recurring tasks — without touching a setting every time.',
+    badge: 'Pro',
   },
   {
     icon: Star,
@@ -66,10 +73,11 @@ const FEATURES = [
 
 const PLANS = [
   {
+    key: 'free',
     name: 'Free',
     price: '₹0',
     period: 'forever',
-    desc: 'Perfect for freelancers and solo founders.',
+    desc: 'For solo founders getting started.',
     color: 'border-white/10',
     cta: 'Start free',
     ctaStyle: 'bg-white/10 text-white hover:bg-white/20',
@@ -77,47 +85,51 @@ const PLANS = [
       '3 active projects',
       'Unlimited tasks',
       'Kanban + list view',
-      'Client portal (share link)',
-      'Team invite (up to 3 members)',
       'Milestone tracking',
-      'Basic activity feed',
+      'Calendar view',
+      'Analytics & reporting',
+      'PDF export',
+      'AI planner (6 uses/month)',
     ],
   },
   {
+    key: 'pro',
     name: 'Pro',
     price: '₹499',
     period: '/month',
-    desc: 'For agencies and teams shipping client work.',
+    desc: 'For freelancers and agencies with clients.',
     color: 'border-violet-500/40',
     highlight: true,
     badge: 'Most popular',
-    cta: 'Start Pro',
+    cta: 'Upgrade to Pro',
     ctaStyle: 'bg-white text-black hover:bg-white/90',
     features: [
       'Unlimited projects',
+      'Client portal (PIN-protected share link)',
       'Time tracking + billable hours',
-      'Analytics & velocity charts',
       'Workflow automation',
-      'AI project assistant',
-      'PDF export (invoice + report)',
-      'Custom task labels & workflows',
+      'AI planner (unlimited)',
+      'PDF invoice + report export',
       'Calendar view',
       'Priority support',
     ],
   },
   {
+    key: 'team',
     name: 'Team',
     price: '₹2,499',
     period: '/month',
-    desc: 'For growing agencies with multiple teams.',
+    desc: 'For agencies managing multiple teams.',
     color: 'border-white/10',
-    cta: 'Start Team',
+    cta: 'Upgrade to Team',
     ctaStyle: 'bg-white/10 text-white hover:bg-white/20',
     features: [
       'Everything in Pro',
-      'Unlimited team members',
-      'Custom client branding on portal',
-      'Team analytics & reporting',
+      'Team members (up to 10)',
+      'Role-based access control',
+      'Member invite links',
+      'Project duplication',
+      'Custom client portal branding',
       'Dedicated onboarding call',
       'SLA-backed support',
     ],
@@ -126,9 +138,34 @@ const PLANS = [
 
 export default function PMPricingSection() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const { plan: currentPlan } = useSubscription()
+  const [showUpgrade, setShowUpgrade] = useState(false)
+
+  const handleCTA = (planKey) => {
+    if (planKey === 'free') {
+      navigate('/signup')
+      return
+    }
+    if (!user) {
+      // Store plan intent so PMDashboard can open upgrade modal after signup
+      sessionStorage.setItem('vikku_pending_plan', planKey)
+      navigate(`/signup?plan=${planKey}`)
+      return
+    }
+    // Logged-in user — open upgrade modal directly
+    setShowUpgrade(true)
+  }
 
   return (
     <section id="pm-pricing" className="py-24 px-6 bg-black relative overflow-hidden">
+      {showUpgrade && (
+        <UpgradeModal
+          onClose={() => setShowUpgrade(false)}
+          onUpgraded={() => { setShowUpgrade(false); navigate('/pm/dashboard') }}
+        />
+      )}
+
       <div className="absolute inset-0 bg-gradient-to-b from-violet-950/10 via-transparent to-transparent pointer-events-none" />
 
       <div className="max-w-6xl mx-auto relative">
@@ -154,10 +191,13 @@ export default function PMPricingSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-20">
           {FEATURES.map((f) => {
             const Icon = f.icon
+            const badgeColor = f.badge === 'Pro'
+              ? 'text-violet-400 bg-violet-500/10 border-violet-500/20'
+              : 'text-blue-400 bg-blue-500/10 border-blue-500/20'
             return (
               <div key={f.title} className="relative glass rounded-2xl p-5 flex flex-col gap-3">
                 {f.badge && (
-                  <span className="absolute top-3 right-3 text-[9px] font-bold text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full uppercase tracking-wide">
+                  <span className={`absolute top-3 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide border ${badgeColor}`}>
                     {f.badge}
                   </span>
                 )}
@@ -176,56 +216,60 @@ export default function PMPricingSection() {
         {/* Pricing */}
         <div className="text-center mb-10">
           <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-white mb-2">Simple, honest pricing</h3>
-          <p className="text-white/40 text-sm">Start free. Upgrade when you're ready.</p>
+          <p className="text-white/40 text-sm">Start free. Upgrade when you need client features.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-16">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative glass rounded-2xl p-7 flex flex-col border ${plan.color} ${plan.highlight ? 'ring-1 ring-violet-500/30' : ''}`}
-            >
-              {plan.badge && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold text-black bg-violet-400 px-3 py-1 rounded-full uppercase tracking-wide whitespace-nowrap">
-                  {plan.badge}
-                </span>
-              )}
-
-              <div className="mb-5">
-                <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2">{plan.name}</p>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="font-display font-extrabold text-3xl text-white">{plan.price}</span>
-                  <span className="text-sm text-white/40">{plan.period}</span>
-                </div>
-                <p className="text-xs text-white/50 leading-relaxed">{plan.desc}</p>
-              </div>
-
-              <ul className="space-y-2.5 flex-1 mb-7">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5">
-                    <CheckCircle size={13} className="text-green-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-xs text-white/60">{f}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={() => navigate('/signup')}
-                className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${plan.ctaStyle}`}
+          {PLANS.map((plan) => {
+            const isCurrentPlan = user && currentPlan === plan.key
+            return (
+              <div
+                key={plan.name}
+                className={`relative glass rounded-2xl p-7 flex flex-col border ${plan.color} ${plan.highlight ? 'ring-1 ring-violet-500/30' : ''}`}
               >
-                {plan.cta} <ArrowRight size={14} />
-              </button>
-            </div>
-          ))}
+                {plan.badge && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold text-black bg-violet-400 px-3 py-1 rounded-full uppercase tracking-wide whitespace-nowrap">
+                    {plan.badge}
+                  </span>
+                )}
+
+                <div className="mb-5">
+                  <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2">{plan.name}</p>
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className="font-display font-extrabold text-3xl text-white">{plan.price}</span>
+                    <span className="text-sm text-white/40">{plan.period}</span>
+                  </div>
+                  <p className="text-xs text-white/50 leading-relaxed">{plan.desc}</p>
+                </div>
+
+                <ul className="space-y-2.5 flex-1 mb-7">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2.5">
+                      <CheckCircle size={13} className="text-green-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-xs text-white/60">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => handleCTA(plan.key)}
+                  disabled={isCurrentPlan}
+                  className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-default ${plan.ctaStyle}`}
+                >
+                  {isCurrentPlan ? 'Current plan' : <>{plan.cta} <ArrowRight size={14} /></>}
+                </button>
+              </div>
+            )
+          })}
         </div>
 
-        {/* Social proof strip */}
+        {/* Bottom CTA strip */}
         <div className="glass rounded-2xl px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-6 flex-wrap justify-center sm:justify-start">
+          <div className="flex items-center gap-8 flex-wrap justify-center sm:justify-start">
             {[
-              { value: '50+', label: 'Active projects' },
-              { value: '₹0', label: 'To get started' },
-              { value: '< 2 min', label: 'To set up a project' },
+              { value: 'Free', label: 'To start — no card needed' },
+              { value: '< 2 min', label: 'To set up your first project' },
+              { value: 'Cancel', label: 'Anytime, keeps access till period end' },
             ].map(({ value, label }) => (
               <div key={label} className="text-center sm:text-left">
                 <p className="font-display font-extrabold text-xl text-white">{value}</p>
@@ -234,10 +278,10 @@ export default function PMPricingSection() {
             ))}
           </div>
           <button
-            onClick={() => navigate('/signup')}
+            onClick={() => handleCTA('free')}
             className="flex items-center gap-2 bg-white text-black font-semibold px-6 py-2.5 rounded-xl hover:bg-white/90 transition-colors text-sm flex-shrink-0"
           >
-            Start free — no card needed <ArrowRight size={14} />
+            Start free <ArrowRight size={14} />
           </button>
         </div>
       </div>
