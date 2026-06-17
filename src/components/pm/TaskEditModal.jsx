@@ -16,6 +16,10 @@ import { useAuth } from '../../contexts/AuthContext'
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent']
 
+function isValidUrl(str) {
+  try { return Boolean(new URL(str)) } catch { return false }
+}
+
 const PRIORITY_STYLES = {
   urgent: 'bg-red-500/20 text-red-400 border-red-500/30',
   high:   'bg-orange-500/20 text-orange-400 border-orange-500/30',
@@ -374,7 +378,10 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                   className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl pl-8 pr-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
                 />
               </div>
-              {form.task_link && (
+              {form.task_link && !isValidUrl(form.task_link) && (
+                <p className="text-[10px] text-yellow-400/70 mt-1">Must start with https://</p>
+              )}
+              {form.task_link && isValidUrl(form.task_link) && (
                 <a href={form.task_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-blue-400/70 hover:text-blue-400 mt-1 transition-colors">
                   <ExternalLink size={9} /> Open link
                 </a>

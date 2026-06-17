@@ -3,6 +3,15 @@ import { createPortal } from 'react-dom'
 import { Zap, X } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getProjects, createTask } from '../../lib/pmService'
+import { TASK_LABELS, LABEL_STYLES } from '../../lib/pmConstants'
+
+const PRIORITIES = ['low', 'medium', 'high', 'urgent']
+const PRIORITY_STYLES = {
+  urgent: 'bg-red-500/20 text-red-400 border-red-500/30',
+  high:   'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  low:    'bg-white/10 text-white/40 border-white/10',
+}
 
 export default function QuickAdd() {
   const { user } = useAuth()
@@ -11,6 +20,9 @@ export default function QuickAdd() {
   const [selectedProject, setSelectedProject] = useState('')
   const [title, setTitle] = useState('')
   const [status, setStatus] = useState('todo')
+  const [priority, setPriority] = useState('medium')
+  const [label, setLabel] = useState('')
+  const [dueDate, setDueDate] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -36,10 +48,20 @@ export default function QuickAdd() {
     if (!title.trim() || !selectedProject) return
     setSaving(true)
     try {
-      await createTask({ project_id: selectedProject, title: title.trim(), status, priority: 'medium' })
+      await createTask({
+        project_id: selectedProject,
+        title: title.trim(),
+        status,
+        priority,
+        label: label || null,
+        due_date: dueDate || null,
+      })
       setSaved(true)
       setTimeout(() => {
         setTitle('')
+        setLabel('')
+        setDueDate('')
+        setPriority('medium')
         setSaved(false)
         setSaving(false)
         setOpen(false)
@@ -95,21 +117,65 @@ export default function QuickAdd() {
             className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-white/20 transition-colors"
           />
 
+          {/* Status */}
           <div className="flex gap-2">
             {['todo', 'in_progress', 'review'].map((s) => (
               <button
                 key={s}
                 onClick={() => setStatus(s)}
                 className={`flex-1 text-[10px] py-1.5 rounded-lg border font-medium transition-all ${
-                  status === s
-                    ? 'bg-white/10 border-white/20 text-white/80'
-                    : 'border-white/[0.08] text-white/30 hover:border-white/20'
+                  status === s ? 'bg-white/10 border-white/20 text-white/80' : 'border-white/[0.08] text-white/30 hover:border-white/20'
                 }`}
               >
                 {s === 'todo' ? 'To Do' : s === 'in_progress' ? 'In Progress' : 'Review'}
               </button>
             ))}
           </div>
+
+          {/* Priority */}
+          <div className="flex gap-1.5">
+            {PRIORITIES.map((p) => (
+              <button
+                key={p}
+                onClick={() => setPriority(p)}
+                className={`flex-1 text-[10px] py-1 rounded-lg border font-medium capitalize transition-all ${
+                  priority === p ? PRIORITY_STYLES[p] : 'border-white/[0.08] text-white/30 hover:border-white/20'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+
+          {/* Label */}
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setLabel('')}
+              className={`text-[10px] px-2 py-1 rounded-lg border font-medium transition-all ${!label ? 'bg-white/10 text-white/60 border-white/20' : 'border-white/[0.08] text-white/25 hover:border-white/20'}`}
+            >
+              No label
+            </button>
+            {TASK_LABELS.map((lbl) => {
+              const s = LABEL_STYLES[lbl]
+              return (
+                <button
+                  key={lbl}
+                  onClick={() => setLabel(label === lbl ? '' : lbl)}
+                  className={`text-[10px] px-2 py-1 rounded-lg border font-medium transition-all ${label === lbl ? `${s.bg} ${s.text} ${s.border}` : 'border-white/[0.08] text-white/30 hover:border-white/20'}`}
+                >
+                  {lbl}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Due date */}
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 outline-none focus:border-white/20 transition-colors [color-scheme:dark]"
+          />
 
           <button
             onClick={handleSubmit}

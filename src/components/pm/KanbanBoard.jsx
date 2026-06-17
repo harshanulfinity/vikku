@@ -23,6 +23,8 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
   const [createModalStatus, setCreateModalStatus] = useState(null)
   const [dragTaskId, setDragTaskId] = useState(null)
   const [dragOverCol, setDragOverCol] = useState(null)
+  const [dragOverTaskId, setDragOverTaskId] = useState(null)
+  const [dragInsertBefore, setDragInsertBefore] = useState(true)
   const [labelFilter, setLabelFilter] = useState('')
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState(new Set())
@@ -71,14 +73,43 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
 
   const handleDragStart = (taskId) => setDragTaskId(taskId)
 
+  const handleTaskDragOver = (e, taskId) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const rect = e.currentTarget.getBoundingClientRect()
+    setDragOverTaskId(taskId)
+    setDragInsertBefore(e.clientY < rect.top + rect.height / 2)
+  }
+
   const handleDrop = async (newStatus) => {
     setDragOverCol(null)
+    setDragOverTaskId(null)
     if (!dragTaskId) return
     const task = tasks.find((t) => t.id === dragTaskId)
-    if (!task || task.status === newStatus) { setDragTaskId(null); return }
-    onTasksChange(tasks.map((t) => t.id === dragTaskId ? { ...t, status: newStatus } : t))
-    await updateTask(dragTaskId, { status: newStatus })
-    if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: newStatus === 'done' ? 'task_done' : 'task_updated', entity_type: 'task', entity_title: task.title })
+    if (!task) { setDragTaskId(null); return }
+
+    const sameCol = task.status === newStatus
+
+    if (dragOverTaskId && dragOverTaskId !== dragTaskId) {
+      // Reorder: insert dragged task before/after the hovered task within the new column
+      const colTasks = tasks
+        .filter((t) => t.status === newStatus && t.id !== dragTaskId)
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      const targetIdx = colTasks.findIndex((t) => t.id === dragOverTaskId)
+      const insertAt = targetIdx === -1 ? colTasks.length : (dragInsertBefore ? targetIdx : targetIdx + 1)
+      colTasks.splice(insertAt, 0, { ...task, status: newStatus })
+      const positioned = colTasks.map((t, i) => ({ ...t, position: i * 100 }))
+      onTasksChange(tasks.map((t) => {
+        const p = positioned.find((pt) => pt.id === t.id)
+        return p ? p : t
+      }))
+      await Promise.all(positioned.map((t) => updateTask(t.id, { status: newStatus, position: t.position })))
+    } else if (!sameCol) {
+      onTasksChange(tasks.map((t) => t.id === dragTaskId ? { ...t, status: newStatus } : t))
+      await updateTask(dragTaskId, { status: newStatus })
+    }
+
+    if (user && !sameCol) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: newStatus === 'done' ? 'task_done' : 'task_updated', entity_type: 'task', entity_title: task.title })
     setDragTaskId(null)
   }
 
@@ -232,18 +263,30 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
               </div>
 
               <div className="flex flex-col gap-2 flex-1">
-                {tasksByStatus[col.id].map((task) => (
-                  <TaskCard
+                {tasksByStatus[col.id].sort((a, b) => (a.position ?? 0) - (b.position ?? 0)).map((task) => (
+                  <div
                     key={task.id}
-                    task={task}
-                    onDelete={handleDelete}
-                    onUpdate={handleUpdate}
-                    draggable={!selectMode}
-                    onDragStart={() => handleDragStart(task.id)}
-                    selectMode={selectMode}
-                    selected={selected.has(task.id)}
-                    onToggleSelect={() => toggleSelect(task.id)}
-                  />
+                    onDragOver={(e) => handleTaskDragOver(e, task.id)}
+                    onDragLeave={() => setDragOverTaskId(null)}
+                    className="relative"
+                  >
+                    {dragOverTaskId === task.id && dragInsertBefore && (
+                      <div className="h-0.5 bg-blue-400/60 rounded-full mx-1 mb-1" />
+                    )}
+                    <TaskCard
+                      task={task}
+                      onDelete={handleDelete}
+                      onUpdate={handleUpdate}
+                      draggable={!selectMode}
+                      onDragStart={() => handleDragStart(task.id)}
+                      selectMode={selectMode}
+                      selected={selected.has(task.id)}
+                      onToggleSelect={() => toggleSelect(task.id)}
+                    />
+                    {dragOverTaskId === task.id && !dragInsertBefore && (
+                      <div className="h-0.5 bg-blue-400/60 rounded-full mx-1 mt-1" />
+                    )}
+                  </div>
                 ))}
 
                 {tasksByStatus[col.id].length === 0 && (

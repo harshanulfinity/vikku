@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt, Timer, Sparkles, MessageSquare } from 'lucide-react'
+import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt, Timer, Sparkles, MessageSquare, AlertCircle } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getProject, getTasks, getMilestones, deleteProject, getProjectTimeLogs, getClientComments } from '../../lib/pmService'
+import { supabase } from '../../lib/supabaseClient'
 import KanbanBoard from '../../components/pm/KanbanBoard'
 import MilestoneList from '../../components/pm/MilestoneList'
 import TimelineView from '../../components/pm/TimelineView'
@@ -47,8 +48,10 @@ export default function ProjectDetail() {
   const [upgradeReason, setUpgradeReason] = useState('')
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [overdueOnly, setOverdueOnly] = useState(false)
   const [showOnboard, setShowOnboard] = useState(false)
   const [clientComments, setClientComments] = useState([])
+  const [seenCommentCount, setSeenCommentCount] = useState(0)
   const { isPro } = useSubscription()
 
   useEffect(() => {
@@ -65,7 +68,10 @@ export default function ProjectDetail() {
       setTasks(t)
       setMilestones(m)
       setFetching(false)
-      if (p.share_token) getClientComments(p.share_token).then(setClientComments)
+      if (p.share_token) getClientComments(p.share_token).then((comments) => {
+        setClientComments(comments)
+        setSeenCommentCount(Number(localStorage.getItem(`seen_comments_${id}`) || 0))
+      })
       if (searchParams.get('onboard') === '1') {
         setShowOnboard(true)
         setSearchParams({}, { replace: true })
@@ -73,6 +79,23 @@ export default function ProjectDetail() {
     }
     load()
   }, [user, id, navigate])
+
+  useEffect(() => {
+    if (!id || !supabase) return
+    const channel = supabase
+      .channel(`tasks_${id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pm_tasks', filter: `project_id=eq.${id}` }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setTasks((prev) => prev.some((t) => t.id === payload.new.id) ? prev : [...prev, payload.new])
+        } else if (payload.eventType === 'UPDATE') {
+          setTasks((prev) => prev.map((t) => t.id === payload.new.id ? { ...t, ...payload.new } : t))
+        } else if (payload.eventType === 'DELETE') {
+          setTasks((prev) => prev.filter((t) => t.id !== payload.old.id))
+        }
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [id])
 
   const triggerUpgrade = (reason) => {
     setUpgradeReason(UPGRADE_REASONS[reason] || '')
@@ -337,22 +360,35 @@ export default function ProjectDetail() {
         {/* Search + Tabs row */}
         <div className="flex items-center gap-3 mb-6 flex-wrap">
         {/* Search */}
-        {activeTab === 'kanban' && (
-          <div className="relative">
-            <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tasks..."
-              className="bg-white/[0.04] border border-white/[0.08] rounded-xl pl-8 pr-8 py-1.5 text-xs text-white placeholder-white/30 outline-none focus:border-white/20 transition-colors w-44"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
-                <XIcon size={11} />
-              </button>
-            )}
-          </div>
-        )}
+        <div className="relative">
+          <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search tasks..."
+            className="bg-white/[0.04] border border-white/[0.08] rounded-xl pl-8 pr-8 py-1.5 text-xs text-white placeholder-white/30 outline-none focus:border-white/20 transition-colors w-44"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
+              <XIcon size={11} />
+            </button>
+          )}
+        </div>
+        {/* Overdue filter */}
+        {(() => {
+          const overdueCount = tasks.filter((t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done').length
+          return overdueCount > 0 ? (
+            <button
+              onClick={() => setOverdueOnly(!overdueOnly)}
+              className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1.5 rounded-lg border font-medium transition-all ${
+                overdueOnly ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'border-white/[0.08] text-red-400/60 hover:border-red-500/30 hover:text-red-400'
+              }`}
+            >
+              <AlertCircle size={10} />
+              {overdueCount} overdue
+            </button>
+          ) : null
+        })()}
         {/* Tabs */}
         <div className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1 w-fit">
           {TABS.map((tab) => {
@@ -381,23 +417,19 @@ export default function ProjectDetail() {
         {/* Main + Sidebar */}
         <div className="flex gap-6">
           <div className="flex-1 min-w-0">
-            {activeTab === 'kanban' && (
-              <KanbanBoard
-                projectId={id}
-                tasks={searchQuery ? tasks.filter((t) => t.title.toLowerCase().includes(searchQuery.toLowerCase()) || (t.description || '').toLowerCase().includes(searchQuery.toLowerCase())) : tasks}
-                onTasksChange={setTasks}
-                user={user}
-              />
-            )}
-            {activeTab === 'timeline' && (
-              <TimelineView milestones={milestones} onMilestonesChange={setMilestones} />
-            )}
-            {activeTab === 'analytics' && (
-              <AnalyticsPanel tasks={tasks} milestones={milestones} />
-            )}
-            {activeTab === 'calendar' && (
-              <CalendarView tasks={tasks} milestones={milestones} />
-            )}
+            {(() => {
+              let filtered = tasks
+              if (searchQuery) filtered = filtered.filter((t) => t.title.toLowerCase().includes(searchQuery.toLowerCase()) || (t.description || '').toLowerCase().includes(searchQuery.toLowerCase()))
+              if (overdueOnly) filtered = filtered.filter((t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done')
+              return (
+                <>
+                  {activeTab === 'kanban' && <KanbanBoard projectId={id} tasks={filtered} onTasksChange={setTasks} user={user} />}
+                  {activeTab === 'timeline' && <TimelineView milestones={milestones} onMilestonesChange={setMilestones} />}
+                  {activeTab === 'analytics' && <AnalyticsPanel tasks={filtered} milestones={milestones} />}
+                  {activeTab === 'calendar' && <CalendarView tasks={filtered} milestones={milestones} />}
+                </>
+              )
+            })()}
           </div>
 
           {/* Sidebar */}
@@ -424,10 +456,19 @@ export default function ProjectDetail() {
             <ActivityFeed projectId={id} />
 
             {clientComments.length > 0 && (
-              <div className="glass rounded-2xl p-5">
+              <div
+                className="glass rounded-2xl p-5 cursor-pointer"
+                onClick={() => {
+                  localStorage.setItem(`seen_comments_${id}`, String(clientComments.length))
+                  setSeenCommentCount(clientComments.length)
+                }}
+              >
                 <div className="flex items-center gap-2 mb-3">
                   <MessageSquare size={13} className="text-white/40" />
                   <p className="text-xs text-white/40">Client Feedback</p>
+                  {clientComments.length > seenCommentCount && (
+                    <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                  )}
                   <span className="text-[10px] text-white/25 bg-white/[0.05] px-1.5 py-0.5 rounded-full ml-auto">{clientComments.length}</span>
                 </div>
                 <div className="space-y-3 max-h-64 overflow-y-auto">
