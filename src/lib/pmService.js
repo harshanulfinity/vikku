@@ -48,11 +48,10 @@ export async function getProjectByToken(token) {
       .select('*')
       .eq('share_token', token)
       .single()
-    if (error) {
-      console.error('Error fetching project by token:', error)
-      return null
-    }
-    return data
+    if (error) { console.error('Error fetching project by token:', error); return null }
+    // Strip PIN from client response; expose only whether one is set
+    const { share_pin, ...rest } = data
+    return { ...rest, has_share_pin: !!share_pin }
   } catch (err) {
     console.error('Failed to fetch project by token:', err)
     return null
@@ -653,6 +652,53 @@ export async function updateTimeLog(id, fields) {
     .eq('id', id)
     .select()
     .single()
+  if (error) throw error
+  return data
+}
+
+// ── Task Dependencies ───────────────────────────────────────
+
+export async function getTaskDependencies(taskId) {
+  if (!supabase) return []
+  const { data } = await supabase.from('pm_task_dependencies').select('depends_on_task_id').eq('task_id', taskId)
+  return data || []
+}
+
+export async function getProjectDependencies(projectId) {
+  if (!supabase) return []
+  const { data } = await supabase.from('pm_task_dependencies').select('task_id, depends_on_task_id').eq('project_id', projectId)
+  return data || []
+}
+
+export async function addTaskDependency(taskId, dependsOnTaskId, projectId) {
+  if (!supabase) throw new Error('Database not configured')
+  const { error } = await supabase.from('pm_task_dependencies').insert({ task_id: taskId, depends_on_task_id: dependsOnTaskId, project_id: projectId })
+  if (error) throw error
+}
+
+export async function removeTaskDependency(taskId, dependsOnTaskId) {
+  if (!supabase) throw new Error('Database not configured')
+  const { error } = await supabase.from('pm_task_dependencies').delete().eq('task_id', taskId).eq('depends_on_task_id', dependsOnTaskId)
+  if (error) throw error
+}
+
+// ── Share PIN ────────────────────────────────────────────────
+
+export async function verifySharePin(token, pin) {
+  if (!supabase) return false
+  try {
+    const { data } = await supabase.rpc('verify_share_pin', { p_token: token, p_pin: pin })
+    return !!data
+  } catch { return false }
+}
+
+// ── Client task approval ─────────────────────────────────────
+
+export async function approveTaskAsClient(taskId, shareToken, status, note = null) {
+  if (!supabase) throw new Error('Database not configured')
+  const { data, error } = await supabase.rpc('approve_task_client', {
+    p_task_id: taskId, p_share_token: shareToken, p_status: status, p_note: note,
+  })
   if (error) throw error
   return data
 }

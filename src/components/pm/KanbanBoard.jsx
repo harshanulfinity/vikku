@@ -3,6 +3,15 @@ import { Plus, X, ClipboardList, Zap, Eye, CheckCircle, Trash2, MousePointer, Li
 import TaskCard from './TaskCard'
 import TaskCreateModal from './TaskCreateModal'
 import { createTask, updateTask, deleteTask, logActivity } from '../../lib/pmService'
+
+function getNextDueDate(dueDate, recurrence) {
+  if (!dueDate) return null
+  const d = new Date(dueDate + 'T00:00:00')
+  if (recurrence === 'daily') d.setDate(d.getDate() + 1)
+  else if (recurrence === 'weekly') d.setDate(d.getDate() + 7)
+  else if (recurrence === 'monthly') d.setMonth(d.getMonth() + 1)
+  return d.toISOString().split('T')[0]
+}
 import { LABEL_STYLES, DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
 
 const DEFAULT_EMPTY = {
@@ -125,6 +134,25 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
 
     const isDoneStage = stages.find((s) => s.status_key === newStatusKey)?.is_done
     if (user && !sameCol) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: isDoneStage ? 'task_done' : 'task_updated', entity_type: 'task', entity_title: task.title })
+
+    // Recurring task: create next occurrence when completed
+    if (isDoneStage && !sameCol && task.recurrence) {
+      const firstStage = stages.find((s) => !s.is_done) || stages[0]
+      createTask({
+        project_id: projectId,
+        title: task.title,
+        description: task.description || null,
+        priority: task.priority || 'medium',
+        status: firstStage.status_key,
+        due_date: getNextDueDate(task.due_date, task.recurrence),
+        assigned_to_email: task.assigned_to_email || null,
+        label: task.label || null,
+        recurrence: task.recurrence,
+      }).then((newTask) => {
+        if (newTask) onTasksChange((prev) => [...prev, newTask])
+      }).catch(() => {})
+    }
+
     setDragTaskId(null)
   }
 

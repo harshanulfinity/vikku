@@ -4,12 +4,14 @@ import {
   X, Trash2, Loader2, MessageCircle, Send, Trash,
   CheckSquare, Square, Plus, Clock, User, Timer, Link, ExternalLink,
   Paperclip, Download, FileText, Bell, BellOff, TrendingUp, TrendingDown,
+  GitMerge, RotateCcw,
 } from 'lucide-react'
 import {
   updateTask, deleteTask, getTaskComments, createTaskComment, deleteTaskComment,
   getSubtasks, createSubtask, updateSubtask, deleteSubtask,
   getTimeLogs, createTimeLog, deleteTimeLog, getProjectMembers,
   getTaskAttachments, uploadTaskAttachment, deleteTaskAttachment, getAttachmentUrl,
+  getTasks, getTaskDependencies, addTaskDependency, removeTaskDependency,
 } from '../../lib/pmService'
 import { TASK_LABELS, LABEL_STYLES } from '../../lib/pmConstants'
 import { useAuth } from '../../contexts/AuthContext'
@@ -61,6 +63,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     label: task.label || '',
     task_link: task.task_link || '',
     estimated_minutes: task.estimated_minutes || '',
+    recurrence: task.recurrence || '',
   })
   const [deleting, setDeleting] = useState(false)
   const [commentError, setCommentError] = useState('')
@@ -86,12 +89,21 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const [attachments, setAttachments] = useState([])
   const [uploading, setUploading] = useState(false)
 
+  const [dependencies, setDependencies] = useState([]) // [{depends_on_task_id}]
+  const [projectTasks, setProjectTasks] = useState([])
+  const [depSearch, setDepSearch] = useState('')
+  const [showDepPicker, setShowDepPicker] = useState(false)
+
   useEffect(() => {
     getTaskComments(task.id).then(setComments)
     getSubtasks(task.id).then(setSubtasks)
     getTimeLogs(task.id).then(setTimeLogs)
     getTaskAttachments(task.id).then(setAttachments)
-    if (task.project_id) getProjectMembers(task.project_id).then(setMembers)
+    if (task.project_id) {
+      getProjectMembers(task.project_id).then(setMembers)
+      getTasks(task.project_id).then(setProjectTasks)
+      getTaskDependencies(task.id).then(setDependencies)
+    }
   }, [task.id, task.project_id])
 
   const totalLogged = timeLogs.reduce((s, l) => s + (l.minutes || 0), 0)
@@ -113,6 +125,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
       label: form.label || null,
       task_link: form.task_link.trim() || null,
       estimated_minutes: form.estimated_minutes ? parseInt(form.estimated_minutes) : null,
+      recurrence: form.recurrence || null,
     }).catch((err) => {
       console.error('updateTask failed:', err)
     })
@@ -177,6 +190,19 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const handleDeleteSubtask = async (id) => {
     await deleteSubtask(id)
     setSubtasks((prev) => prev.filter((s) => s.id !== id))
+  }
+
+  const handleAddDependency = async (blockerTask) => {
+    if (dependencies.some((d) => d.depends_on_task_id === blockerTask.id)) return
+    await addTaskDependency(task.id, blockerTask.id, task.project_id)
+    setDependencies((prev) => [...prev, { depends_on_task_id: blockerTask.id }])
+    setDepSearch('')
+    setShowDepPicker(false)
+  }
+
+  const handleRemoveDependency = async (dependsOnId) => {
+    await removeTaskDependency(task.id, dependsOnId)
+    setDependencies((prev) => prev.filter((d) => d.depends_on_task_id !== dependsOnId))
   }
 
   const handleLogTime = async (mins) => {
@@ -371,6 +397,24 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
               </div>
             </div>
 
+            {/* Recurrence */}
+            <div>
+              <label className="text-[10px] text-white/40 mb-1.5 block uppercase tracking-wider">Recurrence</label>
+              <select
+                value={form.recurrence}
+                onChange={(e) => setForm({ ...form, recurrence: e.target.value })}
+                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 outline-none focus:border-white/20 transition-colors [color-scheme:dark]"
+              >
+                <option value="">None</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+              {form.recurrence && (
+                <p className="text-[10px] text-white/30 mt-1">When completed, a new {form.recurrence} copy will be created.</p>
+              )}
+            </div>
+
             {/* Assignee */}
             <div className="relative">
               <label className="text-[10px] text-white/40 mb-1.5 block uppercase tracking-wider">Assignee</label>
@@ -461,6 +505,60 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                 <button onClick={handleAddSubtask} disabled={addingSubtask || !newSubtask.trim()} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all disabled:opacity-30">
                   {addingSubtask ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
                 </button>
+              </div>
+            </div>
+
+            {/* Dependencies */}
+            <div className="border-t border-white/[0.06] pt-4">
+              <div className="flex items-center gap-1.5 mb-3">
+                <GitMerge size={12} className="text-white/30" />
+                <label className="text-[10px] text-white/40 uppercase tracking-wider">
+                  Blocked by {dependencies.length > 0 && `(${dependencies.length})`}
+                </label>
+              </div>
+              {dependencies.length > 0 && (
+                <div className="space-y-1.5 mb-3">
+                  {dependencies.map((dep) => {
+                    const blocker = projectTasks.find((t) => t.id === dep.depends_on_task_id)
+                    if (!blocker) return null
+                    const isDone = blocker.status === 'done'
+                    return (
+                      <div key={dep.depends_on_task_id} className="flex items-center gap-2 group">
+                        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isDone ? 'bg-green-400' : 'bg-red-400/70'}`} />
+                        <span className={`text-xs flex-1 leading-snug truncate ${isDone ? 'line-through text-white/30' : 'text-white/70'}`}>{blocker.title}</span>
+                        <button onClick={() => handleRemoveDependency(dep.depends_on_task_id)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all flex-shrink-0">
+                          <X size={10} />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              <div className="relative">
+                <input
+                  value={depSearch}
+                  onChange={(e) => { setDepSearch(e.target.value); setShowDepPicker(true) }}
+                  onFocus={() => setShowDepPicker(true)}
+                  placeholder="Search tasks to block on..."
+                  className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
+                />
+                {showDepPicker && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-10 max-h-40 overflow-y-auto">
+                    {projectTasks
+                      .filter((t) => t.id !== task.id && !dependencies.some((d) => d.depends_on_task_id === t.id) && (!depSearch || t.title.toLowerCase().includes(depSearch.toLowerCase())))
+                      .slice(0, 8)
+                      .map((t) => (
+                        <button key={t.id} onClick={() => handleAddDependency(t)} className="w-full text-left px-3 py-2 text-xs text-white/70 hover:bg-white/[0.05] transition-colors flex items-center gap-2">
+                          <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${t.status === 'done' ? 'bg-green-400' : 'bg-white/30'}`} />
+                          <span className="truncate">{t.title}</span>
+                          <span className="text-white/25 ml-auto flex-shrink-0">{t.status.replace('_', ' ')}</span>
+                        </button>
+                      ))}
+                    {projectTasks.filter((t) => t.id !== task.id && !dependencies.some((d) => d.depends_on_task_id === t.id)).length === 0 && (
+                      <p className="px-3 py-2 text-xs text-white/25">No other tasks</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

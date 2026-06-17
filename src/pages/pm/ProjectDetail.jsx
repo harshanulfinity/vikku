@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt, Timer, Sparkles, MessageSquare, AlertCircle, Clock, Layers } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getProject, getTasks, getMilestones, deleteProject, getWorkflow, getClientComments, updateProject } from '../../lib/pmService'
+import { getProject, getTasks, getMilestones, deleteProject, getWorkflow, getClientComments, updateProject, getProjectDependencies } from '../../lib/pmService'
 import { supabase } from '../../lib/supabaseClient'
 import KanbanBoard from '../../components/pm/KanbanBoard'
 import MilestoneList from '../../components/pm/MilestoneList'
@@ -60,6 +60,7 @@ export default function ProjectDetail() {
   const [seenCommentCount, setSeenCommentCount] = useState(0)
   const [workflow, setWorkflow] = useState(null)
   const [showWorkflow, setShowWorkflow] = useState(false)
+  const [dependencies, setDependencies] = useState([]) // [{task_id, depends_on_task_id}]
   const { isPro } = useSubscription()
 
   useEffect(() => {
@@ -77,6 +78,7 @@ export default function ProjectDetail() {
       setMilestones(m)
       setFetching(false)
       if (p.workflow_id) getWorkflow(p.workflow_id).then(setWorkflow)
+      getProjectDependencies(id).then(setDependencies)
       if (p.share_token) getClientComments(p.share_token).then((comments) => {
         setClientComments(comments)
         setSeenCommentCount(Number(localStorage.getItem(`seen_comments_${id}`) || 0))
@@ -174,6 +176,12 @@ export default function ProjectDetail() {
 
   const workflowStages = workflow?.stages || DEFAULT_WORKFLOW_STAGES
   const doneKeys = new Set(workflowStages.filter((s) => s.is_done).map((s) => s.status_key))
+  // Annotate tasks with _isBlocked: true when any blocker is not done
+  const doneTaskIds = new Set(tasks.filter((t) => doneKeys.has(t.status)).map((t) => t.id))
+  const annotatedTasks = tasks.map((t) => ({
+    ...t,
+    _isBlocked: dependencies.some((d) => d.task_id === t.id && !doneTaskIds.has(d.depends_on_task_id)),
+  }))
   const totalTasks = tasks.length
   const doneTasks = tasks.filter((t) => doneKeys.has(t.status)).length
   const progress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
@@ -362,6 +370,25 @@ export default function ProjectDetail() {
                     <span className="text-[10px] text-white/30">{project?.client_brand_color || 'Default'}</span>
                   </div>
                 </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-[10px] text-white/30 w-20 flex-shrink-0">PIN protection</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={8}
+                    defaultValue={project?.share_pin || ''}
+                    placeholder="Leave blank for no PIN"
+                    onBlur={(e) => {
+                      const val = e.target.value.trim()
+                      if (val !== (project?.share_pin || '')) {
+                        updateProject(project.id, { share_pin: val || null })
+                          .then((updated) => setProject(updated))
+                          .catch(() => {})
+                      }
+                    }}
+                    className="flex-1 text-xs bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors font-mono tracking-widest"
+                  />
+                </div>
               </div>
             ) : (
               <div className="flex items-center gap-2 pt-1 border-t border-white/[0.05]">
@@ -493,7 +520,7 @@ export default function ProjectDetail() {
         <div className="flex gap-6">
           <div className="flex-1 min-w-0">
             {(() => {
-              let filtered = tasks
+              let filtered = annotatedTasks
               if (searchQuery) filtered = filtered.filter((t) => t.title.toLowerCase().includes(searchQuery.toLowerCase()) || (t.description || '').toLowerCase().includes(searchQuery.toLowerCase()))
               if (overdueOnly) filtered = filtered.filter((t) => t.due_date && new Date(t.due_date) < new Date() && !doneKeys.has(t.status))
               return (

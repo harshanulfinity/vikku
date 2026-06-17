@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GripVertical, Calendar, CheckSquare, ExternalLink } from 'lucide-react'
+import { GripVertical, Calendar, CheckSquare, ExternalLink, GitMerge, RotateCcw } from 'lucide-react'
 import TaskEditModal from './TaskEditModal'
 import { LABEL_STYLES } from '../../lib/pmConstants'
 
@@ -17,6 +17,7 @@ export default function TaskCard({ task, onDelete, onUpdate, draggable, onDragSt
   const assigneeInitial = task.assigned_to_email ? task.assigned_to_email[0].toUpperCase() : null
   const hasSubtasks = task._subtasksTotal > 0
   const labelStyle = task.label ? LABEL_STYLES[task.label] : null
+  const isBlocked = task._isBlocked
 
   const handleClick = () => {
     if (selectMode) { onToggleSelect?.(); return }
@@ -40,7 +41,7 @@ export default function TaskCard({ task, onDelete, onUpdate, draggable, onDragSt
         onClick={handleClick}
         className={`glass rounded-xl p-3 cursor-pointer group transition-all duration-150 hover:border-white/20 select-none relative ${
           isDragging ? 'scale-105 rotate-1 shadow-2xl shadow-black/60 opacity-70 border-white/30' : ''
-        } ${selected ? 'border-white/30 bg-white/[0.06]' : ''}`}
+        } ${selected ? 'border-white/30 bg-white/[0.06]' : ''} ${isBlocked ? 'border-red-500/20' : ''}`}
       >
         {/* Select checkbox overlay */}
         {selectMode && (
@@ -77,6 +78,16 @@ export default function TaskCard({ task, onDelete, onUpdate, draggable, onDragSt
                 {task.priority}
               </span>
               <div className="flex items-center gap-2 ml-auto">
+                {isBlocked && (
+                  <span title="Blocked by unfinished tasks" className="flex items-center gap-0.5 text-[9px] text-red-400/70">
+                    <GitMerge size={8} /> blocked
+                  </span>
+                )}
+                {task.recurrence && (
+                  <span title={`Repeats ${task.recurrence}`} className="text-blue-400/50">
+                    <RotateCcw size={8} />
+                  </span>
+                )}
                 {hasSubtasks && (
                   <span className={`flex items-center gap-1 text-[9px] ${task._subtasksDone === task._subtasksTotal ? 'text-green-400/70' : 'text-white/30'}`}>
                     <CheckSquare size={8} />
