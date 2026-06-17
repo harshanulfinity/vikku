@@ -51,7 +51,6 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     label: task.label || '',
     task_link: task.task_link || '',
   })
-  const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
   const [comments, setComments] = useState([])
@@ -85,10 +84,11 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const totalLogged = timeLogs.reduce((s, l) => s + (l.minutes || 0), 0)
   const subtasksDone = subtasks.filter((s) => s.completed).length
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!form.title.trim()) return
-    setSaving(true)
-    await updateTask(task.id, {
+    onUpdated({ ...task, ...form })
+    onClose()
+    updateTask(task.id, {
       title: form.title.trim(),
       description: form.description.trim(),
       priority: form.priority,
@@ -97,9 +97,6 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
       label: form.label || null,
       task_link: form.task_link.trim() || null,
     })
-    setSaving(false)
-    onUpdated({ ...task, ...form })
-    onClose()
   }
 
   const handleDelete = async () => {
@@ -534,8 +531,8 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
           </button>
           <div className="flex gap-2">
             <button onClick={onClose} className="text-xs text-white/30 hover:text-white/60 transition-colors px-3 py-1.5">Cancel</button>
-            <button onClick={handleSave} disabled={saving || !form.title.trim()} className="flex items-center gap-1.5 text-xs bg-white text-black font-semibold px-4 py-1.5 rounded-lg hover:bg-white/90 transition-colors disabled:opacity-40">
-              {saving ? <><Loader2 size={11} className="animate-spin" /> Saving...</> : 'Save'}
+            <button onClick={handleSave} disabled={!form.title.trim()} className="flex items-center gap-1.5 text-xs bg-white text-black font-semibold px-4 py-1.5 rounded-lg hover:bg-white/90 transition-colors disabled:opacity-40">
+              Save
             </button>
           </div>
         </div>

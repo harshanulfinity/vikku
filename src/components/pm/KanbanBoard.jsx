@@ -39,11 +39,19 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
 
   const handleAddTask = async (status) => {
     if (!newTitle.trim()) return
-    const task = await createTask({ project_id: projectId, title: newTitle.trim(), status, priority: 'medium' })
-    onTasksChange([...tasks, task])
+    const title = newTitle.trim()
+    const tempId = `temp-${Date.now()}`
+    const tempTask = { id: tempId, project_id: projectId, title, status, priority: 'medium', created_at: new Date().toISOString() }
+    onTasksChange((prev) => [...prev, tempTask])
     setNewTitle('')
     setAddingTo(null)
-    if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_created', entity_type: 'task', entity_title: newTitle.trim() })
+    try {
+      const task = await createTask({ project_id: projectId, title, status, priority: 'medium' })
+      onTasksChange((prev) => prev.map((t) => t.id === tempId ? task : t))
+      if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_created', entity_type: 'task', entity_title: title })
+    } catch {
+      onTasksChange((prev) => prev.filter((t) => t.id !== tempId))
+    }
   }
 
   const handleDelete = async (taskId) => {
