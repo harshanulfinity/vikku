@@ -202,45 +202,58 @@ function ClientComments({ projectId, shareToken }) {
 }
 
 function TaskApprovals({ tasks, token }) {
-  const approvable = tasks.filter((t) => t.status !== 'done' || t.client_approval_status !== 'approved')
+  const [approvalMap, setApprovalMap] = useState(() =>
+    Object.fromEntries(tasks.map((t) => [t.id, { status: t.client_approval_status || null, note: t.client_approval_note || null }]))
+  )
   const [approving, setApproving] = useState({})
   const [notes, setNotes] = useState({})
   const [showNote, setShowNote] = useState({})
+  const [errors, setErrors] = useState({})
 
   const handleApprove = async (task, status) => {
     setApproving((prev) => ({ ...prev, [task.id]: true }))
-    await approveTaskAsClient(task.id, token, status, notes[task.id] || null).catch(() => {})
-    task.client_approval_status = status
-    task.client_approval_note = notes[task.id] || null
+    setErrors((prev) => ({ ...prev, [task.id]: null }))
+    try {
+      await approveTaskAsClient(task.id, token, status, notes[task.id] || null)
+      setApprovalMap((prev) => ({ ...prev, [task.id]: { status, note: notes[task.id] || null } }))
+      setShowNote((prev) => ({ ...prev, [task.id]: false }))
+    } catch (err) {
+      setErrors((prev) => ({ ...prev, [task.id]: err?.message || 'Failed' }))
+    }
     setApproving((prev) => ({ ...prev, [task.id]: false }))
-    setShowNote((prev) => ({ ...prev, [task.id]: false }))
   }
 
-  if (!approvable.length) return null
+  const pending = tasks.filter((t) => {
+    const s = approvalMap[t.id]?.status
+    return !s || s === 'pending'
+  })
+
+  if (!tasks.length) return null
 
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
         <ThumbsUp size={14} className="text-white/60" />
         <h2 className="text-xs font-semibold text-white/80">Task Approvals</h2>
-        <span className="text-[10px] text-white/30">({approvable.length} pending)</span>
+        {pending.length > 0 && <span className="text-[10px] text-white/30">({pending.length} pending)</span>}
       </div>
       <div className="space-y-2">
-        {approvable.map((task) => {
-          const approval = task.client_approval_status
+        {tasks.map((task) => {
+          const approval = approvalMap[task.id]?.status
+          const note = approvalMap[task.id]?.note
           return (
             <div key={task.id} className="glass rounded-xl px-4 py-3 space-y-2">
               <p className="text-sm text-white">{task.title}</p>
               {approval === 'approved' && (
                 <div className="flex items-center gap-1.5 text-green-400 text-xs">
                   <ThumbsUp size={11} /> <span>Approved</span>
-                  {task.client_approval_note && <span className="text-white/30 ml-2">"{task.client_approval_note}"</span>}
+                  {note && <span className="text-white/30 ml-2">"{note}"</span>}
                 </div>
               )}
               {approval === 'needs_revision' && (
-                <div className="flex items-center gap-1.5 text-red-400 text-xs">
+                <div className="flex items-center gap-1.5 text-orange-400 text-xs">
                   <ThumbsDown size={11} /> <span>Needs revision</span>
-                  {task.client_approval_note && <span className="text-white/30 ml-2">"{task.client_approval_note}"</span>}
+                  {note && <span className="text-white/30 ml-2">"{note}"</span>}
                 </div>
               )}
               {(!approval || approval === 'pending') && (
@@ -253,13 +266,14 @@ function TaskApprovals({ tasks, token }) {
                       className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/30 outline-none focus:border-white/20 transition-colors"
                     />
                   )}
+                  {errors[task.id] && <p className="text-[10px] text-red-400">{errors[task.id]}</p>}
                   <div className="flex items-center gap-2">
                     <button onClick={() => handleApprove(task, 'approved')} disabled={approving[task.id]}
                       className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-green-500/15 text-green-400 border border-green-500/20 hover:bg-green-500/25 transition-colors disabled:opacity-40">
                       <ThumbsUp size={11} /> Approve
                     </button>
                     <button onClick={() => handleApprove(task, 'needs_revision')} disabled={approving[task.id]}
-                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 border border-red-500/20 hover:bg-red-500/25 transition-colors disabled:opacity-40">
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-orange-500/15 text-orange-400 border border-orange-500/20 hover:bg-orange-500/25 transition-colors disabled:opacity-40">
                       <ThumbsDown size={11} /> Request revision
                     </button>
                     <button onClick={() => setShowNote((prev) => ({ ...prev, [task.id]: !prev[task.id] }))}
@@ -306,11 +320,15 @@ export default function ClientView() {
     if (!pinInput.trim()) return
     setPinChecking(true)
     setPinError('')
-    const ok = await verifySharePin(token, pinInput.trim())
-    if (ok) {
-      setPinVerified(true)
-    } else {
-      setPinError('Incorrect PIN. Please try again.')
+    try {
+      const ok = await verifySharePin(token, pinInput.trim())
+      if (ok) {
+        setPinVerified(true)
+      } else {
+        setPinError('Incorrect PIN. Please try again.')
+      }
+    } catch {
+      setPinError('Something went wrong. Please try again.')
     }
     setPinChecking(false)
   }

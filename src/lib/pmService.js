@@ -686,10 +686,9 @@ export async function removeTaskDependency(taskId, dependsOnTaskId) {
 
 export async function verifySharePin(token, pin) {
   if (!supabase) return false
-  try {
-    const { data } = await supabase.rpc('verify_share_pin', { p_token: token, p_pin: pin })
-    return !!data
-  } catch { return false }
+  const { data, error } = await supabase.rpc('verify_share_pin', { p_token: token, p_pin: pin })
+  if (error) throw error
+  return !!data
 }
 
 // ── Client task approval ─────────────────────────────────────
