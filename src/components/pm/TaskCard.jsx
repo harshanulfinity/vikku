@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GripVertical, Calendar, CheckSquare, ExternalLink, GitMerge, RotateCcw } from 'lucide-react'
+import { GripVertical, Calendar, CheckSquare, ExternalLink, GitMerge, RotateCcw, ThumbsUp, ThumbsDown } from 'lucide-react'
 import TaskEditModal from './TaskEditModal'
 import { LABEL_STYLES } from '../../lib/pmConstants'
 
@@ -78,6 +78,16 @@ export default function TaskCard({ task, onDelete, onUpdate, draggable, onDragSt
                 {task.priority}
               </span>
               <div className="flex items-center gap-2 ml-auto">
+                {task.client_approval_status === 'approved' && (
+                  <span title="Approved by client" className="flex items-center gap-0.5 text-[9px] text-green-400/70">
+                    <ThumbsUp size={8} /> approved
+                  </span>
+                )}
+                {task.client_approval_status === 'needs_revision' && (
+                  <span title="Client requested revision" className="flex items-center gap-0.5 text-[9px] text-orange-400/70">
+                    <ThumbsDown size={8} /> revision
+                  </span>
+                )}
                 {isBlocked && (
                   <span title="Blocked by unfinished tasks" className="flex items-center gap-0.5 text-[9px] text-red-400/70">
                     <GitMerge size={8} /> blocked

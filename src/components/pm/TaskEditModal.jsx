@@ -651,6 +651,28 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
               )}
             </div>
 
+            {/* Client approval status */}
+            {task.client_approval_status && (
+              <div className={`border rounded-xl px-4 py-3 flex items-start gap-3 ${
+                task.client_approval_status === 'approved'
+                  ? 'border-green-500/20 bg-green-500/10'
+                  : 'border-orange-500/20 bg-orange-500/10'
+              }`}>
+                {task.client_approval_status === 'approved'
+                  ? <ThumbsUp size={13} className="text-green-400 flex-shrink-0 mt-0.5" />
+                  : <ThumbsDown size={13} className="text-orange-400 flex-shrink-0 mt-0.5" />
+                }
+                <div>
+                  <p className={`text-xs font-medium ${task.client_approval_status === 'approved' ? 'text-green-400' : 'text-orange-400'}`}>
+                    {task.client_approval_status === 'approved' ? 'Approved by client' : 'Client requested revision'}
+                  </p>
+                  {task.client_approval_note && (
+                    <p className="text-[10px] text-white/40 mt-0.5">"{task.client_approval_note}"</p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Comments */}
             <div className="border-t border-white/[0.06] pt-4">
               <div className="flex items-center gap-1.5 mb-3">
