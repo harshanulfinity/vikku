@@ -35,11 +35,11 @@ export default function Hero() {
         <h1
           className="font-display font-extrabold leading-[1.08] tracking-tight text-white mb-4"
           style={{
-            fontSize: 'clamp(2rem, 4vw, 3.4rem)',
+            fontSize: 'clamp(1.4rem, 4vw, 3.4rem)',
             textShadow: '4px 4px 12px rgba(0, 0, 0, 0.5), 8px 8px 20px rgba(0, 0, 0, 0.3)'
           }}
         >
-          <div>
+          <div style={{ whiteSpace: 'nowrap' }}>
             {['We', 'Build', 'Digital', 'Products'].map((word, i) => (
               <span key={word} className="inline-block mr-[0.22em]"
                 style={{ animation: `heroWordIn 0.7s cubic-bezier(0.16,1,0.3,1) both`, animationDelay: `${i * 0.12}s` }}>
