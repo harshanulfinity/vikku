@@ -94,10 +94,22 @@ export default function Navbar() {
           {navLinks.map(({ label, href, dropdown, isRoute }) => {
             const isActive = activeId === href.slice(1)
             if (isRoute) {
+              const handleRoute = () => {
+                if (label === 'PM Tool' && !user) {
+                  if (location.pathname !== '/') {
+                    navigate('/')
+                    setTimeout(() => document.getElementById('pm-pricing')?.scrollIntoView({ behavior: 'smooth' }), 300)
+                  } else {
+                    document.getElementById('pm-pricing')?.scrollIntoView({ behavior: 'smooth' })
+                  }
+                } else {
+                  navigate(href)
+                }
+              }
               return (
                 <button
                   key={label}
-                  onClick={() => navigate(href)}
+                  onClick={handleRoute}
                   className="text-xs transition-colors duration-200 tracking-wide text-white hover:text-white/90"
                 >
                   {label}
@@ -242,7 +254,24 @@ export default function Navbar() {
               {navLinks.map(({ label, href, dropdown, isRoute }) => (
                 <div key={label} className="border-b border-white/[0.05] last:border-0">
                   <button
-                    onClick={() => isRoute ? (navigate(href), setMenuOpen(false)) : handleNav(href)}
+                    onClick={() => {
+                      if (isRoute) {
+                        if (label === 'PM Tool' && !user) {
+                          setMenuOpen(false)
+                          if (location.pathname !== '/') {
+                            navigate('/')
+                            setTimeout(() => document.getElementById('pm-pricing')?.scrollIntoView({ behavior: 'smooth' }), 300)
+                          } else {
+                            document.getElementById('pm-pricing')?.scrollIntoView({ behavior: 'smooth' })
+                          }
+                        } else {
+                          navigate(href)
+                          setMenuOpen(false)
+                        }
+                      } else {
+                        handleNav(href)
+                      }
+                    }}
                     className="w-full text-left px-5 py-4 text-sm text-white font-medium active:bg-white/[0.05] transition-colors"
                   >
                     {label}

@@ -9,6 +9,7 @@ import Clients             from './components/Clients'
 import Services            from './components/Services'
 import Solution            from './components/Solution'
 import FounderTools        from './components/FounderTools'
+import PMPricingSection    from './components/PMPricingSection'
 import Process             from './components/Process'
 import TechStack           from './components/TechStack'
 import About               from './components/About'
@@ -78,6 +79,7 @@ function Home() {
         <Clients />
         <Services />
         <FounderTools />
+        <PMPricingSection />
         <Solution />
         <Process />
         <TechStack />
