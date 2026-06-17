@@ -40,6 +40,7 @@ export default function TaskCreateModal({ projectId, initialStatus, user, onSubm
   const handleCreate = () => {
     if (!form.title.trim()) return
     onSubmit({
+      status: initialStatus,
       title: form.title.trim(),
       description: form.description.trim() || null,
       priority: form.priority,
