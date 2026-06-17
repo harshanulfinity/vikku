@@ -419,7 +419,7 @@ export default function ProjectDetail() {
           ) : null
         })()}
         {/* Tabs */}
-        <div className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1 w-fit">
+        <div className="flex items-center gap-0.5 sm:gap-1 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1 overflow-x-auto max-w-full">
           {TABS.map((tab) => {
             const Icon = tab.icon
             const active = activeTab === tab.key
@@ -428,14 +428,14 @@ export default function ProjectDetail() {
               <button
                 key={tab.key}
                 onClick={() => handleTabClick(tab)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0 ${
                   active
                     ? 'bg-white text-black'
                     : 'text-white/40 hover:text-white/80'
                 }`}
               >
                 <Icon size={12} />
-                {tab.label}
+                <span className="hidden sm:inline">{tab.label}</span>
                 {locked && <Lock size={9} className="text-yellow-400/60" />}
               </button>
             )
