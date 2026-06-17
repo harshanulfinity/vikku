@@ -310,11 +310,20 @@ export default function ProjectDetail() {
       {shareTab && (
         <div className="border-b border-white/[0.05] bg-white/[0.02] px-6 py-4">
           <div className="max-w-7xl mx-auto space-y-3">
-            <div>
-              <p className="text-xs text-white/50 mb-2">Client share link — anyone with this link can view the project (read-only, no login needed)</p>
-              <code className="block text-xs text-white/70 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 truncate">
-                {shareUrl}
-              </code>
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-white/50 mb-2">Client share link — anyone with this link can view the project (read-only, no login needed)</p>
+                <code className="block text-xs text-white/70 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 truncate">
+                  {shareUrl}
+                </code>
+              </div>
+              <button
+                onClick={() => setShareTab(false)}
+                className="w-6 h-6 flex items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-all flex-shrink-0 mt-0.5"
+                title="Close"
+              >
+                <XIcon size={13} />
+              </button>
             </div>
             {isPro ? (
               <div className="space-y-2 pt-1 border-t border-white/[0.05]">
