@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, TrendingUp, Loader2, AlertTriangle, DollarSign, Calendar, Zap } from 'lucide-react'
 import { calculateROI } from '../lib/openaiService'
 import LeadCaptureModal from '../components/LeadCaptureModal'
+import { useAuth } from '../contexts/AuthContext'
 
 const BUSINESS_TYPES = [
   'Restaurant / Cafe / Food Business',
@@ -36,6 +37,7 @@ const SOURCE_OPTIONS = [
 
 export default function ROICalculator() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [form, setForm] = useState({
     businessType: '',
     monthlyLeads: '',
@@ -90,10 +92,10 @@ export default function ROICalculator() {
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate(user ? '/dashboard' : '/')}
             className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm"
           >
-            <ArrowLeft size={16} /> Back to Dashboard
+            <ArrowLeft size={16} /> {user ? 'Back to Dashboard' : 'Back to Home'}
           </button>
           <h1 className="font-display font-bold text-lg text-white">ROI Calculator</h1>
           <div className="w-32" />

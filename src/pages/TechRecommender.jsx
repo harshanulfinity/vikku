@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, LayoutDashboard, Loader2, AlertTriangle, ExternalLink, AlertCircle } from 'lucide-react'
 import { recommendStack } from '../lib/openaiService'
 import LeadCaptureModal from '../components/LeadCaptureModal'
+import { useAuth } from '../contexts/AuthContext'
 
 const PROJECT_TYPES = [
   'Business / Portfolio Website',
@@ -46,6 +47,7 @@ const REQUIREMENTS = [
 
 export default function TechRecommender() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [form, setForm] = useState({
     projectType: '',
     scale: '',
@@ -91,8 +93,8 @@ export default function TechRecommender() {
       <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="tech_recommender" />
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm">
-            <ArrowLeft size={16} /> Back to Dashboard
+          <button onClick={() => navigate(user ? '/dashboard' : '/')} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm">
+            <ArrowLeft size={16} /> {user ? 'Back to Dashboard' : 'Back to Home'}
           </button>
           <h1 className="font-display font-bold text-lg text-white">Tech Stack Recommender</h1>
           <div className="w-32" />

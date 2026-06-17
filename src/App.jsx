@@ -105,10 +105,14 @@ export default function App() {
               <Route path="/login"                   element={<Login />} />
               <Route path="/signup"                  element={<Signup />} />
               <Route path="/dashboard"               element={<Dashboard />} />
-              <Route path="/dashboard/cost-estimator"    element={<RequireAuth><CostEstimator /></RequireAuth>} />
-              <Route path="/dashboard/roi-calculator"     element={<RequireAuth><ROICalculator /></RequireAuth>} />
-              <Route path="/dashboard/timeline-calculator" element={<RequireAuth><TimelineCalculator /></RequireAuth>} />
-              <Route path="/dashboard/tech-recommender"   element={<RequireAuth><TechRecommender /></RequireAuth>} />
+              <Route path="/dashboard/cost-estimator"     element={<CostEstimator />} />
+              <Route path="/dashboard/roi-calculator"      element={<ROICalculator />} />
+              <Route path="/dashboard/timeline-calculator" element={<TimelineCalculator />} />
+              <Route path="/dashboard/tech-recommender"    element={<TechRecommender />} />
+              <Route path="/tools/cost-estimator"          element={<CostEstimator />} />
+              <Route path="/tools/roi-calculator"          element={<ROICalculator />} />
+              <Route path="/tools/timeline-calculator"     element={<TimelineCalculator />} />
+              <Route path="/tools/tech-recommender"        element={<TechRecommender />} />
               <Route path="/tools"                        element={<Pricing />} />
               <Route path="/pm"                          element={<PMRedirect />} />
               <Route path="/pm/dashboard"               element={<PMDashboard />} />

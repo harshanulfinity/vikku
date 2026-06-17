@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Clock, AlertTriangle, Lightbulb, Loader2 } from 'lucide-react'
 import { estimateProjectCost } from '../lib/openaiService'
 import LeadCaptureModal from '../components/LeadCaptureModal'
+import { useAuth } from '../contexts/AuthContext'
 
 function formatCurrency(amount, symbol) {
   return (symbol || '₹') + new Intl.NumberFormat('en-IN').format(amount)
@@ -10,6 +11,7 @@ function formatCurrency(amount, symbol) {
 
 export default function CostEstimator() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [requirements, setRequirements] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -42,10 +44,10 @@ export default function CostEstimator() {
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate(user ? '/dashboard' : '/')}
             className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm"
           >
-            <ArrowLeft size={16} /> Back to Dashboard
+            <ArrowLeft size={16} /> {user ? 'Back to Dashboard' : 'Back to Home'}
           </button>
           <h1 className="font-display font-bold text-lg text-white">AI Cost Estimator</h1>
           <div className="w-20" />

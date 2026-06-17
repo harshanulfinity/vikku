@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { DollarSign, Clock, LayoutDashboard, TrendingUp, Kanban, ArrowRight, Sparkles, Lock } from 'lucide-react'
+import { DollarSign, Clock, LayoutDashboard, TrendingUp, Kanban, ArrowRight, Sparkles } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 const TOOLS = [
@@ -60,14 +60,6 @@ export default function FounderTools() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  const handleToolClick = (path) => {
-    if (!user) {
-      navigate('/signup')
-      return
-    }
-    navigate(path)
-  }
-
   return (
     <section className="py-24 px-6 bg-black relative overflow-hidden">
       {/* Subtle background glow */}
@@ -96,18 +88,14 @@ export default function FounderTools() {
             return (
               <div
                 key={tool.name}
-                onClick={() => handleToolClick(tool.path)}
+                onClick={() => navigate(tool.path)}
                 className="group relative bg-white/[0.03] border border-white/[0.07] hover:border-white/15 rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:bg-white/[0.05] flex flex-col"
               >
-                {!user ? (
-                  <span className="absolute top-4 right-4 flex items-center gap-1 text-[9px] font-bold text-white/30 bg-white/[0.04] border border-white/[0.08] px-2 py-0.5 rounded-full uppercase tracking-wide">
-                    <Lock size={8} /> Sign in
-                  </span>
-                ) : tool.badge ? (
+                {tool.badge && (
                   <span className="absolute top-4 right-4 text-[9px] font-bold text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full uppercase tracking-wide">
                     {tool.badge}
                   </span>
-                ) : null}
+                )}
 
                 <div className={`w-9 h-9 rounded-xl ${tool.bg} flex items-center justify-center mb-4 flex-shrink-0`}>
                   <Icon size={17} className={tool.color} />
@@ -118,7 +106,7 @@ export default function FounderTools() {
                 <p className="text-xs text-white/40 leading-relaxed flex-1">{tool.desc}</p>
 
                 <div className="flex items-center gap-1 mt-4 text-[11px] font-semibold text-white/40 group-hover:text-white/70 transition-colors">
-                  {user ? tool.cta : 'Sign in to use this tool'}
+                  {tool.cta}
                   <ArrowRight size={11} className="group-hover:translate-x-0.5 transition-transform" />
                 </div>
               </div>
