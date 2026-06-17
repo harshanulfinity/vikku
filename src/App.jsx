@@ -54,6 +54,12 @@ function PMRedirect() {
   return <Navigate to={user ? '/pm/dashboard' : '/signup'} replace />
 }
 
+function RequireAuth({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return <div className="min-h-screen bg-black" />
+  return user ? children : <Navigate to="/login" replace />
+}
+
 function Home() {
   usePageMeta({
     title:       'Vikku - Software & Tech Agency | Web Apps, Platforms & Digital Products',
@@ -97,10 +103,10 @@ export default function App() {
               <Route path="/login"                   element={<Login />} />
               <Route path="/signup"                  element={<Signup />} />
               <Route path="/dashboard"               element={<Dashboard />} />
-              <Route path="/dashboard/cost-estimator"    element={<CostEstimator />} />
-              <Route path="/dashboard/roi-calculator"     element={<ROICalculator />} />
-              <Route path="/dashboard/timeline-calculator" element={<TimelineCalculator />} />
-              <Route path="/dashboard/tech-recommender"   element={<TechRecommender />} />
+              <Route path="/dashboard/cost-estimator"    element={<RequireAuth><CostEstimator /></RequireAuth>} />
+              <Route path="/dashboard/roi-calculator"     element={<RequireAuth><ROICalculator /></RequireAuth>} />
+              <Route path="/dashboard/timeline-calculator" element={<RequireAuth><TimelineCalculator /></RequireAuth>} />
+              <Route path="/dashboard/tech-recommender"   element={<RequireAuth><TechRecommender /></RequireAuth>} />
               <Route path="/tools"                        element={<Pricing />} />
               <Route path="/pm"                          element={<PMRedirect />} />
               <Route path="/pm/dashboard"               element={<PMDashboard />} />
