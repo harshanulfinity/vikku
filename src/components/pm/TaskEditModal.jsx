@@ -88,18 +88,15 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     if (!form.title.trim()) return
     onUpdated({ ...task, ...form })
     onClose()
-    // Core fields always exist; only include extended fields if the DB column
-    // is confirmed present (task came from select('*'), so absent = column missing)
-    const update = {
+    updateTask(task.id, {
       title: form.title.trim(),
       description: form.description.trim(),
       priority: form.priority,
       due_date: form.due_date || null,
-    }
-    if ('assigned_to_email' in task) update.assigned_to_email = form.assigned_to_email || null
-    if ('label' in task) update.label = form.label || null
-    if ('task_link' in task) update.task_link = form.task_link.trim() || null
-    updateTask(task.id, update)
+      assigned_to_email: form.assigned_to_email || null,
+      label: form.label || null,
+      task_link: form.task_link.trim() || null,
+    })
   }
 
   const handleDelete = async () => {

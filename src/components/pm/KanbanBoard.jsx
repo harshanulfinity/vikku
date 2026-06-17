@@ -42,16 +42,16 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
     const tempId = `temp-${Date.now()}`
     const tempTask = { id: tempId, project_id: projectId, created_at: new Date().toISOString(), ...fields }
     onTasksChange((prev) => [...prev, tempTask])
-    // Only include optional fields in INSERT when they have a value — avoids errors
-    // if the column doesn't exist in this DB version
-    const insert = { project_id: projectId, title, status, priority: priority || 'medium' }
-    if (description) insert.description = description
-    if (due_date) insert.due_date = due_date
-    if (assigned_to_email) insert.assigned_to_email = assigned_to_email
-    if (label) insert.label = label
-    if (task_link) insert.task_link = task_link
     try {
-      const task = await createTask(insert)
+      const task = await createTask({
+        project_id: projectId, title, status,
+        priority: priority || 'medium',
+        description: description || null,
+        due_date: due_date || null,
+        assigned_to_email: assigned_to_email || null,
+        label: label || null,
+        task_link: task_link || null,
+      })
       if (!task) throw new Error('no task returned')
       onTasksChange((prev) => prev.map((t) => t.id === tempId ? task : t))
       if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_created', entity_type: 'task', entity_title: title })
