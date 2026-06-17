@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Plus, X, ClipboardList, Zap, Eye, CheckCircle, Trash2, MousePointer, List, Columns } from 'lucide-react'
 import TaskCard from './TaskCard'
-import { createTask, updateTask, deleteTask, logActivity } from '../../lib/pmService'
+import TaskCreateModal from './TaskCreateModal'
+import { updateTask, deleteTask, logActivity } from '../../lib/pmService'
 import { LABEL_STYLES } from '../../lib/pmConstants'
 
 const COLUMNS = [
@@ -19,8 +20,7 @@ const EMPTY_STATE = {
 }
 
 export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
-  const [addingTo, setAddingTo] = useState(null)
-  const [newTitle, setNewTitle] = useState('')
+  const [createModalStatus, setCreateModalStatus] = useState(null)
   const [dragTaskId, setDragTaskId] = useState(null)
   const [dragOverCol, setDragOverCol] = useState(null)
   const [labelFilter, setLabelFilter] = useState('')
@@ -37,20 +37,13 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
 
   const usedLabels = [...new Set(tasks.map((t) => t.label).filter(Boolean))]
 
-  const handleAddTask = async (status) => {
-    if (!newTitle.trim()) return
-    const title = newTitle.trim()
-    const tempId = `temp-${Date.now()}`
-    const tempTask = { id: tempId, project_id: projectId, title, status, priority: 'medium', created_at: new Date().toISOString() }
-    onTasksChange((prev) => [...prev, tempTask])
-    setNewTitle('')
-    setAddingTo(null)
-    try {
-      const task = await createTask({ project_id: projectId, title, status, priority: 'medium' })
-      onTasksChange((prev) => prev.map((t) => t.id === tempId ? task : t))
-      if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_created', entity_type: 'task', entity_title: title })
-    } catch {
+  const handleCreated = (task, tempId) => {
+    if (task === null) {
       onTasksChange((prev) => prev.filter((t) => t.id !== tempId))
+    } else if (task.id === tempId) {
+      onTasksChange((prev) => [...prev, task])
+    } else {
+      onTasksChange((prev) => prev.map((t) => t.id === tempId ? task : t))
     }
   }
 
@@ -219,7 +212,7 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
                   </span>
                 </div>
                 {!selectMode && (
-                  <button onClick={() => { setAddingTo(col.id); setNewTitle('') }} className="text-white/30 hover:text-white/70 transition-colors">
+                  <button onClick={() => setCreateModalStatus(col.id)} className="text-white/30 hover:text-white/70 transition-colors">
                     <Plus size={14} />
                   </button>
                 )}
@@ -240,27 +233,7 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
                   />
                 ))}
 
-                {addingTo === col.id && !selectMode && (
-                  <div className="glass rounded-xl p-3">
-                    <input
-                      autoFocus
-                      value={newTitle}
-                      onChange={(e) => setNewTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleAddTask(col.id)
-                        if (e.key === 'Escape') setAddingTo(null)
-                      }}
-                      placeholder="Task title..."
-                      className="w-full bg-transparent text-xs text-white placeholder-white/30 outline-none mb-2"
-                    />
-                    <div className="flex gap-2">
-                      <button onClick={() => handleAddTask(col.id)} className="text-[10px] bg-white text-black px-2.5 py-1 rounded-lg font-medium hover:bg-white/90">Add</button>
-                      <button onClick={() => setAddingTo(null)} className="text-[10px] text-white/40 hover:text-white/70 transition-colors"><X size={12} /></button>
-                    </div>
-                  </div>
-                )}
-
-                {tasksByStatus[col.id].length === 0 && addingTo !== col.id && (
+                {tasksByStatus[col.id].length === 0 && (
                   <div
                     className={`flex-1 rounded-xl border border-dashed flex flex-col items-center justify-center min-h-[100px] gap-2 transition-all duration-200 ${
                       isOver ? 'border-white/40 bg-white/[0.06]' : 'border-white/[0.08] hover:border-white/20'
@@ -275,6 +248,16 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
           )
         })}
       </div>}
+
+      {createModalStatus && (
+        <TaskCreateModal
+          projectId={projectId}
+          initialStatus={createModalStatus}
+          user={user}
+          onCreated={handleCreated}
+          onClose={() => setCreateModalStatus(null)}
+        />
+      )}
 
       {/* Bulk action floating bar */}
       {selectMode && selected.size > 0 && (
