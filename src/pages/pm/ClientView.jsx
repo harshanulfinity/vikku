@@ -258,18 +258,28 @@ export default function ClientView() {
     return latest.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
   })()
 
+  const accentColor = project.client_brand_color || project.color || '#ffffff'
+
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Accent bar */}
-      <div className="h-1" style={{ background: `linear-gradient(90deg, ${project.color || '#ffffff'}40, ${project.color || '#ffffff'}10)` }} />
+      <div className="h-1" style={{ background: `linear-gradient(90deg, ${accentColor}60, ${accentColor}15)` }} />
 
       {/* Header */}
       <div className="border-b border-white/[0.05] px-4 sm:px-6 py-4 sm:py-5">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: `${project.color || '#ffffff'}20` }}>
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color || '#ffffff' }} />
-            </div>
+            {project.client_brand_logo ? (
+              <img
+                src={project.client_brand_logo}
+                alt={project.client_brand_name || 'Brand logo'}
+                className="w-8 h-8 rounded-xl object-contain flex-shrink-0 bg-white/5"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: `${accentColor}20` }}>
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accentColor }} />
+              </div>
+            )}
             <div className="min-w-0">
               <h1 className="font-display font-semibold text-white text-sm sm:text-base truncate">{project.name}</h1>
               {project.client_name && (
@@ -309,8 +319,8 @@ export default function ClientView() {
           </div>
           <div className="h-2 bg-white/10 rounded-full overflow-hidden mb-3">
             <div
-              className="h-full bg-white rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${progress}%`, backgroundColor: accentColor }}
             />
           </div>
           <div className="grid grid-cols-4 gap-2">
@@ -369,9 +379,16 @@ export default function ClientView() {
         <ClientComments projectId={project.id} shareToken={token} />
 
         {/* Footer */}
-        <div className="text-center pt-6 border-t border-white/[0.05]">
-          {project.client_brand_name ? (
-            <p className="text-xs text-white/20">Shared by <span className="text-white/40">{project.client_brand_name}</span></p>
+        <div className="flex flex-col items-center gap-2 pt-6 border-t border-white/[0.05]">
+          {(project.client_brand_logo || project.client_brand_name) ? (
+            <div className="flex items-center gap-2">
+              {project.client_brand_logo && (
+                <img src={project.client_brand_logo} alt={project.client_brand_name || 'logo'} className="h-5 object-contain" />
+              )}
+              {project.client_brand_name && (
+                <span className="text-xs text-white/40 font-medium">{project.client_brand_name}</span>
+              )}
+            </div>
           ) : (
             <p className="text-xs text-white/20">Powered by <a href="https://vikku.in/pm" className="text-white/40 hover:text-white/60 transition-colors">Vikku PM</a></p>
           )}

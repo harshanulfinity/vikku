@@ -33,6 +33,7 @@ const UPGRADE_REASONS = {
   ai:       'AI Project Planner is a Pro feature. Describe your project and get tasks + milestones in seconds.',
   time:     'Time tracking is a Pro feature. Track time per task, run reports, and export billable hours.',
   workflow: 'Custom workflows are a Pro feature. Create stages that match your team\'s actual process.',
+  branding: 'Client portal branding is a Pro feature. Add your logo and accent color to the client share page.',
 }
 
 export default function ProjectDetail() {
@@ -305,23 +306,68 @@ export default function ProjectDetail() {
                 </button>
               </div>
             </div>
-            {isPro && (
-              <div className="flex items-center gap-2">
-                <label className="text-[10px] text-white/30 whitespace-nowrap">Brand name</label>
-                <input
-                  type="text"
-                  defaultValue={project?.client_brand_name || ''}
-                  placeholder="e.g. Acme Studio (replaces 'Vikku PM' on client page)"
-                  onBlur={(e) => {
-                    const val = e.target.value.trim()
-                    if (val !== (project?.client_brand_name || '')) {
-                      updateProject(project.id, { client_brand_name: val || null })
-                        .then((updated) => setProject(updated))
-                        .catch(() => {})
-                    }
-                  }}
-                  className="flex-1 text-xs bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
-                />
+            {isPro ? (
+              <div className="space-y-2 pt-1 border-t border-white/[0.05]">
+                <p className="text-[10px] text-white/30 font-medium uppercase tracking-wider">Client portal branding</p>
+                <div className="flex items-center gap-2">
+                  <label className="text-[10px] text-white/30 w-20 flex-shrink-0">Brand name</label>
+                  <input
+                    type="text"
+                    defaultValue={project?.client_brand_name || ''}
+                    placeholder="e.g. Acme Studio"
+                    onBlur={(e) => {
+                      const val = e.target.value.trim()
+                      if (val !== (project?.client_brand_name || '')) {
+                        updateProject(project.id, { client_brand_name: val || null })
+                          .then((updated) => setProject(updated))
+                          .catch(() => {})
+                      }
+                    }}
+                    className="flex-1 text-xs bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-[10px] text-white/30 w-20 flex-shrink-0">Logo URL</label>
+                  <input
+                    type="url"
+                    defaultValue={project?.client_brand_logo || ''}
+                    placeholder="https://your-logo.png"
+                    onBlur={(e) => {
+                      const val = e.target.value.trim()
+                      if (val !== (project?.client_brand_logo || '')) {
+                        updateProject(project.id, { client_brand_logo: val || null })
+                          .then((updated) => setProject(updated))
+                          .catch(() => {})
+                      }
+                    }}
+                    className="flex-1 text-xs bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
+                  />
+                  {project?.client_brand_logo && (
+                    <img src={project.client_brand_logo} alt="logo preview" className="w-6 h-6 rounded object-contain flex-shrink-0 bg-white/10" />
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-[10px] text-white/30 w-20 flex-shrink-0">Accent color</label>
+                  <div className="flex items-center gap-2 flex-1">
+                    <input
+                      type="color"
+                      defaultValue={project?.client_brand_color || '#ffffff'}
+                      onChange={(e) => {
+                        updateProject(project.id, { client_brand_color: e.target.value })
+                          .then((updated) => setProject(updated))
+                          .catch(() => {})
+                      }}
+                      className="w-8 h-7 rounded cursor-pointer bg-transparent border border-white/[0.08] p-0.5"
+                    />
+                    <span className="text-[10px] text-white/30">{project?.client_brand_color || 'Default'}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 pt-1 border-t border-white/[0.05]">
+                <span className="text-[10px] text-white/20">Custom branding</span>
+                <span className="text-[9px] text-yellow-400/60 border border-yellow-400/20 rounded px-1.5 py-0.5">Pro</span>
+                <button onClick={() => triggerUpgrade('branding')} className="text-[10px] text-white/30 hover:text-white/60 transition-colors ml-auto">Upgrade to customise →</button>
               </div>
             )}
           </div>
