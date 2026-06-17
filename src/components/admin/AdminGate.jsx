@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 
-const ADMIN_EMAILS = ['sanikommuharshavardhanressy6@gmail.com']
+const ADMIN_EMAILS = ['sanikommuharshavardhanreddy6@gmail.com']
 
 export default function AdminGate({ children }) {
   const { user, loading } = useAuth()
