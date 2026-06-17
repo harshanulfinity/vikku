@@ -52,6 +52,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     task_link: task.task_link || '',
   })
   const [deleting, setDeleting] = useState(false)
+  const [commentError, setCommentError] = useState('')
 
   const [comments, setComments] = useState([])
   const [newComment, setNewComment] = useState('')
@@ -86,7 +87,9 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
 
   const handleSave = () => {
     if (!form.title.trim()) return
-    onUpdated({ ...task, ...form })
+    if (String(task.id).startsWith('temp-')) return
+    const updated = { ...task, ...form }
+    onUpdated(updated)
     onClose()
     updateTask(task.id, {
       title: form.title.trim(),
@@ -96,6 +99,8 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
       assigned_to_email: form.assigned_to_email || null,
       label: form.label || null,
       task_link: form.task_link.trim() || null,
+    }).catch((err) => {
+      console.error('updateTask failed:', err)
     })
   }
 
@@ -109,11 +114,26 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
 
   const handleSendComment = async () => {
     if (!newComment.trim() || !user) return
+    if (String(task.id).startsWith('temp-')) return
+    setCommentError('')
     setSendingComment(true)
-    const comment = await createTaskComment({ task_id: task.id, user_id: user.id, user_email: user.email, content: newComment.trim() })
-    setComments((prev) => [...prev, comment])
+    const tempId = `temp-comment-${Date.now()}`
+    const tempComment = { id: tempId, task_id: task.id, user_id: user.id, user_email: user.email, content: newComment.trim(), created_at: new Date().toISOString() }
+    setComments((prev) => [...prev, tempComment])
     setNewComment('')
-    setSendingComment(false)
+    try {
+      const saved = await createTaskComment({ task_id: task.id, user_id: user.id, user_email: user.email, content: tempComment.content })
+      if (saved) {
+        setComments((prev) => prev.map((c) => c.id === tempId ? saved : c))
+      }
+    } catch (err) {
+      console.error('createTaskComment failed:', err)
+      setComments((prev) => prev.filter((c) => c.id !== tempId))
+      setCommentError(err?.message || 'Failed to save comment')
+      setNewComment(tempComment.content)
+    } finally {
+      setSendingComment(false)
+    }
   }
 
   const handleDeleteComment = async (commentId) => {
@@ -466,6 +486,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                   ))}
                 </div>
               )}
+              {commentError && <p className="text-[10px] text-red-400 mb-2">{commentError}</p>}
               <div className="flex gap-2">
                 <input
                   value={newComment}
