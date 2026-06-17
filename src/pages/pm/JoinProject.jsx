@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Search, AlertTriangle, CheckCircle, Users, Lock } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getProject, getProjectMembers, joinProject } from '../../lib/pmService'
-import { getSubscription } from '../../lib/razorpayService'
-
-const MEMBER_LIMITS = { free: 3, pro: 10, team: Infinity }
+import { getProject, getProjectMembers, joinProject, getProjectMemberLimit } from '../../lib/pmService'
 
 export default function JoinProject() {
   const { projectId } = useParams()
@@ -46,11 +43,11 @@ export default function JoinProject() {
         return
       }
 
-      // Check member limit based on owner's plan
-      const ownerSub = await getSubscription(p.user_id)
-      const limit = MEMBER_LIMITS[ownerSub.plan] ?? MEMBER_LIMITS.free
-      // +1 for owner who is not in pm_project_members
-      if (members.length + 1 >= limit) {
+      // Check member limit using SECURITY DEFINER RPC (bypasses RLS so joiner
+      // can read the owner's plan without the cross-user read being blocked).
+      const { limit } = await getProjectMemberLimit(projectId)
+      // members.length = rows in pm_project_members (excludes owner), +1 accounts for owner
+      if (limit !== Infinity && members.length + 1 >= limit) {
         setStatus('full')
         return
       }

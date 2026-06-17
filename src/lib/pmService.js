@@ -240,6 +240,20 @@ export async function removeProjectMember(memberId) {
   if (error) throw error
 }
 
+// Calls a SECURITY DEFINER RPC so any authenticated user can read the owner's plan.
+// Run the SQL in supabase/migrations/get_project_member_limit.sql to create the function.
+export async function getProjectMemberLimit(projectId) {
+  if (!supabase) return { plan: 'free', limit: 3 }
+  try {
+    const { data, error } = await supabase.rpc('get_project_member_limit', { p_project_id: projectId })
+    if (error) throw error
+    return data ?? { plan: 'free', limit: 3 }
+  } catch (err) {
+    console.error('get_project_member_limit RPC failed:', err)
+    return { plan: 'free', limit: 3 }
+  }
+}
+
 export async function getSharedProjects(userId) {
   if (!supabase) return []
   try {
