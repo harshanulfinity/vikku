@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabaseClient'
 import { ArrowLeft, Mail, Lock, AlertCircle, CheckCircle2, Inbox } from 'lucide-react'
 
 export default function Signup() {
@@ -12,6 +13,12 @@ export default function Signup() {
   const [sent, setSent] = useState(false)
   const { signUp } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const refCode = searchParams.get('ref')
+
+  useEffect(() => {
+    if (refCode) sessionStorage.setItem('vikku_ref', refCode)
+  }, [refCode])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -29,12 +36,17 @@ export default function Signup() {
 
     setLoading(true)
 
-    const { error } = await signUp(email, password)
+    const { error, data } = await signUp(email, password)
 
     if (error) {
       setError(error.message)
       setLoading(false)
     } else {
+      const ref = sessionStorage.getItem('vikku_ref')
+      if (ref && data?.user?.id) {
+        sessionStorage.removeItem('vikku_ref')
+        await supabase.from('referrals').insert({ referrer_code: ref, referred_user_id: data.user.id }).catch(() => {})
+      }
       setSent(true)
     }
   }

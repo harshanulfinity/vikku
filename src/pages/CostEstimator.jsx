@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Clock, AlertTriangle, Lightbulb, Loader2 } from 'lucide-react'
 import { estimateProjectCost } from '../lib/openaiService'
+import LeadCaptureModal from '../components/LeadCaptureModal'
 
 function formatCurrency(amount, symbol) {
   return (symbol || '₹') + new Intl.NumberFormat('en-IN').format(amount)
@@ -13,6 +14,7 @@ export default function CostEstimator() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+  const [showLead, setShowLead] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -25,6 +27,7 @@ export default function CostEstimator() {
     try {
       const estimate = await estimateProjectCost(requirements, null)
       setResult(estimate)
+      setShowLead(true)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -34,6 +37,7 @@ export default function CostEstimator() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="cost_estimator" />
       {/* Header */}
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">

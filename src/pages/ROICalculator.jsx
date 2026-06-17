@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, TrendingUp, Loader2, AlertTriangle, DollarSign, Calendar, Zap } from 'lucide-react'
 import { calculateROI } from '../lib/openaiService'
+import LeadCaptureModal from '../components/LeadCaptureModal'
 
 const BUSINESS_TYPES = [
   'Restaurant / Cafe / Food Business',
@@ -44,6 +45,7 @@ export default function ROICalculator() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+  const [showLead, setShowLead] = useState(false)
 
   const toggleSource = (src) => {
     setForm(f => ({
@@ -71,6 +73,7 @@ export default function ROICalculator() {
         howTheyGetClients: form.howTheyGetClients.join(', '),
       })
       setResult(res)
+      setShowLead(true)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -82,6 +85,7 @@ export default function ROICalculator() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="roi_calculator" />
       {/* Header */}
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">

@@ -54,15 +54,23 @@ serve(async (req) => {
 
     // ── GET: overview ─────────────────────────────────────────────
     if (type === 'overview') {
-      const [usersRes, subsRes, projectsRes] = await Promise.all([
+      const [usersRes, subsRes, projectsRes, subscribersRes] = await Promise.all([
         admin.auth.admin.listUsers({ perPage: 1000 }),
         admin.from('user_subscriptions').select('plan, status, created_at'),
         admin.from('pm_projects').select('status, created_at'),
+        admin.from('subscribers').select('source, created_at', { count: 'exact', head: false }),
       ])
 
-      const users    = usersRes.data?.users || []
-      const subs     = subsRes.data || []
-      const projects = projectsRes.data || []
+      const users       = usersRes.data?.users || []
+      const subs        = subsRes.data || []
+      const projects    = projectsRes.data || []
+      const subscribers = subscribersRes.data || []
+
+      const subscribersBySource: Record<string, number> = {}
+      subscribers.forEach((s: { source?: string }) => {
+        const src = s.source || 'other'
+        subscribersBySource[src] = (subscribersBySource[src] || 0) + 1
+      })
 
       const proSubs  = subs.filter(s => s.plan === 'pro'  && s.status === 'active')
       const teamSubs = subs.filter(s => s.plan === 'team' && s.status === 'active')
@@ -93,6 +101,8 @@ serve(async (req) => {
         totalProjects: projects.length,
         signupsByDay: Object.entries(signupsByDay).map(([date, count]) => ({ date, count })),
         projectStatus,
+        totalSubscribers: subscribers.length,
+        subscribersBySource,
       })
     }
 

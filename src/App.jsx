@@ -43,6 +43,8 @@ const ReferralPage          = lazy(() => import('./pages/pm/ReferralPage'))
 const InvoiceGenerator      = lazy(() => import('./pages/pm/InvoiceGenerator'))
 const PublicShowcase        = lazy(() => import('./pages/pm/PublicShowcase'))
 const PaymentDemo            = lazy(() => import('./pages/PaymentDemo'))
+const PrivacyPolicy          = lazy(() => import('./pages/PrivacyPolicy'))
+const TermsOfService         = lazy(() => import('./pages/TermsOfService'))
 const NotFound               = lazy(() => import('./pages/NotFound'))
 const AdminDashboard         = lazy(() => import('./pages/admin/AdminDashboard'))
 const AdminUsers             = lazy(() => import('./pages/admin/AdminUsers'))
@@ -122,6 +124,8 @@ export default function App() {
               <Route path="/work/rolex-ads"          element={<CaseStudyRolexAds />} />
               <Route path="/work/media-manager"      element={<CaseStudyMediaManager />} />
               <Route path="/payment-demo"            element={<PaymentDemo />} />
+              <Route path="/privacy"                 element={<PrivacyPolicy />} />
+              <Route path="/terms"                   element={<TermsOfService />} />
               <Route path="/admin"         element={<AdminGate><AdminDashboard /></AdminGate>} />
               <Route path="/admin/users"   element={<AdminGate><AdminUsers /></AdminGate>} />
               <Route path="/admin/billing" element={<AdminGate><AdminBilling /></AdminGate>} />

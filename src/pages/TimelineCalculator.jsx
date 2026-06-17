@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Clock, Loader2, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react'
 import { calculateTimeline } from '../lib/openaiService'
+import LeadCaptureModal from '../components/LeadCaptureModal'
 
 const PROJECT_TYPES = [
   'Landing Page / Business Website',
@@ -49,6 +50,7 @@ export default function TimelineCalculator() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+  const [showLead, setShowLead] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -59,6 +61,7 @@ export default function TimelineCalculator() {
     try {
       const res = await calculateTimeline(form)
       setResult(res)
+      setShowLead(true)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -88,6 +91,7 @@ export default function TimelineCalculator() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="timeline_calculator" />
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm">

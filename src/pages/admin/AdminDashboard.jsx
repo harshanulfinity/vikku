@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { TrendingUp, Users, Folder, IndianRupee, RefreshCw } from 'lucide-react'
+import { TrendingUp, Users, Folder, IndianRupee, RefreshCw, Mail } from 'lucide-react'
 import AdminLayout from './AdminLayout'
 import { getAdminOverview } from '../../lib/adminService'
 
@@ -79,7 +79,7 @@ export default function AdminDashboard() {
       ) : data ? (
         <>
           {/* Stat cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
             <StatCard
               icon={IndianRupee}
               label="MRR"
@@ -105,6 +105,13 @@ export default function AdminDashboard() {
               label="Projects"
               value={data.totalProjects}
               sub="across all users"
+            />
+            <StatCard
+              icon={Mail}
+              label="Subscribers"
+              value={data.totalSubscribers ?? '—'}
+              sub="newsletter + leads"
+              color="text-blue-400"
             />
           </div>
 
@@ -139,6 +146,32 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
+
+          {/* Subscriber sources */}
+          {data.subscribersBySource && Object.keys(data.subscribersBySource).length > 0 && (
+            <div className="glass rounded-2xl p-5 mb-4">
+              <p className="text-xs text-white/40 uppercase tracking-widest mb-4">Lead Sources</p>
+              <div className="space-y-2">
+                {Object.entries(data.subscribersBySource)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([src, count]) => {
+                    const pct = data.totalSubscribers > 0 ? Math.round((count / data.totalSubscribers) * 100) : 0
+                    const label = src.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+                    return (
+                      <div key={src}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-white/60">{label}</span>
+                          <span className="text-xs text-white/40">{count}</span>
+                        </div>
+                        <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500/60 rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            </div>
+          )}
 
           {/* Project status */}
           <div className="glass rounded-2xl p-5">

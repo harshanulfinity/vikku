@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, LayoutDashboard, Loader2, AlertTriangle, ExternalLink, AlertCircle } from 'lucide-react'
 import { recommendStack } from '../lib/openaiService'
+import LeadCaptureModal from '../components/LeadCaptureModal'
 
 const PROJECT_TYPES = [
   'Business / Portfolio Website',
@@ -55,6 +56,7 @@ export default function TechRecommender() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+  const [showLead, setShowLead] = useState(false)
 
   const toggleReq = (req) => {
     setForm(f => ({
@@ -76,6 +78,7 @@ export default function TechRecommender() {
     try {
       const res = await recommendStack(form)
       setResult(res)
+      setShowLead(true)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -85,6 +88,7 @@ export default function TechRecommender() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="tech_recommender" />
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm">

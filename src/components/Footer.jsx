@@ -18,6 +18,11 @@ const tools = [
   { label: 'Tools',             href: '/tools' },
 ]
 
+const legal = [
+  { label: 'Privacy Policy', href: '/privacy' },
+  { label: 'Terms of Service', href: '/terms' },
+]
+
 const socials = [
   { icon: Instagram, href: 'https://www.instagram.com/vikku.in__', label: 'Instagram' },
   { icon: Mail,      href: 'mailto:connect@vikku.in',              label: 'Email' },
@@ -89,6 +94,14 @@ export default function Footer() {
             <h4 className="text-[10px] text-white uppercase tracking-widest mb-4">Free Tools</h4>
             <ul className="space-y-3">
               {tools.map(({ label, href }) => (
+                <li key={label}>
+                  <a href={href} className="text-white text-xs hover:text-white/70 transition-colors">{label}</a>
+                </li>
+              ))}
+            </ul>
+            <h4 className="text-[10px] text-white uppercase tracking-widest mb-3 mt-6">Legal</h4>
+            <ul className="space-y-3">
+              {legal.map(({ label, href }) => (
                 <li key={label}>
                   <a href={href} className="text-white text-xs hover:text-white/70 transition-colors">{label}</a>
                 </li>
