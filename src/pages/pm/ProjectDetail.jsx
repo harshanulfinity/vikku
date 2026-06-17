@@ -181,7 +181,7 @@ export default function ProjectDetail() {
     </div>
     <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
     <h2>Tasks</h2>
-    ${tasks.map(t=>`<div class="task"><span class="badge ${t.status}">${t.status.replace('_',' ')}</span>${t.title}</div>`).join('')}
+    ${tasks.map(t=>`<div class="task"><span class="badge ${t.status||''}">${(t.status||'').replace('_',' ')}</span>${t.title||''}</div>`).join('')}
     ${milestones.length>0?`<h2>Milestones</h2>${milestones.map(m=>`<div class="milestone"><span>${m.completed?'✓ ':''} ${m.title}</span><span style="color:#888">${new Date(m.due_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span></div>`).join('')}`:''}
     <script>window.onload=()=>window.print()</script></body></html>`)
     win.document.close()

@@ -153,7 +153,7 @@ export default function CalendarView({ tasks, milestones }) {
                 {t.title}
               </span>
               <span className="ml-auto text-[9px] text-white/30 capitalize bg-white/[0.05] px-1.5 py-0.5 rounded">
-                {t.status.replace('_', ' ')}
+                {(t.status || '').replace('_', ' ')}
               </span>
             </div>
           ))}
