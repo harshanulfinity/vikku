@@ -61,6 +61,7 @@ export default function ProjectDetail() {
   const [workflow, setWorkflow] = useState(null)
   const [showWorkflow, setShowWorkflow] = useState(false)
   const [dependencies, setDependencies] = useState([]) // [{task_id, depends_on_task_id}]
+  const [pinValue, setPinValue] = useState('')
   const { isPro } = useSubscription()
 
   useEffect(() => {
@@ -118,9 +119,18 @@ export default function ProjectDetail() {
     setActiveTab(tab.key)
   }
 
+  useEffect(() => {
+    if (project?.id) setPinValue(project.share_pin || '')
+  }, [project?.id])
+
   const shareUrl = project ? `${window.location.origin}/pm/share/${project.share_token}` : ''
 
-  const handleCopy = async () => {
+  const handleSaveAndCopy = async () => {
+    const pin = pinValue.trim()
+    if (pin !== (project?.share_pin || '')) {
+      const updated = await updateProject(project.id, { share_pin: pin || null }).catch(() => null)
+      if (updated) setProject(updated)
+    }
     await navigator.clipboard.writeText(shareUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -301,18 +311,10 @@ export default function ProjectDetail() {
         <div className="border-b border-white/[0.05] bg-white/[0.02] px-6 py-4">
           <div className="max-w-7xl mx-auto space-y-3">
             <div>
-              <p className="text-xs text-white/50 mb-2">Client share link - anyone with this link can view the project (read-only, no login needed)</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs text-white/70 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 truncate">
-                  {shareUrl}
-                </code>
-                <button
-                  onClick={handleCopy}
-                  className="flex items-center gap-1.5 text-xs bg-white text-black px-3 py-2 rounded-lg font-medium hover:bg-white/90 transition-colors flex-shrink-0"
-                >
-                  {copied ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy link</>}
-                </button>
-              </div>
+              <p className="text-xs text-white/50 mb-2">Client share link — anyone with this link can view the project (read-only, no login needed)</p>
+              <code className="block text-xs text-white/70 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 truncate">
+                {shareUrl}
+              </code>
             </div>
             {isPro ? (
               <div className="space-y-2 pt-1 border-t border-white/[0.05]">
@@ -376,18 +378,17 @@ export default function ProjectDetail() {
                     type="text"
                     inputMode="numeric"
                     maxLength={8}
-                    defaultValue={project?.share_pin || ''}
+                    value={pinValue}
+                    onChange={(e) => setPinValue(e.target.value)}
                     placeholder="Leave blank for no PIN"
-                    onBlur={(e) => {
-                      const val = e.target.value.trim()
-                      if (val !== (project?.share_pin || '')) {
-                        updateProject(project.id, { share_pin: val || null })
-                          .then((updated) => setProject(updated))
-                          .catch(() => {})
-                      }
-                    }}
                     className="flex-1 text-xs bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors font-mono tracking-widest"
                   />
+                  <button
+                    onClick={handleSaveAndCopy}
+                    className="flex items-center gap-1.5 text-xs bg-white text-black px-3 py-1.5 rounded-lg font-medium hover:bg-white/90 transition-colors flex-shrink-0"
+                  >
+                    {copied ? <><Check size={12} /> Saved & Copied!</> : <><Copy size={12} /> Save & Copy link</>}
+                  </button>
                 </div>
               </div>
             ) : (
