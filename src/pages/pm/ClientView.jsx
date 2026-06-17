@@ -159,7 +159,7 @@ function ClientComments({ projectId, shareToken }) {
             <div key={c.id} className="glass rounded-xl px-4 py-3">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] text-white/60 font-semibold flex-shrink-0">
-                  {c.author_name[0].toUpperCase()}
+                  {c.author_name?.[0]?.toUpperCase() || 'A'}
                 </div>
                 <span className="text-xs font-medium text-white/70">{c.author_name}</span>
                 <span className="text-[10px] text-white/25 ml-auto">
@@ -446,7 +446,7 @@ export default function ClientView() {
           {[
             { label: 'Progress', value: `${progress}%`, sub: `${doneTasks} of ${totalTasks} tasks done` },
             { label: 'In Progress', value: inProgress, sub: 'tasks active' },
-            { label: 'Next Due', value: nextMilestone ? new Date(nextMilestone.due_date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—', sub: nextMilestone?.title || 'All milestones done' },
+            { label: 'Next Due', value: nextMilestone?.due_date ? new Date(nextMilestone.due_date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—', sub: nextMilestone?.title || 'All milestones done' },
           ].map((stat) => (
             <div key={stat.label} className="glass rounded-2xl p-4 sm:p-5 text-center">
               <p className="text-xl sm:text-2xl font-bold text-white mb-1">{stat.value}</p>

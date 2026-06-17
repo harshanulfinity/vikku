@@ -130,7 +130,7 @@ function VelocityChart({ tasks, doneKeys }) {
         {rows.map((r) => (
           <div key={r.email} className="flex items-center gap-3">
             <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] text-white/50 flex-shrink-0">
-              {r.email[0].toUpperCase()}
+              {r.email?.[0]?.toUpperCase() || '?'}
             </span>
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
