@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt, Timer, Sparkles } from 'lucide-react'
+import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt, Timer, Sparkles, MessageSquare } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getProject, getTasks, getMilestones, deleteProject, getProjectTimeLogs } from '../../lib/pmService'
+import { getProject, getTasks, getMilestones, deleteProject, getProjectTimeLogs, getClientComments } from '../../lib/pmService'
 import KanbanBoard from '../../components/pm/KanbanBoard'
 import MilestoneList from '../../components/pm/MilestoneList'
 import TimelineView from '../../components/pm/TimelineView'
@@ -48,6 +48,7 @@ export default function ProjectDetail() {
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showOnboard, setShowOnboard] = useState(false)
+  const [clientComments, setClientComments] = useState([])
   const { isPro } = useSubscription()
 
   useEffect(() => {
@@ -64,6 +65,7 @@ export default function ProjectDetail() {
       setTasks(t)
       setMilestones(m)
       setFetching(false)
+      if (p.share_token) getClientComments(p.share_token).then(setClientComments)
       if (searchParams.get('onboard') === '1') {
         setShowOnboard(true)
         setSearchParams({}, { replace: true })
@@ -420,6 +422,32 @@ export default function ProjectDetail() {
             )}
 
             <ActivityFeed projectId={id} />
+
+            {clientComments.length > 0 && (
+              <div className="glass rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <MessageSquare size={13} className="text-white/40" />
+                  <p className="text-xs text-white/40">Client Feedback</p>
+                  <span className="text-[10px] text-white/25 bg-white/[0.05] px-1.5 py-0.5 rounded-full ml-auto">{clientComments.length}</span>
+                </div>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {clientComments.map((c) => (
+                    <div key={c.id} className="border-b border-white/[0.05] pb-3 last:border-0 last:pb-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center text-[8px] text-white/50 flex-shrink-0">
+                          {c.author_name?.[0]?.toUpperCase()}
+                        </div>
+                        <span className="text-[10px] font-medium text-white/60">{c.author_name}</span>
+                        <span className="text-[9px] text-white/20 ml-auto">
+                          {new Date(c.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-white/50 leading-relaxed pl-6">{c.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="glass rounded-2xl p-5">
               <p className="text-xs text-white/40 mb-3">Danger zone</p>
