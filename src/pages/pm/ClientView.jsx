@@ -481,9 +481,11 @@ export default function ClientView() {
         </div>
 
         {/* Tasks by status */}
-        {['in_progress', 'review', 'todo', 'done'].map((status) => {
+        {[...new Set(tasks.map((t) => t.status).filter(Boolean))].map((status) => {
           const filtered = tasks.filter((t) => t.status === status)
           if (filtered.length === 0) return null
+          const label = STATUS_LABELS[status] || status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+          const color = STATUS_COLORS[status] || 'text-white/60'
           return (
             <div key={status}>
               <div className="flex items-center gap-2 mb-3">
@@ -493,7 +495,7 @@ export default function ClientView() {
                     ? <Clock size={14} className="text-blue-400" />
                     : <Circle size={14} className="text-white/40" />
                 }
-                <h2 className={`text-xs font-semibold ${STATUS_COLORS[status]}`}>{STATUS_LABELS[status]}</h2>
+                <h2 className={`text-xs font-semibold ${color}`}>{label}</h2>
                 <span className="text-[10px] text-white/30">({filtered.length})</span>
               </div>
               <div className="space-y-2">

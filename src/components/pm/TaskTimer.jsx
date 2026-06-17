@@ -117,7 +117,7 @@ export default function TaskTimer({ task, projectId, user, isPro, onTimerStop, o
           ) : (
             <Play size={10} fill="currentColor" />
           )}
-          {isPro ? 'Start timer' : 'Start timer'}
+          Start timer
           {!isPro && <span className="text-yellow-400/60 text-[9px]">Pro</span>}
         </button>
       )}

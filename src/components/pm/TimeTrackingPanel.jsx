@@ -113,7 +113,7 @@ export default function TimeTrackingPanel({ projectId, tasks }) {
       return { date: d.toISOString().slice(0, 10), label: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }), minutes: 0 }
     })
     filteredLogs.forEach((l) => {
-      const day = new Date(l.created_at).toISOString().slice(0, 10)
+      const day = new Date(l.end_time || l.created_at).toISOString().slice(0, 10)
       const slot = days.find((d) => d.date === day)
       if (slot) slot.minutes += l.minutes || 0
     })

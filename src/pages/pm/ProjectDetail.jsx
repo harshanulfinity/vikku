@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt, Timer, Sparkles, MessageSquare, AlertCircle, Clock, Layers } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getProject, getTasks, getMilestones, deleteProject, getWorkflow, getClientComments, updateProject, getProjectDependencies } from '../../lib/pmService'
+import { getProject, getTasks, getMilestones, deleteProject, getWorkflow, getClientComments, updateProject, getProjectDependencies, getSubtaskCounts } from '../../lib/pmService'
 import { supabase } from '../../lib/supabaseClient'
 import KanbanBoard from '../../components/pm/KanbanBoard'
 import MilestoneList from '../../components/pm/MilestoneList'
@@ -75,8 +75,18 @@ export default function ProjectDetail() {
       const [p, t, m] = await Promise.all([getProject(id), getTasks(id), getMilestones(id)])
       if (!p) { navigate('/pm/dashboard'); return }
       setProject(p)
-      setTasks(t)
       setMilestones(m)
+      // Annotate tasks with subtask counts so TaskCard badges are accurate
+      if (t.length) {
+        const counts = await getSubtaskCounts(t.map((task) => task.id))
+        setTasks(t.map((task) => ({
+          ...task,
+          _subtasksTotal: counts[task.id]?.total || 0,
+          _subtasksDone: counts[task.id]?.done || 0,
+        })))
+      } else {
+        setTasks(t)
+      }
       setFetching(false)
       if (p.workflow_id) getWorkflow(p.workflow_id).then(setWorkflow)
       getProjectDependencies(id).then(setDependencies)

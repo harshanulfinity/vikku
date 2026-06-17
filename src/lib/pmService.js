@@ -331,6 +331,23 @@ export async function logActivity(fields) {
 
 // ── Subtasks ───────────────────────────────────────────────
 
+export async function getSubtaskCounts(taskIds) {
+  if (!supabase || !taskIds.length) return {}
+  try {
+    const { data } = await supabase
+      .from('pm_subtasks')
+      .select('task_id, completed')
+      .in('task_id', taskIds)
+    const map = {}
+    ;(data || []).forEach((s) => {
+      if (!map[s.task_id]) map[s.task_id] = { total: 0, done: 0 }
+      map[s.task_id].total++
+      if (s.completed) map[s.task_id].done++
+    })
+    return map
+  } catch { return {} }
+}
+
 export async function getSubtasks(taskId) {
   if (!supabase) return []
   try {
