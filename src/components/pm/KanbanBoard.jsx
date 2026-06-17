@@ -3,24 +3,26 @@ import { Plus, X, ClipboardList, Zap, Eye, CheckCircle, Trash2, MousePointer, Li
 import TaskCard from './TaskCard'
 import TaskCreateModal from './TaskCreateModal'
 import { createTask, updateTask, deleteTask, logActivity } from '../../lib/pmService'
-import { LABEL_STYLES } from '../../lib/pmConstants'
+import { LABEL_STYLES, DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
 
-const COLUMNS = [
-  { id: 'todo',        label: 'To Do',       color: 'bg-white/10' },
-  { id: 'in_progress', label: 'In Progress',  color: 'bg-blue-500/20' },
-  { id: 'review',      label: 'Review',       color: 'bg-yellow-500/20' },
-  { id: 'done',        label: 'Done',         color: 'bg-green-500/20' },
-]
-
-const EMPTY_STATE = {
+const DEFAULT_EMPTY = {
   todo:        { Icon: ClipboardList, hint: 'Add tasks to get started' },
   in_progress: { Icon: Zap,          hint: 'Drag tasks here to start working' },
   review:      { Icon: Eye,          hint: 'Move tasks here when ready to review' },
   done:        { Icon: CheckCircle,  hint: 'Completed tasks will appear here' },
 }
 
-export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
-  const [createModalStatus, setCreateModalStatus] = useState(null)
+function stageColor(hexColor) {
+  // Convert a hex color to a subtle Tailwind-compatible inline style
+  return hexColor || '#6b7280'
+}
+
+export default function KanbanBoard({ projectId, tasks, onTasksChange, user, workflow }) {
+  // workflow = array of stage objects [{status_key, name, color, is_done, position}, ...]
+  // or null/undefined → use DEFAULT_WORKFLOW_STAGES
+  const stages = (workflow && workflow.length > 0) ? workflow : DEFAULT_WORKFLOW_STAGES
+
+  const [createModalStage, setCreateModalStage] = useState(null) // { status_key, name }
   const [dragTaskId, setDragTaskId] = useState(null)
   const [dragOverCol, setDragOverCol] = useState(null)
   const [dragOverTaskId, setDragOverTaskId] = useState(null)
@@ -34,10 +36,15 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
   const [viewMode, setViewMode] = useState('kanban') // 'kanban' | 'list'
 
   const filteredTasks = labelFilter ? tasks.filter((t) => t.label === labelFilter) : tasks
-  const tasksByStatus = COLUMNS.reduce((acc, col) => {
-    acc[col.id] = filteredTasks.filter((t) => t.status === col.id)
+
+  const tasksByStage = stages.reduce((acc, stage) => {
+    acc[stage.status_key] = filteredTasks.filter((t) => t.status === stage.status_key)
     return acc
   }, {})
+
+  // Collect tasks with status keys not in current workflow (orphaned tasks)
+  const stageKeys = new Set(stages.map((s) => s.status_key))
+  const orphanedTasks = filteredTasks.filter((t) => !stageKeys.has(t.status))
 
   const usedLabels = [...new Set(tasks.map((t) => t.label).filter(Boolean))]
 
@@ -86,40 +93,38 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
     setDragInsertBefore(before)
   }
 
-  const handleDrop = async (newStatus) => {
-    // Read from refs — state may already be cleared by dragLeave before drop fires
+  const handleDrop = async (newStatusKey) => {
     const overTaskId = dragOverTaskIdRef.current
     const insertBefore = dragInsertBeforeRef.current
     dragOverTaskIdRef.current = null
-
     setDragOverCol(null)
     setDragOverTaskId(null)
     if (!dragTaskId) return
     const task = tasks.find((t) => t.id === dragTaskId)
     if (!task) { setDragTaskId(null); return }
 
-    const sameCol = task.status === newStatus
+    const sameCol = task.status === newStatusKey
 
     if (overTaskId && overTaskId !== dragTaskId) {
-      // Reorder: insert dragged task before/after the hovered task
       const colTasks = tasks
-        .filter((t) => t.status === newStatus && t.id !== dragTaskId)
+        .filter((t) => t.status === newStatusKey && t.id !== dragTaskId)
         .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
       const targetIdx = colTasks.findIndex((t) => t.id === overTaskId)
       const insertAt = targetIdx === -1 ? colTasks.length : (insertBefore ? targetIdx : targetIdx + 1)
-      colTasks.splice(insertAt, 0, { ...task, status: newStatus })
+      colTasks.splice(insertAt, 0, { ...task, status: newStatusKey })
       const positioned = colTasks.map((t, i) => ({ ...t, position: i * 100 }))
       onTasksChange(tasks.map((t) => {
         const p = positioned.find((pt) => pt.id === t.id)
         return p ? p : t
       }))
-      await Promise.all(positioned.map((t) => updateTask(t.id, { status: newStatus, position: t.position })))
+      await Promise.all(positioned.map((t) => updateTask(t.id, { status: newStatusKey, position: t.position })))
     } else if (!sameCol) {
-      onTasksChange(tasks.map((t) => t.id === dragTaskId ? { ...t, status: newStatus } : t))
-      await updateTask(dragTaskId, { status: newStatus })
+      onTasksChange(tasks.map((t) => t.id === dragTaskId ? { ...t, status: newStatusKey } : t))
+      await updateTask(dragTaskId, { status: newStatusKey })
     }
 
-    if (user && !sameCol) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: newStatus === 'done' ? 'task_done' : 'task_updated', entity_type: 'task', entity_title: task.title })
+    const isDoneStage = stages.find((s) => s.status_key === newStatusKey)?.is_done
+    if (user && !sameCol) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: isDoneStage ? 'task_done' : 'task_updated', entity_type: 'task', entity_title: task.title })
     setDragTaskId(null)
   }
 
@@ -133,12 +138,12 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
 
   const exitSelectMode = () => { setSelectMode(false); setSelected(new Set()) }
 
-  const handleBulkMove = async (status) => {
+  const handleBulkMove = async (statusKey) => {
     if (!selected.size) return
     setBulkWorking(true)
     const ids = [...selected]
-    onTasksChange(tasks.map((t) => selected.has(t.id) ? { ...t, status } : t))
-    await Promise.all(ids.map((id) => updateTask(id, { status })))
+    onTasksChange(tasks.map((t) => selected.has(t.id) ? { ...t, status: statusKey } : t))
+    await Promise.all(ids.map((id) => updateTask(id, { status: statusKey })))
     exitSelectMode()
     setBulkWorking(false)
   }
@@ -198,28 +203,34 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
           className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg border font-medium transition-all ${
             viewMode === 'list' ? 'bg-white/10 text-white/70 border-white/20' : 'border-white/[0.08] text-white/30 hover:border-white/20'
           }`}
-          title={viewMode === 'kanban' ? 'Switch to list view' : 'Switch to kanban view'}
         >
           {viewMode === 'kanban' ? <List size={10} /> : <Columns size={10} />}
           {viewMode === 'kanban' ? 'List' : 'Board'}
         </button>
       </div>
 
+      {/* Orphaned tasks warning */}
+      {orphanedTasks.length > 0 && (
+        <div className="mb-4 px-4 py-2.5 rounded-xl border border-yellow-500/20 bg-yellow-500/[0.06] text-[10px] text-yellow-400/80">
+          {orphanedTasks.length} task{orphanedTasks.length !== 1 ? 's' : ''} have stages not in the current workflow. Change their status to move them.
+        </div>
+      )}
+
       {/* List View */}
       {viewMode === 'list' && (
         <div className="space-y-4">
-          {COLUMNS.map((col) => {
-            const colTasks = tasksByStatus[col.id]
-            if (colTasks.length === 0) return null
+          {stages.map((stage) => {
+            const stageTasks = tasksByStage[stage.status_key] || []
+            if (stageTasks.length === 0) return null
             return (
-              <div key={col.id}>
+              <div key={stage.status_key}>
                 <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-2 h-2 rounded-full ${col.color}`} />
-                  <span className="text-xs font-semibold text-white/70">{col.label}</span>
-                  <span className="text-[10px] text-white/30 bg-white/[0.05] px-1.5 py-0.5 rounded-full">{colTasks.length}</span>
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: stageColor(stage.color) }} />
+                  <span className="text-xs font-semibold text-white/70">{stage.name}</span>
+                  <span className="text-[10px] text-white/30 bg-white/[0.05] px-1.5 py-0.5 rounded-full">{stageTasks.length}</span>
                 </div>
                 <div className="space-y-1.5">
-                  {colTasks.map((task) => (
+                  {stageTasks.map((task) => (
                     <TaskCard
                       key={task.id}
                       task={task}
@@ -244,89 +255,104 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
       )}
 
       {/* Kanban Board View */}
-      {viewMode === 'kanban' && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {COLUMNS.map((col) => {
-          const isOver = dragOverCol === col.id
-          return (
-            <div
-              key={col.id}
-              className={`flex flex-col min-h-[300px] rounded-2xl p-3 transition-all duration-200 ${
-                isOver ? 'bg-white/[0.04] ring-1 ring-white/20' : ''
-              }`}
-              onDragOver={(e) => { e.preventDefault(); setDragOverCol(col.id) }}
-              onDragLeave={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget)) {
-                  setDragOverCol(null)
-                  setDragOverTaskId(null)
-                  dragOverTaskIdRef.current = null
-                }
-              }}
-              onDrop={() => handleDrop(col.id)}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${col.color}`} />
-                  <span className="text-xs font-semibold text-white/80">{col.label}</span>
-                  <span className="text-[10px] text-white/30 bg-white/[0.05] px-1.5 py-0.5 rounded-full">
-                    {tasksByStatus[col.id].length}
-                  </span>
+      {viewMode === 'kanban' && (
+        <div className="flex gap-3 overflow-x-auto pb-2" style={{ minWidth: 0 }}>
+          {stages.map((stage) => {
+            const isOver = dragOverCol === stage.status_key
+            const stageTasks = (tasksByStage[stage.status_key] || []).sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+            const DefaultIcon = DEFAULT_EMPTY[stage.status_key]?.Icon || ClipboardList
+            const defaultHint = DEFAULT_EMPTY[stage.status_key]?.hint || 'Drop tasks here'
+
+            return (
+              <div
+                key={stage.status_key}
+                style={{ minWidth: '220px', flex: '1 0 220px', maxWidth: '320px' }}
+                className={`flex flex-col min-h-[300px] rounded-2xl p-3 transition-all duration-200 ${
+                  isOver ? 'bg-white/[0.04] ring-1 ring-white/20' : ''
+                }`}
+                onDragOver={(e) => { e.preventDefault(); setDragOverCol(stage.status_key) }}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget)) {
+                    setDragOverCol(null)
+                    setDragOverTaskId(null)
+                    dragOverTaskIdRef.current = null
+                  }
+                }}
+                onDrop={() => handleDrop(stage.status_key)}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: stageColor(stage.color) }} />
+                    <span className="text-xs font-semibold text-white/80">{stage.name}</span>
+                    <span className="text-[10px] text-white/30 bg-white/[0.05] px-1.5 py-0.5 rounded-full">
+                      {stageTasks.length}
+                    </span>
+                    {stage.is_done && (
+                      <span className="text-[8px] text-green-400/60 bg-green-500/10 px-1 py-0.5 rounded">Done</span>
+                    )}
+                  </div>
+                  {!selectMode && (
+                    <button
+                      onClick={() => setCreateModalStage({ status_key: stage.status_key, name: stage.name })}
+                      className="text-white/30 hover:text-white/70 transition-colors"
+                    >
+                      <Plus size={14} />
+                    </button>
+                  )}
                 </div>
-                {!selectMode && (
-                  <button onClick={() => setCreateModalStatus(col.id)} className="text-white/30 hover:text-white/70 transition-colors">
-                    <Plus size={14} />
-                  </button>
-                )}
+
+                <div className="flex flex-col gap-2 flex-1">
+                  {stageTasks.map((task) => (
+                    <div
+                      key={task.id}
+                      onDragOver={(e) => handleTaskDragOver(e, task.id)}
+                      className="relative"
+                    >
+                      {dragOverTaskId === task.id && dragInsertBefore && (
+                        <div className="h-0.5 bg-blue-400/60 rounded-full mx-1 mb-1" />
+                      )}
+                      <TaskCard
+                        task={task}
+                        onDelete={handleDelete}
+                        onUpdate={handleUpdate}
+                        draggable={!selectMode}
+                        onDragStart={() => handleDragStart(task.id)}
+                        selectMode={selectMode}
+                        selected={selected.has(task.id)}
+                        onToggleSelect={() => toggleSelect(task.id)}
+                      />
+                      {dragOverTaskId === task.id && !dragInsertBefore && (
+                        <div className="h-0.5 bg-blue-400/60 rounded-full mx-1 mt-1" />
+                      )}
+                    </div>
+                  ))}
+
+                  {stageTasks.length === 0 && (
+                    <div
+                      className={`flex-1 rounded-xl border border-dashed flex flex-col items-center justify-center min-h-[100px] gap-2 transition-all duration-200 ${
+                        isOver ? 'border-white/40 bg-white/[0.06]' : 'border-white/[0.08] hover:border-white/20'
+                      }`}
+                    >
+                      <DefaultIcon size={16} className="text-white/20" />
+                      <p className="text-[10px] text-white/25 text-center px-3">{defaultHint}</p>
+                    </div>
+                  )}
+                </div>
               </div>
+            )
+          })}
+        </div>
+      )}
 
-              <div className="flex flex-col gap-2 flex-1">
-                {tasksByStatus[col.id].sort((a, b) => (a.position ?? 0) - (b.position ?? 0)).map((task) => (
-                  <div
-                    key={task.id}
-                    onDragOver={(e) => handleTaskDragOver(e, task.id)}
-                    className="relative"
-                  >
-                    {dragOverTaskId === task.id && dragInsertBefore && (
-                      <div className="h-0.5 bg-blue-400/60 rounded-full mx-1 mb-1" />
-                    )}
-                    <TaskCard
-                      task={task}
-                      onDelete={handleDelete}
-                      onUpdate={handleUpdate}
-                      draggable={!selectMode}
-                      onDragStart={() => handleDragStart(task.id)}
-                      selectMode={selectMode}
-                      selected={selected.has(task.id)}
-                      onToggleSelect={() => toggleSelect(task.id)}
-                    />
-                    {dragOverTaskId === task.id && !dragInsertBefore && (
-                      <div className="h-0.5 bg-blue-400/60 rounded-full mx-1 mt-1" />
-                    )}
-                  </div>
-                ))}
-
-                {tasksByStatus[col.id].length === 0 && (
-                  <div
-                    className={`flex-1 rounded-xl border border-dashed flex flex-col items-center justify-center min-h-[100px] gap-2 transition-all duration-200 ${
-                      isOver ? 'border-white/40 bg-white/[0.06]' : 'border-white/[0.08] hover:border-white/20'
-                    }`}
-                  >
-                    {(() => { const { Icon } = EMPTY_STATE[col.id]; return <Icon size={16} className="text-white/20" /> })()}
-                    <p className="text-[10px] text-white/25 text-center px-3">{EMPTY_STATE[col.id].hint}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>}
-
-      {createModalStatus && (
+      {createModalStage && (
         <TaskCreateModal
           projectId={projectId}
-          initialStatus={createModalStatus}
+          initialStatus={createModalStage.status_key}
+          initialStatusName={createModalStage.name}
+          stages={stages}
           user={user}
           onSubmit={handleCreateSubmit}
-          onClose={() => setCreateModalStatus(null)}
+          onClose={() => setCreateModalStage(null)}
         />
       )}
 
@@ -335,14 +361,14 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user }) {
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-[#1a1a1a] border border-white/20 rounded-2xl px-4 py-3 shadow-2xl whitespace-nowrap">
           <span className="text-xs text-white/60 mr-1 font-medium">{selected.size} selected</span>
           <span className="text-[10px] text-white/30">Move to →</span>
-          {COLUMNS.map((col) => (
+          {stages.map((stage) => (
             <button
-              key={col.id}
-              onClick={() => handleBulkMove(col.id)}
+              key={stage.status_key}
+              onClick={() => handleBulkMove(stage.status_key)}
               disabled={bulkWorking}
               className="text-[10px] px-2.5 py-1.5 rounded-lg bg-white/[0.08] text-white/60 hover:bg-white/15 hover:text-white transition-all disabled:opacity-40"
             >
-              {col.label}
+              {stage.name}
             </button>
           ))}
           <div className="w-px h-5 bg-white/[0.08]" />

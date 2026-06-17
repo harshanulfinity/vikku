@@ -9,3 +9,94 @@ export const LABEL_STYLES = {
   Meeting:  { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/20', dot: 'bg-orange-400' },
   Research: { bg: 'bg-cyan-500/20',   text: 'text-cyan-400',   border: 'border-cyan-500/20',   dot: 'bg-cyan-400' },
 }
+
+// ── Workflow system ───────────────────────────────────────────────────────────
+
+export const DEFAULT_WORKFLOW_STAGES = [
+  { status_key: 'todo',        name: 'To Do',       color: '#6b7280', is_done: false, position: 0 },
+  { status_key: 'in_progress', name: 'In Progress', color: '#3b82f6', is_done: false, position: 1 },
+  { status_key: 'review',      name: 'Review',      color: '#eab308', is_done: false, position: 2 },
+  { status_key: 'done',        name: 'Done',        color: '#22c55e', is_done: true,  position: 3 },
+]
+
+export const WORKFLOW_TEMPLATES = [
+  {
+    name: 'Software Development',
+    description: 'From backlog to production',
+    icon: '💻',
+    stages: [
+      { name: 'Backlog',     color: '#6b7280', is_done: false },
+      { name: 'Design',      color: '#8b5cf6', is_done: false },
+      { name: 'Development', color: '#3b82f6', is_done: false },
+      { name: 'QA',          color: '#f59e0b', is_done: false },
+      { name: 'UAT',         color: '#f97316', is_done: false },
+      { name: 'Production',  color: '#22c55e', is_done: true  },
+    ],
+  },
+  {
+    name: 'Marketing Campaign',
+    description: 'From idea to publication',
+    icon: '📢',
+    stages: [
+      { name: 'Idea',      color: '#8b5cf6', is_done: false },
+      { name: 'Writing',   color: '#3b82f6', is_done: false },
+      { name: 'Design',    color: '#ec4899', is_done: false },
+      { name: 'Review',    color: '#f59e0b', is_done: false },
+      { name: 'Scheduled', color: '#f97316', is_done: false },
+      { name: 'Published', color: '#22c55e', is_done: true  },
+    ],
+  },
+  {
+    name: 'Recruitment Pipeline',
+    description: 'From application to hire',
+    icon: '🧑‍💼',
+    stages: [
+      { name: 'Applied',   color: '#6b7280', is_done: false },
+      { name: 'Screening', color: '#3b82f6', is_done: false },
+      { name: 'Interview', color: '#8b5cf6', is_done: false },
+      { name: 'Offer',     color: '#f59e0b', is_done: false },
+      { name: 'Hired',     color: '#22c55e', is_done: true  },
+    ],
+  },
+  {
+    name: 'Content Production',
+    description: 'Plan, create, publish',
+    icon: '✍️',
+    stages: [
+      { name: 'Planned',    color: '#6b7280', is_done: false },
+      { name: 'Drafting',   color: '#3b82f6', is_done: false },
+      { name: 'Editing',    color: '#8b5cf6', is_done: false },
+      { name: 'Approval',   color: '#f59e0b', is_done: false },
+      { name: 'Published',  color: '#22c55e', is_done: true  },
+    ],
+  },
+]
+
+export const STAGE_COLORS = [
+  '#6b7280', '#3b82f6', '#8b5cf6', '#ec4899', '#f97316',
+  '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#f43f5e',
+  '#a855f7', '#10b981', '#ef4444', '#0ea5e9', '#d97706',
+]
+
+/** Generate a collision-free slug from a stage name */
+export function generateStatusKey(name, existingKeys = []) {
+  const base = (name || 'stage')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 25) || 'stage'
+  let key = base
+  let n = 2
+  while (existingKeys.includes(key)) key = `${base}_${n++}`
+  return key
+}
+
+/** Format minutes → "2h 30m" */
+export function formatMinutes(mins) {
+  if (!mins || mins <= 0) return '0m'
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  if (h === 0) return `${m}m`
+  if (m === 0) return `${h}h`
+  return `${h}h ${m}m`
+}

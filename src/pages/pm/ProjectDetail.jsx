@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt, Timer, Sparkles, MessageSquare, AlertCircle } from 'lucide-react'
+import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt, Timer, Sparkles, MessageSquare, AlertCircle, Clock, Layers } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getProject, getTasks, getMilestones, deleteProject, getProjectTimeLogs, getClientComments, updateProject } from '../../lib/pmService'
+import { getProject, getTasks, getMilestones, deleteProject, getWorkflow, getClientComments, updateProject } from '../../lib/pmService'
 import { supabase } from '../../lib/supabaseClient'
 import KanbanBoard from '../../components/pm/KanbanBoard'
 import MilestoneList from '../../components/pm/MilestoneList'
@@ -13,20 +13,26 @@ import AIAssistant from '../../components/pm/AIAssistant'
 import InviteMemberModal from '../../components/pm/InviteMemberModal'
 import MembersPanel from '../../components/pm/MembersPanel'
 import ActivityFeed from '../../components/pm/ActivityFeed'
+import WorkflowEditor from '../../components/pm/WorkflowEditor'
+import TimeTrackingPanel from '../../components/pm/TimeTrackingPanel'
 import useSubscription from '../../hooks/useSubscription'
 import UpgradeModal from '../../components/pm/UpgradeModal'
 import AppHeader from '../../components/AppHeader'
+import { DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
 
 const TABS = [
   { key: 'kanban',    label: 'Kanban',    icon: LayoutDashboard },
   { key: 'timeline',  label: 'Timeline',  icon: GitBranch },
   { key: 'analytics', label: 'Analytics', icon: BarChart2 },
   { key: 'calendar',  label: 'Calendar',  icon: Calendar },
+  { key: 'time',      label: 'Time',      icon: Clock, pro: true },
 ]
 
 const UPGRADE_REASONS = {
-  share:     'Client share links are Pro-only. Share a read-only link with clients - no login needed.',
-  ai:        'AI Project Planner is a Pro feature. Describe your project and get tasks + milestones in seconds.',
+  share:    'Client share links are Pro-only. Share a read-only link with clients - no login needed.',
+  ai:       'AI Project Planner is a Pro feature. Describe your project and get tasks + milestones in seconds.',
+  time:     'Time tracking is a Pro feature. Track time per task, run reports, and export billable hours.',
+  workflow: 'Custom workflows are a Pro feature. Create stages that match your team\'s actual process.',
 }
 
 export default function ProjectDetail() {
@@ -51,6 +57,8 @@ export default function ProjectDetail() {
   const [showOnboard, setShowOnboard] = useState(false)
   const [clientComments, setClientComments] = useState([])
   const [seenCommentCount, setSeenCommentCount] = useState(0)
+  const [workflow, setWorkflow] = useState(null)
+  const [showWorkflow, setShowWorkflow] = useState(false)
   const { isPro } = useSubscription()
 
   useEffect(() => {
@@ -67,6 +75,7 @@ export default function ProjectDetail() {
       setTasks(t)
       setMilestones(m)
       setFetching(false)
+      if (p.workflow_id) getWorkflow(p.workflow_id).then(setWorkflow)
       if (p.share_token) getClientComments(p.share_token).then((comments) => {
         setClientComments(comments)
         setSeenCommentCount(Number(localStorage.getItem(`seen_comments_${id}`) || 0))
@@ -155,30 +164,6 @@ export default function ProjectDetail() {
     win.document.close()
   }
 
-  const handleTimeCSV = async () => {
-    const logs = await getProjectTimeLogs(id)
-    if (!logs.length) { alert('No time logs recorded for this project yet.'); return }
-    const taskMap = {}
-    tasks.forEach((t) => { taskMap[t.id] = t.title })
-    const rows = [
-      ['Task', 'Duration (min)', 'Note', 'Logged At'],
-      ...logs.map((l) => [
-        `"${(taskMap[l.task_id] || 'Unknown task').replace(/"/g, '""')}"`,
-        l.minutes,
-        `"${(l.note || '').replace(/"/g, '""')}"`,
-        new Date(l.created_at).toLocaleString('en-IN'),
-      ]),
-    ]
-    const csv = rows.map((r) => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${project.name.replace(/\s+/g, '_')}_time_logs.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   const handleDelete = async () => {
     if (!window.confirm(`Delete "${project.name}"? This will delete all tasks and milestones too. This cannot be undone.`)) return
     setDeleting(true)
@@ -186,8 +171,10 @@ export default function ProjectDetail() {
     navigate('/pm/dashboard')
   }
 
+  const workflowStages = workflow?.stages || DEFAULT_WORKFLOW_STAGES
+  const doneKeys = new Set(workflowStages.filter((s) => s.is_done).map((s) => s.status_key))
   const totalTasks = tasks.length
-  const doneTasks = tasks.filter((t) => t.status === 'done').length
+  const doneTasks = tasks.filter((t) => doneKeys.has(t.status)).length
   const progress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
 
   if (loading || fetching) {
@@ -216,6 +203,25 @@ export default function ProjectDetail() {
           projectName={project.name}
           ownerUserId={project.user_id}
           onClose={() => setShowInviteModal(false)}
+        />
+      )}
+
+      {showWorkflow && (
+        <WorkflowEditor
+          projectId={id}
+          currentWorkflowId={project.workflow_id || null}
+          projectTasks={tasks}
+          onClose={() => setShowWorkflow(false)}
+          onWorkflowAssigned={(wfId) => {
+            const updated = { ...project, workflow_id: wfId }
+            setProject(updated)
+            if (wfId) {
+              getWorkflow(wfId).then(setWorkflow)
+            } else {
+              setWorkflow(null)
+            }
+            setShowWorkflow(false)
+          }}
         />
       )}
 
@@ -251,14 +257,17 @@ export default function ProjectDetail() {
               <FileDown size={14} />
               <span className="hidden sm:inline">Export</span>
             </button>
-            <button
-              onClick={handleTimeCSV}
-              className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
-              title="Download time logs as CSV"
-            >
-              <Timer size={14} />
-              <span className="hidden sm:inline">Time CSV</span>
-            </button>
+            {project.user_id === user?.id && (
+              <button
+                onClick={() => isPro ? setShowWorkflow(true) : triggerUpgrade('workflow')}
+                className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
+                title="Customize workflow stages"
+              >
+                <Layers size={14} />
+                <span className="hidden sm:inline">Workflow</span>
+                {!isPro && <span className="text-[10px] text-yellow-400/60">Pro</span>}
+              </button>
+            )}
             <button
               onClick={() => navigate(`/pm/projects/${id}/invoice`)}
               className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
@@ -396,7 +405,7 @@ export default function ProjectDetail() {
         </div>
         {/* Overdue filter */}
         {(() => {
-          const overdueCount = tasks.filter((t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done').length
+          const overdueCount = tasks.filter((t) => t.due_date && new Date(t.due_date) < new Date() && !doneKeys.has(t.status)).length
           return overdueCount > 0 ? (
             <button
               onClick={() => setOverdueOnly(!overdueOnly)}
@@ -440,13 +449,14 @@ export default function ProjectDetail() {
             {(() => {
               let filtered = tasks
               if (searchQuery) filtered = filtered.filter((t) => t.title.toLowerCase().includes(searchQuery.toLowerCase()) || (t.description || '').toLowerCase().includes(searchQuery.toLowerCase()))
-              if (overdueOnly) filtered = filtered.filter((t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done')
+              if (overdueOnly) filtered = filtered.filter((t) => t.due_date && new Date(t.due_date) < new Date() && !doneKeys.has(t.status))
               return (
                 <>
-                  {activeTab === 'kanban' && <KanbanBoard projectId={id} tasks={filtered} onTasksChange={setTasks} user={user} />}
+                  {activeTab === 'kanban' && <KanbanBoard projectId={id} tasks={filtered} onTasksChange={setTasks} user={user} workflow={workflowStages} />}
                   {activeTab === 'timeline' && <TimelineView milestones={milestones} onMilestonesChange={setMilestones} />}
-                  {activeTab === 'analytics' && <AnalyticsPanel tasks={filtered} milestones={milestones} />}
+                  {activeTab === 'analytics' && <AnalyticsPanel tasks={filtered} milestones={milestones} stages={workflowStages} />}
                   {activeTab === 'calendar' && <CalendarView tasks={filtered} milestones={milestones} />}
+                  {activeTab === 'time' && <TimeTrackingPanel projectId={id} tasks={tasks} />}
                 </>
               )
             })()}

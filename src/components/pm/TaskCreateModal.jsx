@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X, User, Link, ExternalLink } from 'lucide-react'
 import { getProjectMembers } from '../../lib/pmService'
-import { TASK_LABELS, LABEL_STYLES } from '../../lib/pmConstants'
+import { TASK_LABELS, LABEL_STYLES, DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent']
 
@@ -17,14 +17,14 @@ const PRIORITY_STYLES = {
   low:    'bg-white/10 text-white/40 border-white/10',
 }
 
-const STATUS_LABELS = {
-  todo:        'To Do',
-  in_progress: 'In Progress',
-  review:      'Review',
-  done:        'Done',
-}
+export default function TaskCreateModal({ projectId, initialStatus, initialStatusName, stages, user, onSubmit, onClose }) {
+  const activeStages = stages && stages.length > 0 ? stages : DEFAULT_WORKFLOW_STAGES
 
-export default function TaskCreateModal({ projectId, initialStatus, user, onSubmit, onClose }) {
+  // Resolve the display name for initialStatus
+  const stageName = initialStatusName
+    || activeStages.find((s) => s.status_key === initialStatus)?.name
+    || initialStatus || 'To Do'
+
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -56,8 +56,6 @@ export default function TaskCreateModal({ projectId, initialStatus, user, onSubm
     onClose()
   }
 
-  const labelStyle = form.label ? LABEL_STYLES[form.label] : null
-
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <div className="w-full max-w-lg bg-[#111] border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
@@ -66,8 +64,11 @@ export default function TaskCreateModal({ projectId, initialStatus, user, onSubm
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] flex-shrink-0">
           <div className="flex items-center gap-2">
             <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">New Task</p>
-            <span className="text-[10px] bg-white/[0.06] text-white/40 px-1.5 py-0.5 rounded border border-white/[0.08]">
-              {STATUS_LABELS[initialStatus]}
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded border border-white/[0.08] text-white/50"
+              style={{ backgroundColor: `${activeStages.find((s) => s.status_key === initialStatus)?.color || '#6b7280'}20` }}
+            >
+              {stageName}
             </span>
           </div>
           <button onClick={onClose} className="w-6 h-6 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all">

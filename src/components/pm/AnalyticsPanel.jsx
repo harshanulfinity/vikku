@@ -1,11 +1,12 @@
 import { BarChart2, TrendingDown, Users } from 'lucide-react'
+import { DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
 
-const STATUS_CONFIG = [
-  { key: 'done',        label: 'Done',        color: 'bg-green-400' },
-  { key: 'in_progress', label: 'In Progress', color: 'bg-blue-400' },
-  { key: 'review',      label: 'Review',      color: 'bg-yellow-400' },
-  { key: 'todo',        label: 'To Do',       color: 'bg-white/40' },
-]
+const FALLBACK_STATUS_COLORS = {
+  done:        '#22c55e',
+  in_progress: '#3b82f6',
+  review:      '#eab308',
+  todo:        '#6b7280',
+}
 
 const PRIORITY_CONFIG = [
   { key: 'urgent', label: 'Urgent', color: 'bg-red-400' },
@@ -14,14 +15,15 @@ const PRIORITY_CONFIG = [
   { key: 'low',    label: 'Low',    color: 'bg-white/30' },
 ]
 
-function Bar({ pct, color, label, count, total }) {
+function Bar({ hex, label, count, total }) {
+  const pct = total > 0 ? (count / total) * 100 : 0
   return (
     <div className="flex items-center gap-3 mb-3">
       <span className="text-[11px] text-white/50 w-20 flex-shrink-0">{label}</span>
       <div className="flex-1 h-2 bg-white/[0.06] rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all duration-700 ${color}`}
-          style={{ width: total > 0 ? `${(count / total) * 100}%` : '0%' }}
+          className="h-full rounded-full transition-all duration-700"
+          style={{ width: `${pct}%`, backgroundColor: hex ? hex + 'aa' : 'rgba(255,255,255,0.3)' }}
         />
       </div>
       <span className="text-[11px] text-white/30 w-8 text-right">{count}</span>
@@ -29,7 +31,7 @@ function Bar({ pct, color, label, count, total }) {
   )
 }
 
-function BurndownChart({ tasks }) {
+function BurndownChart({ tasks, doneKeys }) {
   const days = 7
   const now = new Date()
   const points = []
@@ -37,11 +39,9 @@ function BurndownChart({ tasks }) {
     const dayEnd = new Date(now)
     dayEnd.setDate(now.getDate() - i)
     dayEnd.setHours(23, 59, 59, 999)
-    // Tasks that existed on this day (created before end of day)
     const existedCount = tasks.filter((t) => new Date(t.created_at) <= dayEnd).length
-    // Tasks actually completed by end of this day — use updated_at for done tasks
     const doneCount = tasks.filter((t) => {
-      if (t.status !== 'done') return false
+      if (!doneKeys.has(t.status)) return false
       const completedAt = new Date(t.updated_at || t.created_at)
       return completedAt <= dayEnd
     }).length
@@ -94,14 +94,13 @@ function BurndownChart({ tasks }) {
   )
 }
 
-function VelocityChart({ tasks }) {
-  // Group done tasks by assignee
+function VelocityChart({ tasks, doneKeys }) {
   const assignees = {}
   tasks.filter((t) => t.assigned_to_email).forEach((t) => {
     const email = t.assigned_to_email
     if (!assignees[email]) assignees[email] = { email, done: 0, total: 0 }
     assignees[email].total++
-    if (t.status === 'done') assignees[email].done++
+    if (doneKeys.has(t.status)) assignees[email].done++
   })
 
   const rows = Object.values(assignees).sort((a, b) => b.done - a.done)
@@ -155,11 +154,13 @@ function VelocityChart({ tasks }) {
   )
 }
 
-export default function AnalyticsPanel({ tasks, milestones }) {
+export default function AnalyticsPanel({ tasks, milestones, stages }) {
+  const activeStages = (stages && stages.length > 0) ? stages : DEFAULT_WORKFLOW_STAGES
+  const doneKeys = new Set(activeStages.filter((s) => s.is_done).map((s) => s.status_key))
   const total = tasks.length
-  const done = tasks.filter((t) => t.status === 'done').length
+  const done = tasks.filter((t) => doneKeys.has(t.status)).length
   const overdueTasks = tasks.filter(
-    (t) => t.due_date && t.status !== 'done' && new Date(t.due_date) < new Date()
+    (t) => t.due_date && !doneKeys.has(t.status) && new Date(t.due_date) < new Date()
   ).length
   const overdueMilestones = milestones.filter(
     (m) => !m.completed && new Date(m.due_date) < new Date()
@@ -213,12 +214,12 @@ export default function AnalyticsPanel({ tasks, milestones }) {
       {/* Tasks by status */}
       <div className="glass rounded-2xl p-5">
         <p className="text-xs font-semibold text-white/70 mb-4">Tasks by Status</p>
-        {STATUS_CONFIG.map(({ key, label, color }) => (
+        {activeStages.map((stage) => (
           <Bar
-            key={key}
-            label={label}
-            color={color}
-            count={tasks.filter((t) => t.status === key).length}
+            key={stage.status_key}
+            label={stage.name}
+            hex={stage.color || FALLBACK_STATUS_COLORS[stage.status_key] || '#6b7280'}
+            count={tasks.filter((t) => t.status === stage.status_key).length}
             total={total}
           />
         ))}
@@ -239,8 +240,8 @@ export default function AnalyticsPanel({ tasks, milestones }) {
       </div>
 
       {/* Burndown + Velocity */}
-      {total > 0 && <BurndownChart tasks={tasks} />}
-      {total > 0 && <VelocityChart tasks={tasks} />}
+      {total > 0 && <BurndownChart tasks={tasks} doneKeys={doneKeys} />}
+      {total > 0 && <VelocityChart tasks={tasks} doneKeys={doneKeys} />}
 
       {/* Milestones */}
       {milestones.length > 0 && (

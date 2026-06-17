@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import {
   X, Trash2, Loader2, MessageCircle, Send, Trash,
   CheckSquare, Square, Plus, Clock, User, Timer, Link, ExternalLink,
-  Paperclip, Download, FileText, Bell, BellOff,
+  Paperclip, Download, FileText, Bell, BellOff, TrendingUp, TrendingDown,
 } from 'lucide-react'
 import {
   updateTask, deleteTask, getTaskComments, createTaskComment, deleteTaskComment,
@@ -13,6 +13,9 @@ import {
 } from '../../lib/pmService'
 import { TASK_LABELS, LABEL_STYLES } from '../../lib/pmConstants'
 import { useAuth } from '../../contexts/AuthContext'
+import useSubscription from '../../hooks/useSubscription'
+import TaskTimer from './TaskTimer'
+import UpgradeModal from './UpgradeModal'
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent']
 
@@ -46,6 +49,8 @@ function fmtMins(m) {
 
 export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const { user } = useAuth()
+  const { isPro } = useSubscription()
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [form, setForm] = useState({
     title: task.title || '',
     description: task.description || '',
@@ -55,6 +60,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     assigned_to_email: task.assigned_to_email || '',
     label: task.label || '',
     task_link: task.task_link || '',
+    estimated_minutes: task.estimated_minutes || '',
   })
   const [deleting, setDeleting] = useState(false)
   const [commentError, setCommentError] = useState('')
@@ -73,6 +79,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const [timeLogs, setTimeLogs] = useState([])
   const [logMinutes, setLogMinutes] = useState('')
   const [logDesc, setLogDesc] = useState('')
+  const [logBillable, setLogBillable] = useState(false)
   const [loggingTime, setLoggingTime] = useState(false)
   const [timeLogError, setTimeLogError] = useState('')
 
@@ -105,6 +112,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
       assigned_to_email: form.assigned_to_email || null,
       label: form.label || null,
       task_link: form.task_link.trim() || null,
+      estimated_minutes: form.estimated_minutes ? parseInt(form.estimated_minutes) : null,
     }).catch((err) => {
       console.error('updateTask failed:', err)
     })
@@ -177,10 +185,19 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     setLoggingTime(true)
     setTimeLogError('')
     try {
-      const log = await createTimeLog({ task_id: task.id, project_id: task.project_id, user_id: user?.id, minutes: m, note: logDesc.trim() || null })
+      const log = await createTimeLog({
+        task_id: task.id,
+        project_id: task.project_id,
+        user_id: user?.id,
+        user_email: user?.email || null,
+        minutes: m,
+        note: logDesc.trim() || null,
+        billable: logBillable,
+      })
       setTimeLogs((prev) => [log, ...prev])
       setLogMinutes('')
       setLogDesc('')
+      setLogBillable(false)
     } catch (err) {
       setTimeLogError(err.message || 'Failed to log time')
     } finally {
@@ -222,6 +239,14 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const labelStyle = form.label ? LABEL_STYLES[form.label] : null
 
   const modal = (
+    <>
+    {showUpgradeModal && (
+      <UpgradeModal
+        reason="Time tracking with timer is a Pro feature."
+        onClose={() => setShowUpgradeModal(false)}
+        onUpgraded={() => { setShowUpgradeModal(false); window.location.reload() }}
+      />
+    )}
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <div className="w-full max-w-lg bg-[#111] border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
 
@@ -441,12 +466,54 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
 
             {/* Time Tracking */}
             <div className="border-t border-white/[0.06] pt-4">
-              <div className="flex items-center gap-1.5 mb-3">
-                <Clock size={12} className="text-white/30" />
-                <label className="text-[10px] text-white/40 uppercase tracking-wider">
-                  Time Logged {totalLogged > 0 && `· ${fmtMins(totalLogged)} total`}
-                </label>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-1.5">
+                  <Clock size={12} className="text-white/30" />
+                  <label className="text-[10px] text-white/40 uppercase tracking-wider">
+                    Time {totalLogged > 0 && `· ${fmtMins(totalLogged)} logged`}
+                  </label>
+                </div>
+                <TaskTimer
+                  task={task}
+                  projectId={task.project_id}
+                  user={user}
+                  isPro={isPro}
+                  onTimerStop={(saved) => {
+                    if (saved) setTimeLogs((prev) => [saved, ...prev])
+                  }}
+                  onShowUpgrade={() => setShowUpgradeModal(true)}
+                />
               </div>
+
+              {/* Estimate + variance */}
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-1.5 flex-1">
+                  <label className="text-[10px] text-white/30 whitespace-nowrap">Estimate (min)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={form.estimated_minutes}
+                    onChange={(e) => setForm({ ...form, estimated_minutes: e.target.value })}
+                    placeholder="—"
+                    className="w-20 bg-white/[0.05] border border-white/[0.08] rounded-lg px-2 py-1 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
+                  />
+                  {form.estimated_minutes && parseInt(form.estimated_minutes) > 0 && (
+                    <span className="text-[10px] text-white/25">=&nbsp;{fmtMins(parseInt(form.estimated_minutes))}</span>
+                  )}
+                </div>
+                {form.estimated_minutes && totalLogged > 0 && (() => {
+                  const est = parseInt(form.estimated_minutes)
+                  const diff = totalLogged - est
+                  const over = diff > 0
+                  return (
+                    <div className={`flex items-center gap-1 text-[10px] ${over ? 'text-red-400' : 'text-green-400'}`}>
+                      {over ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                      {over ? '+' : ''}{fmtMins(Math.abs(diff))} {over ? 'over' : 'under'}
+                    </div>
+                  )
+                })()}
+              </div>
+
               <div className="flex gap-1.5 mb-2">
                 {[15, 30, 60, 120].map((m) => (
                   <button type="button" key={m} onClick={() => handleLogTime(m)} disabled={loggingTime} className="text-[10px] px-2 py-1 rounded-lg border border-white/[0.08] text-white/40 hover:border-white/20 hover:text-white/70 transition-all disabled:opacity-40">
@@ -455,8 +522,16 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                 ))}
               </div>
               <div className="flex gap-2 mb-1">
-                <input type="number" min="1" value={logMinutes} onChange={(e) => setLogMinutes(e.target.value)} placeholder="Minutes" className="w-24 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors" />
+                <input type="number" min="1" value={logMinutes} onChange={(e) => setLogMinutes(e.target.value)} placeholder="Minutes" className="w-20 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors" />
                 <input value={logDesc} onChange={(e) => setLogDesc(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleLogTime(logMinutes) } }} placeholder="Note (optional)" className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors" />
+                <button
+                  type="button"
+                  onClick={() => setLogBillable((b) => !b)}
+                  title={logBillable ? 'Billable — click to toggle' : 'Non-billable — click to toggle'}
+                  className={`w-8 h-8 flex items-center justify-center rounded-xl border transition-all text-[9px] font-semibold flex-shrink-0 ${logBillable ? 'bg-green-500/15 border-green-500/25 text-green-400' : 'bg-white/[0.04] border-white/[0.08] text-white/25 hover:border-white/20'}`}
+                >
+                  $
+                </button>
                 <button type="button" onClick={() => handleLogTime(logMinutes)} disabled={loggingTime || !logMinutes} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all disabled:opacity-30">
                   {loggingTime ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
                 </button>
@@ -469,6 +544,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                   {timeLogs.slice(0, 5).map((l) => (
                     <div key={l.id} className="flex items-center gap-2 group">
                       <span className="text-[10px] text-white/50 font-medium w-10 flex-shrink-0">{fmtMins(l.minutes)}</span>
+                      {l.billable && <span className="text-[8px] bg-green-500/10 text-green-400 border border-green-500/15 px-1 py-0.5 rounded flex-shrink-0">B</span>}
                       <span className="text-[10px] text-white/30 flex-1 truncate">{l.note || timeAgo(l.created_at)}</span>
                       <button onClick={() => handleDeleteTimeLog(l.id)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all"><Trash size={10} /></button>
                     </div>
@@ -577,6 +653,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
         </div>
       </div>
     </div>
+    </>
   )
 
   return createPortal(modal, document.body)

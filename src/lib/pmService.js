@@ -491,3 +491,168 @@ export async function createClientComment(fields) {
   if (error) throw error
   return data
 }
+
+// ── Workflows ──────────────────────────────────────────────────────────────────
+
+export async function getWorkflows(userId) {
+  if (!supabase) return []
+  try {
+    const { data, error } = await supabase
+      .from('pm_workflows')
+      .select('*, pm_workflow_stages(*)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true })
+    if (error) { console.error('getWorkflows:', error); return [] }
+    return (data || []).map((w) => ({
+      ...w,
+      stages: (w.pm_workflow_stages || []).sort((a, b) => a.position - b.position),
+    }))
+  } catch (err) { console.error(err); return [] }
+}
+
+export async function getWorkflow(workflowId) {
+  if (!supabase || !workflowId) return null
+  try {
+    const { data, error } = await supabase
+      .from('pm_workflows')
+      .select('*, pm_workflow_stages(*)')
+      .eq('id', workflowId)
+      .single()
+    if (error) { console.error('getWorkflow:', error); return null }
+    return { ...data, stages: (data.pm_workflow_stages || []).sort((a, b) => a.position - b.position) }
+  } catch { return null }
+}
+
+export async function createWorkflow(userId, name, stages = []) {
+  if (!supabase) throw new Error('Database not configured')
+  const { data: wf, error: we } = await supabase
+    .from('pm_workflows')
+    .insert({ user_id: userId, name })
+    .select()
+    .single()
+  if (we) throw we
+  if (stages.length > 0) {
+    const { error: se } = await supabase.from('pm_workflow_stages').insert(
+      stages.map((s, i) => ({ workflow_id: wf.id, name: s.name, color: s.color, position: i * 100, is_done: s.is_done || false, status_key: s.status_key }))
+    )
+    if (se) throw se
+  }
+  return getWorkflow(wf.id)
+}
+
+export async function updateWorkflowName(id, name) {
+  if (!supabase) throw new Error('Database not configured')
+  const { data, error } = await supabase
+    .from('pm_workflows')
+    .update({ name, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteWorkflow(id) {
+  if (!supabase) throw new Error('Database not configured')
+  const { error } = await supabase.from('pm_workflows').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function saveWorkflowStages(workflowId, stages) {
+  if (!supabase) throw new Error('Database not configured')
+  await supabase.from('pm_workflow_stages').delete().eq('workflow_id', workflowId)
+  if (!stages.length) return []
+  const { data, error } = await supabase
+    .from('pm_workflow_stages')
+    .insert(stages.map((s, i) => ({
+      workflow_id: workflowId,
+      name:       s.name,
+      color:      s.color,
+      position:   i * 100,
+      is_done:    s.is_done || false,
+      status_key: s.status_key,
+    })))
+    .select()
+  if (error) throw error
+  return data
+}
+
+export async function migrateTaskStatuses(projectId, statusMap) {
+  // statusMap: { old_key: new_key, ... }
+  if (!supabase) throw new Error('Database not configured')
+  const entries = Object.entries(statusMap).filter(([o, n]) => o !== n)
+  if (!entries.length) return
+  const results = await Promise.all(
+    entries.map(([oldKey, newKey]) =>
+      supabase.from('pm_tasks').update({ status: newKey }).eq('project_id', projectId).eq('status', oldKey)
+    )
+  )
+  const failed = results.find((r) => r.error)
+  if (failed) throw failed.error
+}
+
+// ── Extended Time Tracking ─────────────────────────────────────────────────────
+
+export async function startTimer(taskId, projectId, userId, userEmail) {
+  if (!supabase) throw new Error('Database not configured')
+  // Stop any already-running timers for this user first
+  const { data: running } = await supabase
+    .from('pm_time_logs')
+    .select('id, start_time')
+    .eq('user_id', userId)
+    .eq('is_running', true)
+  if (running?.length) {
+    await Promise.all(running.map((r) => {
+      const mins = Math.max(1, Math.round((Date.now() - new Date(r.start_time).getTime()) / 60000))
+      return supabase.from('pm_time_logs').update({ is_running: false, end_time: new Date().toISOString(), minutes: mins }).eq('id', r.id)
+    }))
+  }
+  const { data, error } = await supabase
+    .from('pm_time_logs')
+    .insert({ task_id: taskId, project_id: projectId, user_id: userId, user_email: userEmail, minutes: 0, is_running: true, start_time: new Date().toISOString(), billable: true })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function stopTimer(logId) {
+  if (!supabase) throw new Error('Database not configured')
+  const { data: log, error: fe } = await supabase.from('pm_time_logs').select('start_time').eq('id', logId).single()
+  if (fe) throw fe
+  const mins = Math.max(1, Math.round((Date.now() - new Date(log.start_time).getTime()) / 60000))
+  const { data, error } = await supabase
+    .from('pm_time_logs')
+    .update({ is_running: false, end_time: new Date().toISOString(), minutes: mins })
+    .eq('id', logId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function getRunningTimer(taskId, userId) {
+  if (!supabase) return null
+  try {
+    const { data } = await supabase
+      .from('pm_time_logs')
+      .select('*')
+      .eq('task_id', taskId)
+      .eq('user_id', userId)
+      .eq('is_running', true)
+      .maybeSingle()
+    return data || null
+  } catch { return null }
+}
+
+export async function updateTimeLog(id, fields) {
+  if (!supabase) throw new Error('Database not configured')
+  const { data, error } = await supabase
+    .from('pm_time_logs')
+    .update(fields)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
