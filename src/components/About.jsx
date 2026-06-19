@@ -24,7 +24,7 @@ const team = [
   {
     name:    'Sai Prashanth',
     role:    'AI Engineer · DevOps · Cloud (AWS/Azure)',
-    photo:   '/globe/prasanth.jpg',
+    photo:   '/globe/prasanth.png',
     bio:     "I'm a Software Development Engineer with a deep passion for building scalable AI solutions that drive innovation and efficiency. I design and develop advanced systems, leveraging AI to solve real-world problems and optimize performance at scale. As an Azure Solutions Architect, I craft secure, cloud-based solutions that help businesses operate more effectively, and as a freelancer I take pride in delivering high-quality work tailored to each client's needs.",
     focus:   ['AI Engineering', 'DevOps', 'Cloud — AWS/Azure', 'Java & Python', 'Microservices', 'Generative AI'],
     linkedin: 'https://www.linkedin.com/in/sai-prashanth123',
