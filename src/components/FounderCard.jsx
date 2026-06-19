@@ -1,4 +1,4 @@
-import { Linkedin, Mail, Instagram } from 'lucide-react'
+import { Linkedin, Mail, Instagram, Phone } from 'lucide-react'
 
 export default function FounderCard({ founder }) {
   return (
@@ -22,7 +22,10 @@ export default function FounderCard({ founder }) {
 
       {/* Bio */}
       <div className="w-full sm:w-1/2">
-        <h3 className="font-display font-semibold text-white text-base mb-3">{founder.name}</h3>
+        <h3 className="font-display font-semibold text-white text-base mb-1">{founder.name}</h3>
+        {founder.role && (
+          <p className="text-white/50 text-xs mb-3">{founder.role}</p>
+        )}
         <p className="text-white/90 text-sm leading-relaxed mb-4">{founder.bio}</p>
 
         <div className="flex flex-wrap gap-1.5 mb-4">
@@ -42,14 +45,24 @@ export default function FounderCard({ founder }) {
           >
             <Linkedin size={12} /> LinkedIn
           </a>
-          <a
-            href={founder.instagram}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 glass rounded-lg px-3 py-1.5 text-[11px] text-white hover:border-white/20 transition-colors"
-          >
-            <Instagram size={12} /> Instagram
-          </a>
+          {founder.instagram && (
+            <a
+              href={founder.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 glass rounded-lg px-3 py-1.5 text-[11px] text-white hover:border-white/20 transition-colors"
+            >
+              <Instagram size={12} /> Instagram
+            </a>
+          )}
+          {founder.phone && (
+            <a
+              href={`tel:${founder.phone.replace(/\s/g, '')}`}
+              className="inline-flex items-center gap-1.5 glass rounded-lg px-3 py-1.5 text-[11px] text-white hover:border-white/20 transition-colors"
+            >
+              <Phone size={12} /> {founder.phone}
+            </a>
+          )}
           <a
             href={`mailto:${founder.email}`}
             className="inline-flex items-center gap-1.5 glass rounded-lg px-3 py-1.5 text-[11px] text-white hover:border-white/20 transition-colors"

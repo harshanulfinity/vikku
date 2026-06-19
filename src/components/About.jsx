@@ -11,6 +11,7 @@ const stats = [
 
 const founder = {
   name:    'Harsha Vardhan Reddy Sanikommu',
+  role:    'Founder & Product Lead',
   photo:   '/founder.JPG',
   bio:     "I'm an AI/ML student passionate about building products, solving business problems, and turning ideas into scalable digital solutions. Over the past few years I've worked on 8+ real-world projects across India and the USA - collaborating directly with businesses to design, develop, and launch impactful products spanning AI applications, automation, web development, and digital transformation. I love working at the intersection of technology, business, and product thinking: understanding user problems, spotting opportunities, and building solutions that create measurable value.",
   focus:   ['AI & Machine Learning', 'Product Development', 'Automation & AI Workflows', 'Web Applications', 'Digital Strategy', 'Problem Solving'],
@@ -18,6 +19,19 @@ const founder = {
   instagram: 'https://www.instagram.com/theharshasanikommu/',
   email:    'connect@vikku.in',
 }
+
+const team = [
+  {
+    name:    'Sai Prashanth',
+    role:    'AI Engineer · DevOps · Cloud (AWS/Azure)',
+    photo:   '/globe/prasanth.jpg',
+    bio:     "I'm a Software Development Engineer with a deep passion for building scalable AI solutions that drive innovation and efficiency. I design and develop advanced systems, leveraging AI to solve real-world problems and optimize performance at scale. As an Azure Solutions Architect, I craft secure, cloud-based solutions that help businesses operate more effectively, and as a freelancer I take pride in delivering high-quality work tailored to each client's needs.",
+    focus:   ['AI Engineering', 'DevOps', 'Cloud — AWS/Azure', 'Java & Python', 'Microservices', 'Generative AI'],
+    linkedin: 'https://www.linkedin.com/in/sai-prashanth123',
+    email:    'saip00519@gmail.com',
+    phone:    '6281441422',
+  },
+]
 
 const highlights = [
   'Full-stack across web, mobile & cloud',
@@ -108,6 +122,11 @@ export default function About() {
 
         {/* Meet the Founder */}
         <FounderCard founder={founder} />
+
+        {/* The Team */}
+        {team.map((member) => (
+          <FounderCard key={member.name} founder={member} />
+        ))}
       </div>
     </section>
   )
