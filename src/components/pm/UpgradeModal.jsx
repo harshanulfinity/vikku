@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Sparkles, Loader2, AlertCircle, Check, Minus } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { openRazorpayCheckout } from '../../lib/razorpayService'
+import { openRazorpayCheckout, PLAN_PRICING, priceBreakdown } from '../../lib/razorpayService'
 
 // Feature comparison table: [label, free, pro, team]
 // true = check, false = dash, string = custom text
@@ -11,36 +11,31 @@ const FEATURE_GROUPS = [
     title: 'Pro Features',
     rows: [
       ['AI Project Planner',       '6/month',    'Unlimited',  'Unlimited'],
+      ['Active projects',          '3',          'Unlimited',  'Unlimited'],
       ['Custom workflows',         false,        true,         true],
       ['Time tracking + timer',    false,        true,         true],
       ['Time reports & export',    false,        true,         true],
       ['Billable hours tracking',  false,        true,         true],
-      ['Client share links',       false,        true,         true],
-      ['Client comments on share', false,        true,         true],
-      ['Client portal branding',   false,        true,         true],
-      ['Milestone client approvals', false,      true,         true],
-      ['Task email reminders',     false,        true,         true],
-      ['Priority email support',   false,        true,         true],
+      ['Client share links (PIN)', false,        true,         true],
     ],
   },
   {
     title: 'Team Collaboration',
     rows: [
-      ['Team members per project', '1 (you)',   '1 (you)',    'Up to 10'],
-      ['Role-based access',       false,        false,        true],
-      ['Member invite links',     false,        false,        true],
-      ['Project duplication',     false,        false,        true],
+      ['Members per project',      '3',          '10',         'Unlimited'],
+      ['Member invite links',      true,         true,         true],
+      ['Shared project access',    true,         true,         true],
     ],
   },
   {
     title: 'Projects & Tasks',
     rows: [
-      ['Active projects',         '3',         'Unlimited',  'Unlimited'],
-      ['Kanban board (4 columns)', true,        true,         true],
-      ['List view (mobile-friendly)', true,     true,         true],
+      ['Unlimited tasks',         true,         true,         true],
+      ['Kanban board',            true,         true,         true],
+      ['List view (mobile)',      true,         true,         true],
       ['Task labels & priorities', true,        true,         true],
-      ['Due dates & reminders',   true,         true,         true],
-      ['Task comments & activity feed', true,   true,         true],
+      ['Due dates',               true,         true,         true],
+      ['Task comments & activity', true,        true,         true],
       ['Bulk task actions',       true,         true,         true],
       ['Cmd+K quick-add',         true,         true,         true],
     ],
@@ -51,10 +46,9 @@ const FEATURE_GROUPS = [
       ['Milestones & timeline',   true,         true,         true],
       ['Calendar view',           true,         true,         true],
       ['Project analytics',       true,         true,         true],
-      ['Project templates (5)',   true,         true,         true],
+      ['Project templates',       true,         true,         true],
       ['Manual time logging',     true,         true,         true],
       ['PDF export',              true,         true,         true],
-      ['PWA (install as app)',    true,         true,         true],
     ],
   },
 ]
@@ -75,16 +69,24 @@ function Cell({ value, isHighlight }) {
   )
 }
 
-export default function UpgradeModal({ onClose, onUpgraded, reason }) {
+export default function UpgradeModal({ onClose, onUpgraded, reason, currentPlan = 'free', initialBillingCycle = 'monthly' }) {
   const { user } = useAuth()
   const [processing, setProcessing] = useState(null)
   const [error, setError] = useState('')
+  const [billingCycle, setBillingCycle] = useState(initialBillingCycle === 'annual' ? 'annual' : 'monthly')
+
+  const isAnnual = billingCycle === 'annual'
+  const fmt = (n) => `₹${n.toLocaleString('en-IN')}`
+  const fmt2 = (n) => `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  const priceFor = (planKey) => fmt(PLAN_PRICING[planKey][billingCycle])
+  const totalFor = (planKey) => fmt2(priceBreakdown(planKey, billingCycle).total)
 
   const handleUpgrade = (planKey) => {
     setError('')
     setProcessing(planKey)
     openRazorpayCheckout({
       plan: planKey,
+      billingCycle,
       user,
       onSuccess: () => {
         setProcessing(null)
@@ -95,6 +97,7 @@ export default function UpgradeModal({ onClose, onUpgraded, reason }) {
         setProcessing(null)
         setError(msg || 'Payment failed. Please try again.')
       },
+      onDismiss: () => setProcessing(null),
     })
   }
 
@@ -105,7 +108,9 @@ export default function UpgradeModal({ onClose, onUpgraded, reason }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] flex-shrink-0">
           <div>
-            <h2 className="font-display font-bold text-white text-base">Compare plans</h2>
+            <h2 className="font-display font-bold text-white text-base">
+            {currentPlan === 'pro' ? 'Upgrade to Team' : 'Compare plans'}
+          </h2>
             {reason && <p className="text-xs text-white/40 mt-0.5">{reason}</p>}
           </div>
           <button
@@ -118,6 +123,27 @@ export default function UpgradeModal({ onClose, onUpgraded, reason }) {
 
         <div className="overflow-y-auto flex-1">
           <div className="p-5">
+            {/* Billing cycle toggle */}
+            <div className="flex justify-center mb-4">
+              <div className="inline-flex items-center bg-white/[0.06] border border-white/[0.08] rounded-xl p-0.5">
+                <button
+                  onClick={() => setBillingCycle('monthly')}
+                  className={`text-[11px] font-semibold px-4 py-1.5 rounded-lg transition-all ${!isAnnual ? 'bg-white text-black' : 'text-white/50 hover:text-white/80'}`}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setBillingCycle('annual')}
+                  className={`text-[11px] font-semibold px-4 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${isAnnual ? 'bg-white text-black' : 'text-white/50 hover:text-white/80'}`}
+                >
+                  Annual
+                  <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${isAnnual ? 'bg-green-500/20 text-green-600' : 'bg-green-500/15 text-green-400'}`}>
+                    Save ~16%
+                  </span>
+                </button>
+              </div>
+            </div>
+
             {/* Plan header row */}
             <div className="grid grid-cols-4 gap-2 mb-4">
               {/* Feature label column */}
@@ -126,39 +152,55 @@ export default function UpgradeModal({ onClose, onUpgraded, reason }) {
               <div className="bg-white/[0.04] border border-white/[0.08] rounded-xl p-2.5 text-center">
                 <p className="text-[10px] font-semibold text-white/40 mb-0.5">Free</p>
                 <p className="font-display font-extrabold text-base text-white">₹0</p>
-                <p className="text-[9px] text-white/30">/month</p>
+                <p className="text-[9px] text-white/30">forever</p>
                 <div className="mt-2 py-1 rounded-lg bg-white/[0.06] text-[9px] text-white/30 font-medium">
-                  Current plan
+                  {currentPlan === 'free' ? 'Current plan' : '—'}
                 </div>
               </div>
               {/* Pro */}
-              <div className="bg-white rounded-xl p-2.5 text-center relative">
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-0.5 rounded-full border border-white/20">
-                  POPULAR
-                </div>
-                <p className="text-[10px] font-semibold text-black/50 mb-0.5">Pro</p>
-                <p className="font-display font-extrabold text-base text-black">₹499</p>
-                <p className="text-[9px] text-black/40">/month</p>
-                <button
-                  onClick={() => handleUpgrade('pro')}
-                  disabled={!!processing}
-                  className="mt-2 w-full py-1 rounded-lg bg-black text-white font-semibold text-[9px] hover:bg-black/80 transition-all flex items-center justify-center gap-1 disabled:opacity-50"
-                >
-                  {processing === 'pro' ? <><Loader2 size={9} className="animate-spin" /> Processing</> : <><Sparkles size={9} /> Upgrade</>}
-                </button>
+              <div className={`rounded-xl p-2.5 text-center relative ${currentPlan === 'pro' ? 'bg-white/[0.04] border border-violet-500/30' : 'bg-white'}`}>
+                {currentPlan !== 'pro' && (
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-0.5 rounded-full border border-white/20">
+                    POPULAR
+                  </div>
+                )}
+                <p className={`text-[10px] font-semibold mb-0.5 ${currentPlan === 'pro' ? 'text-violet-400' : 'text-black/50'}`}>Pro</p>
+                <p className={`font-display font-extrabold text-sm sm:text-base ${currentPlan === 'pro' ? 'text-white' : 'text-black'}`}>{priceFor('pro')}</p>
+                <p className={`text-[9px] ${currentPlan === 'pro' ? 'text-white/30' : 'text-black/40'}`}>{isAnnual ? '/year' : '/month'}</p>
+                <p className={`text-[8px] leading-tight mt-0.5 ${currentPlan === 'pro' ? 'text-white/30' : 'text-black/40'}`}>+18% GST<br />= {totalFor('pro')}</p>
+                {currentPlan === 'pro' ? (
+                  <div className="mt-2 py-1 rounded-lg bg-violet-500/15 text-[9px] text-violet-400 font-semibold">
+                    Current plan
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleUpgrade('pro')}
+                    disabled={!!processing || currentPlan === 'team'}
+                    className="mt-2 w-full py-1 rounded-lg bg-black text-white font-semibold text-[9px] hover:bg-black/80 transition-all flex items-center justify-center gap-1 disabled:opacity-50"
+                  >
+                    {processing === 'pro' ? <><Loader2 size={9} className="animate-spin" /> Processing</> : <><Sparkles size={9} /> Upgrade</>}
+                  </button>
+                )}
               </div>
               {/* Team */}
-              <div className="bg-white/[0.04] border border-white/[0.08] rounded-xl p-2.5 text-center">
-                <p className="text-[10px] font-semibold text-white/40 mb-0.5">Team</p>
-                <p className="font-display font-extrabold text-base text-white">₹2,499</p>
-                <p className="text-[9px] text-white/30">/month</p>
-                <button
-                  onClick={() => handleUpgrade('team')}
-                  disabled={!!processing}
-                  className="mt-2 w-full py-1 rounded-lg bg-white text-black font-semibold text-[9px] hover:bg-white/90 transition-all flex items-center justify-center gap-1 disabled:opacity-50"
-                >
-                  {processing === 'team' ? <><Loader2 size={9} className="animate-spin" /> Processing</> : 'Upgrade'}
-                </button>
+              <div className={`rounded-xl p-2.5 text-center ${currentPlan === 'team' ? 'bg-white/[0.04] border border-violet-500/30' : 'bg-white/[0.04] border border-white/[0.08]'}`}>
+                <p className={`text-[10px] font-semibold mb-0.5 ${currentPlan === 'team' ? 'text-violet-400' : 'text-white/40'}`}>Team</p>
+                <p className="font-display font-extrabold text-sm sm:text-base text-white">{priceFor('team')}</p>
+                <p className="text-[9px] text-white/30">{isAnnual ? '/year' : '/month'}</p>
+                <p className="text-[8px] leading-tight mt-0.5 text-white/30">+18% GST<br />= {totalFor('team')}</p>
+                {currentPlan === 'team' ? (
+                  <div className="mt-2 py-1 rounded-lg bg-violet-500/15 text-[9px] text-violet-400 font-semibold">
+                    Current plan
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleUpgrade('team')}
+                    disabled={!!processing}
+                    className="mt-2 w-full py-1 rounded-lg bg-white text-black font-semibold text-[9px] hover:bg-white/90 transition-all flex items-center justify-center gap-1 disabled:opacity-50"
+                  >
+                    {processing === 'team' ? <><Loader2 size={9} className="animate-spin" /> Processing</> : 'Upgrade'}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -195,7 +237,7 @@ export default function UpgradeModal({ onClose, onUpgraded, reason }) {
             )}
 
             <p className="text-center text-[10px] text-white/20">
-              Secured by Razorpay · Cancel anytime · GST applicable
+              Secured by Razorpay · Auto-renews · Cancel anytime · Incl. 18% GST
             </p>
           </div>
         </div>

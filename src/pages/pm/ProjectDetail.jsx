@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt, Timer, Sparkles, MessageSquare, AlertCircle, Clock, Layers } from 'lucide-react'
+import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt, Timer, Sparkles, MessageSquare, AlertCircle, Clock, Layers, MoreHorizontal } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getProject, getTasks, getMilestones, deleteProject, getWorkflow, getClientComments, updateProject, getProjectDependencies, getSubtaskCounts } from '../../lib/pmService'
 import { supabase } from '../../lib/supabaseClient'
@@ -62,6 +62,7 @@ export default function ProjectDetail() {
   const [showWorkflow, setShowWorkflow] = useState(false)
   const [dependencies, setDependencies] = useState([]) // [{task_id, depends_on_task_id}]
   const [pinValue, setPinValue] = useState('')
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const { isPro } = useSubscription()
 
   useEffect(() => {
@@ -261,10 +262,11 @@ export default function ProjectDetail() {
           { label: project.name },
         ]}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Desktop-only actions */}
             <button
               onClick={() => setShowInviteModal(true)}
-              className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
+              className="hidden sm:flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
             >
               <UserPlus size={14} />
               <span className="hidden sm:inline">Invite</span>
@@ -281,7 +283,7 @@ export default function ProjectDetail() {
             />
             <button
               onClick={handleExportPDF}
-              className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
+              className="hidden sm:flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
             >
               <FileDown size={14} />
               <span className="hidden sm:inline">Export</span>
@@ -289,7 +291,7 @@ export default function ProjectDetail() {
             {project.user_id === user?.id && (
               <button
                 onClick={() => isPro ? setShowWorkflow(true) : triggerUpgrade('workflow')}
-                className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
+                className="hidden sm:flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
                 title="Customize workflow stages"
               >
                 <Layers size={14} />
@@ -299,7 +301,7 @@ export default function ProjectDetail() {
             )}
             <button
               onClick={() => navigate(`/pm/projects/${id}/invoice`)}
-              className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
+              className="hidden sm:flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
             >
               <Receipt size={14} />
               <span className="hidden sm:inline">Invoice</span>
@@ -310,8 +312,50 @@ export default function ProjectDetail() {
             >
               <Share2 size={14} />
               <span className="hidden sm:inline">Share</span>
-              {!isPro && <span className="text-[10px] text-yellow-400/60">Pro</span>}
+              {!isPro && <span className="hidden sm:inline text-[10px] text-yellow-400/60">Pro</span>}
             </button>
+            {/* Mobile-only overflow menu */}
+            <div className="relative sm:hidden">
+              <button
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                className="flex items-center text-white/50 hover:text-white transition-colors p-1"
+              >
+                <MoreHorizontal size={16} />
+              </button>
+              {showMobileMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowMobileMenu(false)} />
+                  <div className="absolute right-0 top-8 z-50 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl py-1 min-w-[140px]">
+                    <button
+                      onClick={() => { setShowInviteModal(true); setShowMobileMenu(false) }}
+                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors"
+                    >
+                      <UserPlus size={13} /> Invite
+                    </button>
+                    <button
+                      onClick={() => { handleExportPDF(); setShowMobileMenu(false) }}
+                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors"
+                    >
+                      <FileDown size={13} /> Export PDF
+                    </button>
+                    {project.user_id === user?.id && (
+                      <button
+                        onClick={() => { isPro ? setShowWorkflow(true) : triggerUpgrade('workflow'); setShowMobileMenu(false) }}
+                        className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors"
+                      >
+                        <Layers size={13} /> Workflow {!isPro && <span className="text-[10px] text-yellow-400/60 ml-auto">Pro</span>}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => { navigate(`/pm/projects/${id}/invoice`); setShowMobileMenu(false) }}
+                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors"
+                    >
+                      <Receipt size={13} /> Invoice
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         }
       />
@@ -460,7 +504,7 @@ export default function ProjectDetail() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-5 sm:py-8">
         {/* Progress bar */}
         <div className="glass rounded-2xl p-5 mb-6">
           <div className="flex items-center justify-between mb-2">
@@ -537,7 +581,7 @@ export default function ProjectDetail() {
         </div>
 
         {/* Main + Sidebar */}
-        <div className="flex gap-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:gap-6">
           <div className="flex-1 min-w-0">
             {(() => {
               let filtered = annotatedTasks
@@ -556,7 +600,7 @@ export default function ProjectDetail() {
           </div>
 
           {/* Sidebar */}
-          <div className="w-64 flex-shrink-0 space-y-4">
+          <div className="w-full xl:w-64 xl:flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
             <div className="glass rounded-2xl p-5">
               <MilestoneList projectId={id} milestones={milestones} onMilestonesChange={setMilestones} />
             </div>

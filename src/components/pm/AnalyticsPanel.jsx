@@ -67,8 +67,8 @@ function BurndownChart({ tasks, doneKeys }) {
   const areaD = `${pathD} L ${pts[pts.length-1].x} ${height} L ${pts[0].x} ${height} Z`
 
   return (
-    <div className="glass rounded-2xl p-5">
-      <div className="flex items-center gap-2 mb-4">
+    <div className="glass rounded-2xl p-4">
+      <div className="flex items-center gap-2 mb-3">
         <TrendingDown size={13} className="text-white/40" />
         <p className="text-xs font-semibold text-white/70">7-Day Task Burndown</p>
       </div>
@@ -108,7 +108,7 @@ function VelocityChart({ tasks, doneKeys }) {
 
   if (rows.length === 0) {
     return (
-      <div className="glass rounded-2xl p-5">
+      <div className="glass rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Users size={13} className="text-white/40" />
           <p className="text-xs font-semibold text-white/70">Team Velocity</p>
@@ -121,8 +121,8 @@ function VelocityChart({ tasks, doneKeys }) {
   const maxDone = Math.max(...rows.map((r) => r.done), 1)
 
   return (
-    <div className="glass rounded-2xl p-5">
-      <div className="flex items-center gap-2 mb-4">
+    <div className="glass rounded-2xl p-4">
+      <div className="flex items-center gap-2 mb-3">
         <Users size={13} className="text-white/40" />
         <p className="text-xs font-semibold text-white/70">Team Velocity</p>
       </div>
@@ -188,21 +188,21 @@ export default function AnalyticsPanel({ tasks, milestones, stages }) {
           { label: 'Overdue Tasks', value: overdueTasks, sub: overdueTasks > 0 ? 'needs attention' : 'all on track', color: overdueTasks > 0 ? 'text-red-400' : 'text-green-400' },
           { label: 'Milestones', value: `${milestoneDone}/${milestones.length}`, sub: overdueMilestones > 0 ? `${overdueMilestones} overdue` : 'on track', color: overdueMilestones > 0 ? 'text-red-400' : 'text-white' },
         ].map(({ label, value, sub, color }) => (
-          <div key={label} className="glass rounded-xl p-4">
-            <p className="text-[10px] text-white/40 mb-1">{label}</p>
-            <p className={`font-display font-bold text-xl mb-0.5 ${color}`}>{value}</p>
-            <p className="text-[10px] text-white/25">{sub}</p>
+          <div key={label} className="glass rounded-xl p-3">
+            <p className="text-[10px] text-white/40 mb-0.5">{label}</p>
+            <p className={`font-display font-bold text-lg ${color}`}>{value}</p>
+            <p className="text-[9px] text-white/25">{sub}</p>
           </div>
         ))}
       </div>
 
       {/* Overall progress bar */}
-      <div className="glass rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-3">
+      <div className="glass rounded-2xl p-4">
+        <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-semibold text-white/70">Overall Progress</p>
           <span className="text-sm font-bold text-white">{completionPct}%</span>
         </div>
-        <div className="h-3 bg-white/[0.06] rounded-full overflow-hidden mb-1">
+        <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden mb-1">
           <div
             className="h-full bg-gradient-to-r from-white/60 to-white rounded-full transition-all duration-700"
             style={{ width: `${completionPct}%` }}
@@ -212,8 +212,8 @@ export default function AnalyticsPanel({ tasks, milestones, stages }) {
       </div>
 
       {/* Tasks by status */}
-      <div className="glass rounded-2xl p-5">
-        <p className="text-xs font-semibold text-white/70 mb-4">Tasks by Status</p>
+      <div className="glass rounded-2xl p-4">
+        <p className="text-xs font-semibold text-white/70 mb-3">Tasks by Status</p>
         {activeStages.map((stage) => (
           <Bar
             key={stage.status_key}
@@ -226,8 +226,8 @@ export default function AnalyticsPanel({ tasks, milestones, stages }) {
       </div>
 
       {/* Tasks by priority */}
-      <div className="glass rounded-2xl p-5">
-        <p className="text-xs font-semibold text-white/70 mb-4">Tasks by Priority</p>
+      <div className="glass rounded-2xl p-4">
+        <p className="text-xs font-semibold text-white/70 mb-3">Tasks by Priority</p>
         {PRIORITY_CONFIG.map(({ key, label, color }) => (
           <Bar
             key={key}
@@ -245,7 +245,7 @@ export default function AnalyticsPanel({ tasks, milestones, stages }) {
 
       {/* Milestones */}
       {milestones.length > 0 && (
-        <div className="glass rounded-2xl p-5">
+        <div className="glass rounded-2xl p-4">
           <div className="flex items-center justify-between mb-4">
             <p className="text-xs font-semibold text-white/70">Milestones</p>
             <span className="text-xs text-white/40">{milestoneDone}/{milestones.length}</span>

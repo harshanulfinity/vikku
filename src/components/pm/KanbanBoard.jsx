@@ -294,9 +294,13 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
             return (
               <div
                 key={stage.status_key}
-                style={{ minWidth: '220px', flex: '1 0 220px', maxWidth: '320px' }}
+                style={{ minWidth: '200px', flex: '1 0 200px', maxWidth: '320px' }}
                 className={`flex flex-col min-h-[300px] rounded-2xl p-3 transition-all duration-200 ${
-                  isOver ? 'bg-white/[0.04] ring-1 ring-white/20' : ''
+                  isOver
+                    ? 'bg-white/[0.06] ring-1 ring-white/20'
+                    : stage.is_done
+                    ? 'bg-green-500/[0.04]'
+                    : 'bg-white/[0.025]'
                 }`}
                 onDragOver={(e) => { e.preventDefault(); setDragOverCol(stage.status_key) }}
                 onDragLeave={(e) => {
@@ -308,6 +312,7 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
                 }}
                 onDrop={() => handleDrop(stage.status_key)}
               >
+                <div className="h-0.5 rounded-full mb-3 -mx-1" style={{ backgroundColor: `${stageColor(stage.color)}55` }} />
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: stageColor(stage.color) }} />

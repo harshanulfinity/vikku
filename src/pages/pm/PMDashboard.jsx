@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, LayoutDashboard, Lock, Users, Gift, CheckCircle, AlertTriangle, TrendingUp, Folder, CalendarClock, ChevronDown, ChevronUp, Zap, Mail, Settings, X, CreditCard } from 'lucide-react'
+import { Plus, LayoutDashboard, Lock, Users, Gift, CheckCircle, AlertTriangle, TrendingUp, Folder, CalendarClock, ChevronDown, ChevronUp, Zap, Mail, Settings, X, CreditCard, Sparkles } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getProjects, getTasks, getSharedProjects } from '../../lib/pmService'
 import { sendWeeklyDigest } from '../../lib/openaiService'
@@ -12,6 +12,7 @@ import useSubscription from '../../hooks/useSubscription'
 import AppHeader from '../../components/AppHeader'
 
 const FREE_PROJECT_LIMIT = 3
+const MY_TASKS_LIMIT = 6
 
 export default function PMDashboard() {
   const { user, loading, signOut } = useAuth()
@@ -22,10 +23,12 @@ export default function PMDashboard() {
   const [allTasks, setAllTasks] = useState([])
   const [fetching, setFetching] = useState(true)
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [pendingCycle, setPendingCycle] = useState('monthly')
   const [showManageSub, setShowManageSub] = useState(false)
   const [cancelConfirm, setCancelConfirm] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [showMyTasks, setShowMyTasks] = useState(true)
+  const [showAllTasks, setShowAllTasks] = useState(false)
   const [sendingDigest, setSendingDigest] = useState(false)
   const [digestSent, setDigestSent] = useState(false)
   const { isPro, plan, subscription, setSubscription, loading: subLoading } = useSubscription()
@@ -35,6 +38,8 @@ export default function PMDashboard() {
     const pending = sessionStorage.getItem('vikku_pending_plan')
     if (pending && user) {
       sessionStorage.removeItem('vikku_pending_plan')
+      const cycle = sessionStorage.getItem('vikku_pending_cycle')
+      if (cycle) { setPendingCycle(cycle); sessionStorage.removeItem('vikku_pending_cycle') }
       setShowUpgrade(true)
     }
   }, [user])
@@ -149,7 +154,9 @@ export default function PMDashboard() {
     <div className="min-h-screen bg-black text-white">
       {showUpgrade && (
         <UpgradeModal
-          reason="Free plan allows 3 active projects. Upgrade to Pro for unlimited projects."
+          currentPlan={plan}
+          initialBillingCycle={pendingCycle}
+          reason={plan === 'pro' ? 'Upgrade to Team for unlimited members across your projects.' : 'Free plan allows 3 active projects. Upgrade to Pro for unlimited projects.'}
           onClose={() => setShowUpgrade(false)}
           onUpgraded={() => { setShowUpgrade(false); window.location.reload() }}
         />
@@ -157,46 +164,62 @@ export default function PMDashboard() {
 
       {/* Manage Subscription Modal */}
       {showManageSub && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-sm bg-[#111] border border-white/10 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display font-bold text-white text-base">My Subscription</h2>
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={() => { setShowManageSub(false); setCancelConfirm(false) }}
+        >
+          <div
+            className="w-full max-w-[300px] bg-[#111] border border-white/10 rounded-2xl p-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display font-bold text-white text-sm">My Subscription</h2>
               <button onClick={() => { setShowManageSub(false); setCancelConfirm(false) }} className="text-white/40 hover:text-white transition-colors">
-                <X size={16} />
+                <X size={15} />
               </button>
             </div>
 
-            <div className="glass rounded-xl p-4 mb-4">
-              <div className="flex items-center justify-between mb-3">
+            <div className="glass rounded-xl p-3 mb-2.5">
+              <div className="flex items-center justify-between mb-2.5">
                 <div>
-                  <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Current plan</p>
-                  <p className="font-display font-bold text-white capitalize">{plan}</p>
+                  <p className="text-[10px] text-white/40 uppercase tracking-wider mb-0.5">Current plan</p>
+                  <p className="font-display font-bold text-white capitalize text-sm">{plan}</p>
                 </div>
-                <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                  <CreditCard size={14} className="text-violet-400" />
+                <div className="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                  <CreditCard size={13} className="text-violet-400" />
                 </div>
               </div>
               {subscription?.current_period_end && (
                 <div>
-                  <p className="text-xs text-white/40 uppercase tracking-wider mb-1">
+                  <p className="text-[10px] text-white/40 uppercase tracking-wider mb-0.5">
                     {subscription.status === 'cancelling' ? 'Access until' : 'Renews on'}
                   </p>
-                  <p className="text-sm text-white">
+                  <p className="text-xs text-white">
                     {new Date(subscription.current_period_end).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
               )}
               {subscription?.status === 'cancelling' && (
-                <p className="text-xs text-yellow-400/80 mt-3">Cancellation scheduled — Pro access continues until the date above.</p>
+                <p className="text-[10px] text-yellow-400/80 mt-2">Cancellation scheduled — Pro access continues until the date above.</p>
               )}
             </div>
+
+            {plan === 'pro' && subscription?.status !== 'cancelling' && (
+              <button
+                onClick={() => { setShowManageSub(false); setCancelConfirm(false); setShowUpgrade(true) }}
+                className="w-full text-xs font-semibold text-white bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 rounded-xl py-2 mb-2 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Sparkles size={12} className="text-violet-400" />
+                Upgrade to Team — ₹999/mo
+              </button>
+            )}
 
             {subscription?.status !== 'cancelling' && (
               <>
                 {!cancelConfirm ? (
                   <button
                     onClick={() => setCancelConfirm(true)}
-                    className="w-full text-sm text-white/40 hover:text-red-400 transition-colors py-2 border border-white/[0.06] rounded-xl"
+                    className="w-full text-xs text-white/40 hover:text-red-400 transition-colors py-2 border border-white/[0.06] rounded-xl"
                   >
                     Cancel subscription
                   </button>
@@ -256,12 +279,12 @@ export default function PMDashboard() {
         }
       />
 
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Page header */}
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <h1 className="font-display font-extrabold text-3xl text-white mb-2">My Projects</h1>
-            <div className="flex items-center gap-4 text-xs text-white/40">
+        <div className="flex items-start justify-between gap-3 mb-6 sm:mb-8">
+          <div className="min-w-0">
+            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-white mb-1.5 sm:mb-2">My Projects</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/40">
               <span>{projects.length} total</span>
               <span>{active} active</span>
               <span>{done} completed</span>
@@ -272,14 +295,14 @@ export default function PMDashboard() {
           </div>
           <button
             onClick={handleNewProject}
-            className={`flex items-center gap-2 font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors ${
+            className={`flex items-center gap-1.5 sm:gap-2 font-semibold text-xs sm:text-sm px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-xl transition-colors flex-shrink-0 ${
               atLimit
                 ? 'bg-white/10 text-white/50 hover:bg-white/15'
                 : 'bg-white text-black hover:bg-white/90'
             }`}
           >
-            {atLimit ? <Lock size={14} /> : <Plus size={16} />}
-            New Project
+            {atLimit ? <Lock size={14} /> : <Plus size={15} />}
+            <span className="hidden sm:inline">New </span>Project
           </button>
         </div>
 
@@ -411,9 +434,16 @@ export default function PMDashboard() {
               </div>
             </button>
 
-            {showMyTasks && (
+            {showMyTasks && (() => {
+              // Cap the number of task rows shown across all groups until "Show more"
+              let budget = showAllTasks ? Infinity : MY_TASKS_LIMIT
+              return (
               <div className="space-y-6">
-                {myTaskGroups.map(({ label, tasks, color, dotColor }) => (
+                {myTaskGroups.map(({ label, tasks, color, dotColor }) => {
+                  const visibleTasks = showAllTasks ? tasks : tasks.slice(0, Math.max(0, budget))
+                  budget -= visibleTasks.length
+                  if (visibleTasks.length === 0) return null
+                  return (
                   <div key={label}>
                     <div className="flex items-center gap-2 mb-2">
                       <div className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
@@ -421,7 +451,7 @@ export default function PMDashboard() {
                       <span className="text-[10px] text-white/20">({tasks.length})</span>
                     </div>
                     <div className="space-y-1.5">
-                      {tasks.map((t) => (
+                      {visibleTasks.map((t) => (
                         <div
                           key={t.id}
                           onClick={() => navigate(`/pm/projects/${t.project_id}`)}
@@ -449,9 +479,24 @@ export default function PMDashboard() {
                       ))}
                     </div>
                   </div>
-                ))}
+                  )
+                })}
+
+                {pendingTasks.length > MY_TASKS_LIMIT && (
+                  <button
+                    onClick={() => setShowAllTasks((v) => !v)}
+                    className="w-full flex items-center justify-center gap-1 text-xs text-white/40 hover:text-white/70 border border-white/[0.06] hover:border-white/15 rounded-xl py-2 transition-all"
+                  >
+                    {showAllTasks ? (
+                      <>Show less <ChevronUp size={13} /></>
+                    ) : (
+                      <>Show {pendingTasks.length - MY_TASKS_LIMIT} more <ChevronDown size={13} /></>
+                    )}
+                  </button>
+                )}
               </div>
-            )}
+              )
+            })()}
           </div>
         )}
 

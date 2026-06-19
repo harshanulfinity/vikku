@@ -90,7 +90,7 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
       {!open && (
         <button
           onClick={handleOpen}
-          className="flex items-center gap-2 text-xs bg-white/[0.06] hover:bg-white/10 text-white px-4 py-2.5 rounded-xl transition-all border border-white/[0.08] hover:border-white/20"
+          className="flex items-center gap-1.5 sm:gap-2 text-xs bg-white/[0.06] hover:bg-white/10 text-white px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-xl transition-all border border-white/[0.08] hover:border-white/20"
         >
           {isPro ? (
             <Sparkles size={14} className="text-yellow-400" />
@@ -99,11 +99,12 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
           ) : (
             <Sparkles size={14} className="text-white/60" />
           )}
-          Plan with AI
-          {isPro ? null : freeExhausted ? (
-            <span className="text-[10px] text-yellow-400/60 ml-0.5">Upgrade</span>
-          ) : (
-            <span className="text-[10px] text-white/30 ml-0.5">{remaining}/{FREE_LIMIT} free</span>
+          <span className="hidden sm:inline">Plan with AI</span>
+          {!isPro && !freeExhausted && (
+            <span className="hidden sm:inline text-[10px] text-white/30 ml-0.5">{remaining}/{FREE_LIMIT} free</span>
+          )}
+          {!isPro && freeExhausted && (
+            <span className="hidden sm:inline text-[10px] text-yellow-400/60 ml-0.5">Upgrade</span>
           )}
         </button>
       )}

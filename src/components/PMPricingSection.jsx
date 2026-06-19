@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import useSubscription from '../hooks/useSubscription'
 import UpgradeModal from './pm/UpgradeModal'
+import { priceBreakdown } from '../lib/razorpayService'
 import {
   Kanban, Users, Clock, BarChart2, FileText, Zap, Share2, CheckCircle,
   ArrowRight, Star,
@@ -75,28 +76,27 @@ const PLANS = [
   {
     key: 'free',
     name: 'Free',
-    price: '₹0',
-    period: 'forever',
+    monthly: { price: '₹0', period: 'forever' },
+    annual:  { price: '₹0', period: 'forever' },
     desc: 'For solo founders getting started.',
     color: 'border-white/10',
     cta: 'Start free',
     ctaStyle: 'bg-white/10 text-white hover:bg-white/20',
     features: [
       '3 active projects',
+      'Up to 3 members per project',
       'Unlimited tasks',
-      'Kanban + list view',
-      'Milestone tracking',
-      'Calendar view',
-      'Analytics & reporting',
-      'PDF export',
-      'AI planner (6 uses/month)',
+      'Kanban, timeline & calendar views',
+      'Milestones & analytics',
+      'PDF export & manual time logging',
+      'AI planner (6 plans/month)',
     ],
   },
   {
     key: 'pro',
     name: 'Pro',
-    price: '₹499',
-    period: '/month',
+    monthly: { price: '₹299', period: '/month' },
+    annual:  { price: '₹2,999', period: '/year', note: '₹250/mo billed yearly' },
     desc: 'For freelancers and agencies with clients.',
     color: 'border-violet-500/40',
     highlight: true,
@@ -104,34 +104,29 @@ const PLANS = [
     cta: 'Upgrade to Pro',
     ctaStyle: 'bg-white text-black hover:bg-white/90',
     features: [
-      'Unlimited projects',
-      'Client portal (PIN-protected share link)',
-      'Time tracking + billable hours',
-      'Workflow automation',
+      'Everything in Free',
+      'Unlimited active projects',
       'AI planner (unlimited)',
-      'PDF invoice + report export',
-      'Calendar view',
-      'Priority support',
+      'Time tracking, timer & billable hours',
+      'Client portal (PIN-protected share link)',
+      'Custom workflows',
+      'Up to 10 members per project',
     ],
   },
   {
     key: 'team',
     name: 'Team',
-    price: '₹2,499',
-    period: '/month',
+    monthly: { price: '₹999', period: '/month' },
+    annual:  { price: '₹9,999', period: '/year', note: '₹833/mo billed yearly' },
     desc: 'For agencies managing multiple teams.',
     color: 'border-white/10',
     cta: 'Upgrade to Team',
     ctaStyle: 'bg-white/10 text-white hover:bg-white/20',
     features: [
       'Everything in Pro',
-      'Team members (up to 10)',
-      'Role-based access control',
-      'Member invite links',
-      'Project duplication',
-      'Custom client portal branding',
-      'Dedicated onboarding call',
-      'SLA-backed support',
+      'Unlimited members per project',
+      'Unlimited member invite links',
+      'Shared access across your whole team',
     ],
   },
 ]
@@ -141,6 +136,8 @@ export default function PMPricingSection() {
   const { user } = useAuth()
   const { plan: currentPlan } = useSubscription()
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [billingCycle, setBillingCycle] = useState('monthly')
+  const isAnnual = billingCycle === 'annual'
 
   const handleCTA = (planKey) => {
     if (planKey === 'free') {
@@ -148,8 +145,9 @@ export default function PMPricingSection() {
       return
     }
     if (!user) {
-      // Store plan intent so PMDashboard can open upgrade modal after signup
+      // Store plan + billing intent so PMDashboard can open upgrade modal after signup
       sessionStorage.setItem('vikku_pending_plan', planKey)
+      sessionStorage.setItem('vikku_pending_cycle', billingCycle)
       navigate(`/signup?plan=${planKey}`)
       return
     }
@@ -161,6 +159,8 @@ export default function PMPricingSection() {
     <section id="pm-pricing" className="py-24 px-6 bg-black relative overflow-hidden">
       {showUpgrade && (
         <UpgradeModal
+          currentPlan={currentPlan}
+          initialBillingCycle={billingCycle}
           onClose={() => setShowUpgrade(false)}
           onUpgraded={() => { setShowUpgrade(false); navigate('/pm/dashboard') }}
         />
@@ -214,14 +214,36 @@ export default function PMPricingSection() {
         </div>
 
         {/* Pricing */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-8">
           <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-white mb-2">Simple, honest pricing</h3>
           <p className="text-white/40 text-sm">Start free. Upgrade when you need client features.</p>
+        </div>
+
+        {/* Billing cycle toggle */}
+        <div className="flex justify-center mb-10">
+          <div className="inline-flex items-center bg-white/[0.06] border border-white/[0.08] rounded-xl p-0.5">
+            <button
+              onClick={() => setBillingCycle('monthly')}
+              className={`text-xs font-semibold px-5 py-2 rounded-lg transition-all ${!isAnnual ? 'bg-white text-black' : 'text-white/50 hover:text-white/80'}`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingCycle('annual')}
+              className={`text-xs font-semibold px-5 py-2 rounded-lg transition-all flex items-center gap-2 ${isAnnual ? 'bg-white text-black' : 'text-white/50 hover:text-white/80'}`}
+            >
+              Annual
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isAnnual ? 'bg-green-500/20 text-green-600' : 'bg-green-500/15 text-green-400'}`}>
+                Save ~16%
+              </span>
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-16">
           {PLANS.map((plan) => {
             const isCurrentPlan = user && currentPlan === plan.key
+            const pricing = isAnnual ? plan.annual : plan.monthly
             return (
               <div
                 key={plan.name}
@@ -235,10 +257,16 @@ export default function PMPricingSection() {
 
                 <div className="mb-5">
                   <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2">{plan.name}</p>
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className="font-display font-extrabold text-3xl text-white">{plan.price}</span>
-                    <span className="text-sm text-white/40">{plan.period}</span>
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <span className="font-display font-extrabold text-3xl text-white">{pricing.price}</span>
+                    <span className="text-sm text-white/40">{pricing.period}</span>
                   </div>
+                  <p className="text-[10px] text-green-400/70 mb-1 h-3.5">{pricing.note || ''}</p>
+                  <p className="text-[10px] text-white/30 mb-2 h-3.5">
+                    {plan.key !== 'free'
+                      ? `+18% GST · ₹${priceBreakdown(plan.key, billingCycle).total.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ${isAnnual ? '/yr' : '/mo'} total`
+                      : ''}
+                  </p>
                   <p className="text-xs text-white/50 leading-relaxed">{plan.desc}</p>
                 </div>
 

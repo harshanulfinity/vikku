@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Activity, Plus, ArrowRight, CheckCircle, Flag, Loader2 } from 'lucide-react'
+import { Activity, Plus, ArrowRight, CheckCircle, Flag, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import { getProjectActivity } from '../../lib/pmService'
+
+const VISIBLE_COUNT = 7
 
 const ACTION_ICON = {
   task_created: Plus,
@@ -27,6 +29,7 @@ function timeAgo(dateStr) {
 export default function ActivityFeed({ projectId }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showAll, setShowAll] = useState(false)
 
   useEffect(() => {
     if (!projectId) return
@@ -35,6 +38,8 @@ export default function ActivityFeed({ projectId }) {
       setLoading(false)
     })
   }, [projectId])
+
+  const visibleItems = showAll ? items : items.slice(0, VISIBLE_COUNT)
 
   return (
     <div className="glass rounded-2xl p-4">
@@ -51,7 +56,7 @@ export default function ActivityFeed({ projectId }) {
         <p className="text-[11px] text-white/20 text-center py-4">No activity yet</p>
       ) : (
         <div className="space-y-3">
-          {items.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = ACTION_ICON[item.action] || ArrowRight
             const color = ACTION_COLOR[item.action] || 'text-white/40'
             return (
@@ -75,6 +80,19 @@ export default function ActivityFeed({ projectId }) {
               </div>
             )
           })}
+
+          {items.length > VISIBLE_COUNT && (
+            <button
+              onClick={() => setShowAll((v) => !v)}
+              className="w-full flex items-center justify-center gap-1 text-[11px] text-white/40 hover:text-white/70 border border-white/[0.06] hover:border-white/15 rounded-lg py-1.5 mt-1 transition-all"
+            >
+              {showAll ? (
+                <>Show less <ChevronUp size={12} /></>
+              ) : (
+                <>Show {items.length - VISIBLE_COUNT} more <ChevronDown size={12} /></>
+              )}
+            </button>
+          )}
         </div>
       )}
     </div>
