@@ -137,14 +137,33 @@ export default function ProjectDetail() {
   const shareUrl = project ? `${window.location.origin}/pm/share/${project.share_token}` : ''
 
   const handleSaveAndCopy = async () => {
+    // Copy FIRST — clipboard writes must happen inside the user gesture
+    // (iOS Safari drops the gesture after an awaited network call).
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl)
+      } else {
+        const ta = document.createElement('textarea')
+        ta.value = shareUrl
+        ta.style.position = 'fixed'
+        ta.style.opacity = '0'
+        document.body.appendChild(ta)
+        ta.focus(); ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+      }
+    } catch {
+      // Clipboard blocked — the link is still visible above for manual copy
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+
+    // Then persist the PIN
     const pin = pinValue.trim()
     if (pin !== (project?.share_pin || '')) {
       const updated = await updateProject(project.id, { share_pin: pin || null }).catch(() => null)
       if (updated) setProject(updated)
     }
-    await navigator.clipboard.writeText(shareUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleExportPDF = () => {
@@ -362,7 +381,7 @@ export default function ProjectDetail() {
 
       {/* Share panel */}
       {shareTab && (
-        <div className="border-b border-white/[0.05] bg-white/[0.02] px-6 py-4">
+        <div className="border-b border-white/[0.05] bg-white/[0.02] px-4 sm:px-6 py-4">
           <div className="max-w-7xl mx-auto space-y-3">
             <div className="flex items-start gap-3">
               <div className="flex-1 min-w-0">
@@ -444,11 +463,13 @@ export default function ProjectDetail() {
                     value={pinValue}
                     onChange={(e) => setPinValue(e.target.value)}
                     placeholder="Leave blank for no PIN"
-                    className="flex-1 text-xs bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors font-mono tracking-widest"
+                    className="flex-1 min-w-0 text-xs bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors font-mono tracking-widest"
                   />
+                </div>
+                <div className="flex sm:justify-end pt-1">
                   <button
                     onClick={handleSaveAndCopy}
-                    className="flex items-center gap-1.5 text-xs bg-white text-black px-3 py-1.5 rounded-lg font-medium hover:bg-white/90 transition-colors flex-shrink-0"
+                    className="flex items-center justify-center gap-1.5 text-xs bg-white text-black px-3 py-2 rounded-lg font-medium hover:bg-white/90 transition-colors w-full sm:w-auto"
                   >
                     {copied ? <><Check size={12} /> Saved & Copied!</> : <><Copy size={12} /> Save & Copy link</>}
                   </button>

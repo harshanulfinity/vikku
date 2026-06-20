@@ -1,6 +1,6 @@
 import { Linkedin, Mail, Instagram, Phone } from 'lucide-react'
 
-export default function FounderCard({ founder }) {
+export default function FounderCard({ founder, compact = false }) {
   return (
     <div
       className="glass rounded-xl p-6 md:p-8 mt-3 flex flex-col sm:flex-row gap-6 items-stretch"
@@ -8,20 +8,20 @@ export default function FounderCard({ founder }) {
       style={{ opacity: 0, transform: 'translateY(20px)', transition: 'all 0.5s ease 0.3s' }}
     >
       {/* Photo */}
-      <div className="relative w-full sm:w-1/2 h-64 sm:h-auto sm:self-stretch rounded-xl overflow-hidden flex-shrink-0 bg-black">
+      <div className={`relative ${compact ? 'w-full sm:w-44' : 'w-full sm:w-1/2'} h-56 sm:h-auto sm:self-stretch rounded-2xl overflow-hidden flex-shrink-0 bg-black`}>
         <span className="absolute inset-0 flex items-center justify-center font-display font-bold text-4xl text-white/80">
           {founder.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
         </span>
         <img
           src={founder.photo}
           alt={founder.name}
-          className="relative w-full h-full object-contain"
+          className="relative w-full h-full rounded-2xl object-cover object-top"
           onError={(e) => { e.currentTarget.style.display = 'none' }}
         />
       </div>
 
       {/* Bio */}
-      <div className="w-full sm:w-1/2">
+      <div className={compact ? 'w-full sm:flex-1' : 'w-full sm:w-1/2'}>
         <h3 className="font-display font-semibold text-white text-base mb-1">{founder.name}</h3>
         {founder.role && (
           <p className="text-white/50 text-xs mb-3">{founder.role}</p>

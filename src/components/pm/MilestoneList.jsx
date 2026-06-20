@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircle2, Circle, Plus, Trash2, Flag } from 'lucide-react'
+import { CheckCircle2, Circle, Plus, Trash2, Flag, ThumbsUp, ThumbsDown, Clock } from 'lucide-react'
 import { createMilestone, updateMilestone, deleteMilestone } from '../../lib/pmService'
 
 export default function MilestoneList({ projectId, milestones, onMilestonesChange }) {
@@ -69,6 +69,24 @@ export default function MilestoneList({ projectId, milestones, onMilestonesChang
                   {isPast && !m.completed ? 'Overdue - ' : ''}
                   {new Date(m.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
+                {/* Client approval status (only relevant once completed) */}
+                {m.completed && m.approval_status === 'approved' && (
+                  <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-green-400">
+                    <ThumbsUp size={9} /> Client approved
+                    {m.client_note && <span className="text-white/30 truncate">· &ldquo;{m.client_note}&rdquo;</span>}
+                  </span>
+                )}
+                {m.completed && m.approval_status === 'rejected' && (
+                  <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-red-400">
+                    <ThumbsDown size={9} /> Revision requested
+                    {m.client_note && <span className="text-white/30 truncate">· &ldquo;{m.client_note}&rdquo;</span>}
+                  </span>
+                )}
+                {m.completed && (!m.approval_status || m.approval_status === 'pending') && (
+                  <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-yellow-400/60">
+                    <Clock size={9} /> Awaiting client approval
+                  </span>
+                )}
               </div>
               <button
                 onClick={() => handleDelete(m.id)}

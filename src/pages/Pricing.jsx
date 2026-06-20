@@ -125,11 +125,11 @@ export default function Pricing() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-16">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
         {/* Heading */}
-        <div className="text-center mb-14">
-          <p className="text-xs text-white/40 uppercase tracking-widest mb-4">Free Founder Tools</p>
-          <h1 className="font-display font-extrabold text-4xl md:text-5xl text-white mb-4 leading-tight">
+        <div className="text-center mb-10 sm:mb-14">
+          <p className="text-xs text-white/40 uppercase tracking-widest mb-3 sm:mb-4">Free Founder Tools</p>
+          <h1 className="font-display font-extrabold text-3xl sm:text-4xl md:text-5xl text-white mb-4 leading-tight">
             Tools that help you<br />build smarter
           </h1>
           <p className="text-white/50 text-sm max-w-lg mx-auto leading-relaxed">
@@ -142,9 +142,9 @@ export default function Pricing() {
           {TOOLS_COPY.map((tool) => {
             const Icon = tool.Icon
             return (
-              <div key={tool.name} className="glass rounded-2xl p-8 md:p-10">
+              <div key={tool.name} className="glass rounded-2xl p-5 sm:p-8 md:p-10">
                 {/* Tool label */}
-                <div className="flex items-center gap-2.5 mb-5">
+                <div className="flex items-center gap-2.5 mb-4 sm:mb-5">
                   <div className={`w-8 h-8 rounded-xl ${tool.bg} flex items-center justify-center flex-shrink-0`}>
                     <Icon size={15} className={tool.color} />
                   </div>
@@ -152,16 +152,16 @@ export default function Pricing() {
                 </div>
 
                 {/* Hook */}
-                <h2 className="font-display font-bold text-xl md:text-2xl text-white mb-3 leading-snug">
+                <h2 className="font-display font-bold text-lg sm:text-xl md:text-2xl text-white mb-3 leading-snug">
                   {tool.hook}
                 </h2>
 
                 {/* Outcome */}
-                <p className="text-white/50 text-sm mb-8 max-w-2xl leading-relaxed">
+                <p className="text-white/50 text-sm mb-6 sm:mb-8 max-w-2xl leading-relaxed">
                   {tool.outcome}
                 </p>
 
-                <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+                <div className="grid md:grid-cols-2 gap-6 sm:gap-8 md:gap-12">
                   {/* Left: intro + steps */}
                   <div>
                     <p className="text-white/70 text-sm leading-relaxed mb-6">{tool.intro}</p>
@@ -200,8 +200,8 @@ export default function Pricing() {
         </div>
 
         {/* Bottom CTA */}
-        <div className="glass-strong rounded-2xl p-10 text-center mt-10">
-          <h3 className="font-display font-bold text-2xl text-white mb-3">All tools. Free account. No credit card.</h3>
+        <div className="glass-strong rounded-2xl p-6 sm:p-10 text-center mt-8 sm:mt-10">
+          <h3 className="font-display font-bold text-xl sm:text-2xl text-white mb-3">All tools. Free account. No credit card.</h3>
           <p className="text-white/50 text-sm mb-6 max-w-md mx-auto">
             Sign up and get instant access to every tool - plus the PM tool to manage your projects once you're ready to build.
           </p>

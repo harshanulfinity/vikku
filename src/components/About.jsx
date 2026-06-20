@@ -125,7 +125,7 @@ export default function About() {
 
         {/* The Team */}
         {team.map((member) => (
-          <FounderCard key={member.name} founder={member} />
+          <FounderCard key={member.name} founder={member} compact />
         ))}
       </div>
     </section>

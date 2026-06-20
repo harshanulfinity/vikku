@@ -143,6 +143,11 @@ html.light .bg-\[\#111\] {
   background-color: #ffffff !important;
 }
 
+/* Dropdowns / popovers (overflow menu, assignee menus, workflow popover, tooltips) */
+html.light .bg-\[\#1a1a1a\] {
+  background-color: #ffffff !important;
+}
+
 /* text-white opacity ladder → slate-900 */
 html.light .text-white        { color: #0f172a !important; }
 html.light .text-white\/90    { color: rgba(15,23,42,0.90) !important; }

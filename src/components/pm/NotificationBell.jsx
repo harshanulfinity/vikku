@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Bell, CheckCircle, AlertCircle, X } from 'lucide-react'
+import { Bell, CheckCircle, AlertCircle, X, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { getProjects, getTasks, getMilestones } from '../../lib/pmService'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -35,6 +35,17 @@ export default function NotificationBell() {
           message: `Milestone "${m.title}" due soon`,
           sub: p.name,
         }))
+        // Client milestone reviews
+        milestones
+          .filter((m) => m.approval_status === 'approved' || m.approval_status === 'rejected')
+          .forEach((m) => notes.push({
+            id: `ms-approval-${m.id}`,
+            type: m.approval_status === 'approved' ? 'approved' : 'revision',
+            message: m.approval_status === 'approved'
+              ? `Client approved "${m.title}"`
+              : `Client requested revision on "${m.title}"`,
+            sub: p.name,
+          }))
       }))
       setNotifications(notes)
     }
@@ -82,7 +93,13 @@ export default function NotificationBell() {
             <div className="max-h-80 overflow-y-auto">
               {notifications.map((n) => (
                 <div key={n.id} className="flex gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
-                  <AlertCircle size={13} className={n.type === 'overdue' ? 'text-red-400 flex-shrink-0 mt-0.5' : 'text-yellow-400 flex-shrink-0 mt-0.5'} />
+                  {n.type === 'approved' ? (
+                    <ThumbsUp size={13} className="text-green-400 flex-shrink-0 mt-0.5" />
+                  ) : n.type === 'revision' ? (
+                    <ThumbsDown size={13} className="text-orange-400 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle size={13} className={n.type === 'overdue' ? 'text-red-400 flex-shrink-0 mt-0.5' : 'text-yellow-400 flex-shrink-0 mt-0.5'} />
+                  )}
                   <div>
                     <p className="text-xs text-white/70 leading-snug">{n.message}</p>
                     <p className="text-[10px] text-white/30 mt-0.5">{n.sub}</p>

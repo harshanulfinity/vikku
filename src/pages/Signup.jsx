@@ -55,9 +55,9 @@ export default function Signup() {
 
   if (sent) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+      <div className="min-h-screen bg-black text-white flex items-center justify-center px-4 sm:px-6 py-8">
         <div className="w-full max-w-md text-center">
-          <div className="glass rounded-2xl p-10">
+          <div className="glass rounded-2xl p-6 sm:p-10">
             {/* Icon */}
             <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mx-auto mb-6">
               <Inbox size={28} className="text-black" />
@@ -103,14 +103,14 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+    <div className="min-h-screen bg-black text-white flex items-center justify-center px-4 sm:px-6 py-8">
       <div className="w-full max-w-md">
-        <Link to="/" className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-8">
+        <Link to="/" className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-6">
           <ArrowLeft size={16} /> Back to Home
         </Link>
 
-        <div className="glass rounded-2xl p-8">
-          <div className="mb-8">
+        <div className="glass rounded-2xl p-6 sm:p-8">
+          <div className="mb-6">
             <h1 className="font-display font-extrabold text-2xl text-white mb-2">Create Account</h1>
             <p className="text-white/60 text-sm">Sign up to access AI tools and resources</p>
           </div>
@@ -122,7 +122,7 @@ export default function Signup() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs text-white/60 mb-2 uppercase tracking-wider">Email</label>
               <div className="relative">
