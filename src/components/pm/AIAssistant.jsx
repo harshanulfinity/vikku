@@ -50,7 +50,13 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
       setPreview(result)
       if (!isPro && user) incrementUsage(user.id)
     } catch (err) {
-      setError(err.message)
+      // Server-side gate (free monthly limit / pro-only) → prompt upgrade
+      if (err.message === 'limit_reached' || err.message === 'pro_required') {
+        setOpen(false)
+        setShowUpgrade(true)
+      } else {
+        setError(err.message)
+      }
     } finally {
       setLoading(false)
     }

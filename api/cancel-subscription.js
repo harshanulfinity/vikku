@@ -1,4 +1,5 @@
 import Razorpay from 'razorpay';
+import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -6,29 +7,47 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { subscription_id } = req.body || {};
-    if (!subscription_id) {
-      return res.status(400).json({ error: 'Missing subscription_id' });
+    const { userId, subscription_id } = req.body || {};
+    if (!userId) {
+      return res.status(400).json({ error: 'Missing userId' });
     }
 
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-      return res.status(500).json({ error: 'Razorpay credentials not configured' });
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceKey) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+    const admin = createClient(supabaseUrl, serviceKey);
+
+    // Stop auto-renewal at Razorpay (best-effort; access stays until period end)
+    if (subscription_id && process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+      try {
+        const razorpay = new Razorpay({
+          key_id: process.env.RAZORPAY_KEY_ID,
+          key_secret: process.env.RAZORPAY_KEY_SECRET,
+        });
+        await razorpay.subscriptions.cancel(subscription_id, true); // cancel at cycle end
+      } catch (err) {
+        console.error('Razorpay cancel failed (continuing):', err?.message);
+      }
     }
 
-    const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_KEY_SECRET,
-    });
+    // Mark cancelling — user keeps access until current_period_end
+    const { data, error } = await admin
+      .from('user_subscriptions')
+      .update({ status: 'cancelling', updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .select('current_period_end')
+      .single();
 
-    // cancel_at_cycle_end = 1 → user keeps access until the current period ends.
-    const result = await razorpay.subscriptions.cancel(subscription_id, true);
+    if (error) {
+      console.error('cancel update failed:', error);
+      return res.status(500).json({ error: 'Failed to cancel subscription' });
+    }
 
-    return res.status(200).json({ success: true, status: result?.status });
+    return res.status(200).json({ success: true, accessUntil: data?.current_period_end });
   } catch (error) {
-    console.error('Error cancelling Razorpay subscription:', error);
-    return res.status(500).json({
-      error: 'Failed to cancel subscription',
-      message: error.message,
-    });
+    console.error('Error cancelling subscription:', error);
+    return res.status(500).json({ error: 'Failed to cancel subscription', message: error.message });
   }
 }

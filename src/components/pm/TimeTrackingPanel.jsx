@@ -80,9 +80,10 @@ export default function TimeTrackingPanel({ projectId, tasks }) {
 
   // ── Aggregations ────────────────────────────────────────────────────────────
 
+  // All aggregates use filteredLogs so percentages/bars stay correct under a filter
   const totalMins = filteredLogs.reduce((s, l) => s + (l.minutes || 0), 0)
-  const billableMins = logs.filter((l) => l.billable).reduce((s, l) => s + (l.minutes || 0), 0)
-  const nonBillableMins = logs.filter((l) => !l.billable).reduce((s, l) => s + (l.minutes || 0), 0)
+  const billableMins = filteredLogs.filter((l) => l.billable).reduce((s, l) => s + (l.minutes || 0), 0)
+  const nonBillableMins = filteredLogs.filter((l) => !l.billable).reduce((s, l) => s + (l.minutes || 0), 0)
 
   const byUser = useMemo(() => {
     const m = {}

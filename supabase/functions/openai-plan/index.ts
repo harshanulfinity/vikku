@@ -18,26 +18,51 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+    const FREE_MONTHLY_LIMIT = 6
+
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     })
     const { data: { user } } = await userClient.auth.getUser()
 
-    if (user) {
-      const adminClient = createClient(supabaseUrl, supabaseServiceKey)
-      const { data: sub } = await adminClient
-        .from('pm_subscriptions')
-        .select('plan')
-        .eq('user_id', user.id)
-        .maybeSingle()
+    // AI planning is authenticated-only
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'unauthorized', message: 'Please sign in to use the AI planner.' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-      const plan = sub?.plan || 'free'
-      if (plan === 'free') {
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey)
+    const { data: sub } = await adminClient
+      .from('user_subscriptions')
+      .select('plan, status, current_period_end')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    const subActive = sub && sub.status !== 'cancelled' &&
+      (!sub.current_period_end || new Date(sub.current_period_end) > new Date())
+    const plan = subActive ? (sub.plan || 'free') : 'free'
+
+    // Free tier: enforce 6 AI plans / calendar month server-side
+    if (plan === 'free') {
+      const period = new Date().toISOString().slice(0, 7) // YYYY-MM
+      const { data: usage } = await adminClient
+        .from('ai_plan_usage')
+        .select('count')
+        .eq('user_id', user.id)
+        .eq('period', period)
+        .maybeSingle()
+      const used = usage?.count || 0
+      if (used >= FREE_MONTHLY_LIMIT) {
         return new Response(
-          JSON.stringify({ error: 'pro_required', message: 'AI Project Planner requires a Pro plan. Upgrade to unlock.' }),
+          JSON.stringify({ error: 'limit_reached', message: `You've used all ${FREE_MONTHLY_LIMIT} free AI plans this month. Upgrade to Pro for unlimited.` }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
+      await adminClient
+        .from('ai_plan_usage')
+        .upsert({ user_id: user.id, period, count: used + 1, updated_at: new Date().toISOString() }, { onConflict: 'user_id,period' })
     }
 
     const { description } = await req.json()
@@ -81,8 +106,9 @@ serve(async (req) => {
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

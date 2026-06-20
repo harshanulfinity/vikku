@@ -47,7 +47,10 @@ export default function Signup() {
       const ref = sessionStorage.getItem('vikku_ref')
       if (ref && data?.user?.id) {
         sessionStorage.removeItem('vikku_ref')
-        await supabase.from('referrals').insert({ referrer_code: ref, referred_user_id: data.user.id }).catch(() => {})
+        // Supabase query builders are thenables without .catch — wrap in try/catch
+        try {
+          await supabase.from('referrals').insert({ referrer_code: ref, referred_user_id: data.user.id })
+        } catch { /* referral is best-effort; never block signup */ }
       }
       setSent(true)
     }

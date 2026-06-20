@@ -91,8 +91,15 @@ export async function openRazorpayCheckout({ plan, billingCycle = 'monthly', use
         orderId = data.order_id
       }
     } catch {
-      // card payments still work without an order_id
+      // handled below
     }
+  }
+
+  // We must have a server-created order or subscription — otherwise the payment
+  // can't be verified server-side, and we never grant a plan without verification.
+  if (!subscriptionId && !orderId) {
+    onFailure?.('Could not start a secure checkout. Please try again.')
+    return
   }
 
   const options = {
@@ -104,53 +111,26 @@ export async function openRazorpayCheckout({ plan, billingCycle = 'monthly', use
     theme: { color: '#ffffff' },
     ...(subscriptionId
       ? { subscription_id: subscriptionId }
-      : { amount: totalPaise, currency: 'INR', ...(orderId ? { order_id: orderId } : {}) }),
+      : { amount: totalPaise, currency: 'INR', order_id: orderId }),
     handler: async (response) => {
       try {
-        if (subscriptionId) {
-          // Verify subscription signature: payment_id | subscription_id
-          const verifyRes = await fetch('/api/verify-payment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_subscription_id: response.razorpay_subscription_id,
-              razorpay_signature: response.razorpay_signature,
-            }),
-          })
-          const verifyData = await verifyRes.json()
-          if (!verifyData.success) throw new Error(verifyData.error || 'Payment verification failed')
-
-          await saveSubscription({
+        // The server verifies the signature + amount and grants the plan with
+        // the service-role key. The client never writes the subscription itself.
+        const verifyRes = await fetch('/api/verify-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_subscription_id: response.razorpay_subscription_id,
+            razorpay_signature: response.razorpay_signature,
             userId: user.id,
             plan,
             billingCycle: cycle,
-            paymentId: response.razorpay_payment_id,
-            subscriptionId: response.razorpay_subscription_id,
-          })
-        } else {
-          // Verify one-time order signature: order_id | payment_id
-          if (orderId) {
-            const verifyRes = await fetch('/api/verify-payment', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            })
-            const verifyData = await verifyRes.json()
-            if (!verifyData.success) throw new Error(verifyData.error || 'Payment verification failed')
-          }
-
-          await saveSubscription({
-            userId: user.id,
-            plan,
-            billingCycle: cycle,
-            paymentId: response.razorpay_payment_id,
-          })
-        }
+          }),
+        })
+        const verifyData = await verifyRes.json()
+        if (!verifyData.success) throw new Error(verifyData.error || 'Payment verification failed')
         onSuccess?.(response)
       } catch (err) {
         onFailure?.(err.message)
@@ -166,35 +146,6 @@ export async function openRazorpayCheckout({ plan, billingCycle = 'monthly', use
   rzp.open()
 }
 
-async function saveSubscription({ userId, plan, billingCycle = 'monthly', paymentId, subscriptionId = null }) {
-  if (!supabase) throw new Error('Database not configured')
-
-  const periodEnd = new Date()
-  if (billingCycle === 'annual') {
-    periodEnd.setFullYear(periodEnd.getFullYear() + 1)
-  } else {
-    periodEnd.setMonth(periodEnd.getMonth() + 1)
-  }
-
-  const row = {
-    user_id: userId,
-    plan,
-    billing_cycle: billingCycle,
-    razorpay_payment_id: paymentId,
-    status: 'active',
-    current_period_end: periodEnd.toISOString(),
-    updated_at: new Date().toISOString(),
-  }
-  // Only set when we have an auto-renewing subscription
-  if (subscriptionId) row.razorpay_subscription_id = subscriptionId
-
-  const { error } = await supabase
-    .from('user_subscriptions')
-    .upsert(row, { onConflict: 'user_id' })
-
-  if (error) throw error
-}
-
 export async function getSubscription(userId) {
   try {
     const { data, error } = await supabase
@@ -208,12 +159,9 @@ export async function getSubscription(userId) {
     // Immediately cancelled — no access
     if (data.status === 'cancelled') return { ...data, plan: 'free' }
 
-    // Period has ended — auto-downgrade in DB and return free
+    // Period has ended — treat as free. (The DB row is reconciled server-side
+    // by the Razorpay webhook; clients can't write this table.)
     if (data.current_period_end && new Date(data.current_period_end) < new Date()) {
-      await supabase
-        .from('user_subscriptions')
-        .update({ plan: 'free', status: 'cancelled', updated_at: new Date().toISOString() })
-        .eq('user_id', userId)
       return { plan: 'free' }
     }
 
@@ -225,37 +173,28 @@ export async function getSubscription(userId) {
   }
 }
 
-// Sets status to 'cancelling' — user keeps Pro access until current_period_end
+// Sets status to 'cancelling' — user keeps Pro access until current_period_end.
+// The status flip + Razorpay cancellation happen server-side (clients cannot
+// write user_subscriptions).
 export async function cancelSubscription(userId) {
   if (!supabase) throw new Error('Database not configured')
 
-  const { data: sub, error: fetchErr } = await supabase
+  // Reading own subscription is allowed by RLS
+  const { data: sub } = await supabase
     .from('user_subscriptions')
     .select('current_period_end, razorpay_subscription_id')
     .eq('user_id', userId)
     .single()
 
-  if (fetchErr) throw fetchErr
-
-  // Stop auto-renewal at Razorpay (keeps access until period end). Best-effort:
-  // if the endpoint isn't deployed yet we still mark it cancelling locally.
-  if (sub?.razorpay_subscription_id) {
-    try {
-      await fetch('/api/cancel-subscription', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription_id: sub.razorpay_subscription_id }),
-      })
-    } catch {
-      // ignore — webhook / period_end will still downgrade
-    }
+  const res = await fetch('/api/cancel-subscription', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, subscription_id: sub?.razorpay_subscription_id || null }),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.error || 'Failed to cancel subscription')
   }
-
-  const { error } = await supabase
-    .from('user_subscriptions')
-    .update({ status: 'cancelling', updated_at: new Date().toISOString() })
-    .eq('user_id', userId)
-
-  if (error) throw error
-  return { accessUntil: sub?.current_period_end }
+  const data = await res.json()
+  return { accessUntil: data.accessUntil ?? sub?.current_period_end }
 }

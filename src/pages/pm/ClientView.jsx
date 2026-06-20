@@ -307,14 +307,22 @@ export default function ClientView() {
   const [pinError, setPinError] = useState('')
   const [pinChecking, setPinChecking] = useState(false)
 
+  async function loadProjectData(projectId) {
+    const [t, m] = await Promise.all([getTasks(projectId), getMilestones(projectId)])
+    setTasks(t)
+    setMilestones(m.sort((a, b) => new Date(a.due_date) - new Date(b.due_date)))
+  }
+
   useEffect(() => {
     async function load() {
       const p = await getProjectByToken(token)
       if (!p) { setNotFound(true); setLoading(false); return }
-      const [t, m] = await Promise.all([getTasks(p.id), getMilestones(p.id)])
       setProject(p)
-      setTasks(t)
-      setMilestones(m.sort((a, b) => new Date(a.due_date) - new Date(b.due_date)))
+      // Don't fetch project contents until the PIN is verified — otherwise the
+      // data would be readable before the gate (PIN would be cosmetic).
+      if (!p.has_share_pin) {
+        await loadProjectData(p.id)
+      }
       setLoading(false)
     }
     load()
@@ -327,6 +335,7 @@ export default function ClientView() {
     try {
       const ok = await verifySharePin(token, pinInput.trim())
       if (ok) {
+        await loadProjectData(project.id)
         setPinVerified(true)
       } else {
         setPinError('Incorrect PIN. Please try again.')
