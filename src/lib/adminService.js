@@ -1,16 +1,25 @@
 import { supabase } from './supabaseClient'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 async function getToken() {
   const { data } = await supabase.auth.getSession()
   return data?.session?.access_token || ''
 }
 
+function baseHeaders(token) {
+  return {
+    Authorization: `Bearer ${token}`,
+    apikey: SUPABASE_ANON_KEY,
+    'Content-Type': 'application/json',
+  }
+}
+
 async function adminFetch(type) {
   const token = await getToken()
   const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-stats?type=${type}`, {
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    headers: baseHeaders(token),
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
@@ -27,7 +36,7 @@ async function adminPost(body) {
   const token = await getToken()
   const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-stats`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    headers: baseHeaders(token),
     body: JSON.stringify(body),
   })
   if (!res.ok) {
