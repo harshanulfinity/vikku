@@ -63,7 +63,7 @@ function Cell({ value, isHighlight }) {
   if (value === false)
     return <Minus size={14} strokeWidth={2} className="text-white/20 mx-auto" />
   return (
-    <span className={`text-[11px] font-medium leading-tight text-center ${isHighlight ? 'text-black/70' : 'text-white/50'}`}>
+    <span className={`text-[11px] font-medium leading-tight text-center ${isHighlight ? 'text-white' : 'text-white/50'}`}>
       {value}
     </span>
   )
@@ -145,27 +145,27 @@ export default function UpgradeModal({ onClose, onUpgraded, reason, currentPlan 
             </div>
 
             {/* Plan header row */}
-            <div className="grid grid-cols-4 gap-2 mb-4">
+            <div className="grid grid-cols-[0.7fr_1fr_1fr_1fr] gap-1.5 mb-4">
               {/* Feature label column */}
               <div />
               {/* Free */}
-              <div className="bg-white/[0.04] border border-white/[0.08] rounded-xl p-2.5 text-center">
+              <div className="min-w-0 bg-white/[0.04] border border-white/[0.08] rounded-xl px-1.5 py-2.5 text-center">
                 <p className="text-[10px] font-semibold text-white/40 mb-0.5">Free</p>
-                <p className="font-display font-extrabold text-base text-white">₹0</p>
+                <p className="font-display font-extrabold text-xs text-white">₹0</p>
                 <p className="text-[9px] text-white/30">forever</p>
                 <div className="mt-2 py-1 rounded-lg bg-white/[0.06] text-[9px] text-white/30 font-medium">
                   {currentPlan === 'free' ? 'Current plan' : '—'}
                 </div>
               </div>
               {/* Pro */}
-              <div className={`rounded-xl p-2.5 text-center relative ${currentPlan === 'pro' ? 'bg-white/[0.04] border border-violet-500/30' : 'bg-white'}`}>
+              <div className={`min-w-0 rounded-xl px-1.5 py-2.5 text-center relative ${currentPlan === 'pro' ? 'bg-white/[0.04] border border-violet-500/30' : 'bg-white'}`}>
                 {currentPlan !== 'pro' && (
                   <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-0.5 rounded-full border border-white/20">
                     POPULAR
                   </div>
                 )}
                 <p className={`text-[10px] font-semibold mb-0.5 ${currentPlan === 'pro' ? 'text-violet-400' : 'text-black/50'}`}>Pro</p>
-                <p className={`font-display font-extrabold text-sm sm:text-base ${currentPlan === 'pro' ? 'text-white' : 'text-black'}`}>{priceFor('pro')}</p>
+                <p className={`font-display font-extrabold text-xs ${currentPlan === 'pro' ? 'text-white' : 'text-black'}`}>{priceFor('pro')}</p>
                 <p className={`text-[9px] ${currentPlan === 'pro' ? 'text-white/30' : 'text-black/40'}`}>{isAnnual ? '/year' : '/month'}</p>
                 <p className={`text-[8px] leading-tight mt-0.5 ${currentPlan === 'pro' ? 'text-white/30' : 'text-black/40'}`}>+18% GST<br />= {totalFor('pro')}</p>
                 {currentPlan === 'pro' ? (
@@ -183,9 +183,9 @@ export default function UpgradeModal({ onClose, onUpgraded, reason, currentPlan 
                 )}
               </div>
               {/* Team */}
-              <div className={`rounded-xl p-2.5 text-center ${currentPlan === 'team' ? 'bg-white/[0.04] border border-violet-500/30' : 'bg-white/[0.04] border border-white/[0.08]'}`}>
+              <div className={`min-w-0 rounded-xl px-1.5 py-2.5 text-center ${currentPlan === 'team' ? 'bg-white/[0.04] border border-violet-500/30' : 'bg-white/[0.04] border border-white/[0.08]'}`}>
                 <p className={`text-[10px] font-semibold mb-0.5 ${currentPlan === 'team' ? 'text-violet-400' : 'text-white/40'}`}>Team</p>
-                <p className="font-display font-extrabold text-sm sm:text-base text-white">{priceFor('team')}</p>
+                <p className="font-display font-extrabold text-xs text-white">{priceFor('team')}</p>
                 <p className="text-[9px] text-white/30">{isAnnual ? '/year' : '/month'}</p>
                 <p className="text-[8px] leading-tight mt-0.5 text-white/30">+18% GST<br />= {totalFor('team')}</p>
                 {currentPlan === 'team' ? (
@@ -216,7 +216,7 @@ export default function UpgradeModal({ onClose, onUpgraded, reason, currentPlan 
                     return (
                       <div
                         key={label}
-                        className="grid grid-cols-4 gap-2 items-center px-3 py-2"
+                        className="grid grid-cols-[0.7fr_1fr_1fr_1fr] gap-1.5 items-center px-3 py-2"
                       >
                         <span className="text-[11px] text-white/50 col-span-1">{label}</span>
                         <div className="flex justify-center"><Cell value={free} isHighlight={false} /></div>
