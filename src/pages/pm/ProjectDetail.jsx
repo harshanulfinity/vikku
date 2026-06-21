@@ -54,6 +54,7 @@ export default function ProjectDetail() {
   const [upgradeReason, setUpgradeReason] = useState('')
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [overdueOnly, setOverdueOnly] = useState(false)
   const [showOnboard, setShowOnboard] = useState(false)
   const [clientComments, setClientComments] = useState([])
@@ -129,6 +130,11 @@ export default function ProjectDetail() {
     if (tab.pro && !isPro) { triggerUpgrade(tab.key); return }
     setActiveTab(tab.key)
   }
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300)
+    return () => clearTimeout(t)
+  }, [searchQuery])
 
   useEffect(() => {
     if (project?.id) setPinValue(project.share_pin || '')
@@ -608,12 +614,12 @@ export default function ProjectDetail() {
           <div className="flex-1 min-w-0">
             {(() => {
               let filtered = annotatedTasks
-              if (searchQuery) filtered = filtered.filter((t) => t.title.toLowerCase().includes(searchQuery.toLowerCase()) || (t.description || '').toLowerCase().includes(searchQuery.toLowerCase()))
+              if (debouncedSearch) filtered = filtered.filter((t) => t.title.toLowerCase().includes(debouncedSearch.toLowerCase()) || (t.description || '').toLowerCase().includes(debouncedSearch.toLowerCase()))
               if (overdueOnly) filtered = filtered.filter((t) => t.due_date && new Date(t.due_date) < new Date() && !doneKeys.has(t.status))
               return (
                 <>
                   {activeTab === 'kanban' && <KanbanBoard projectId={id} tasks={filtered} onTasksChange={setTasks} user={user} workflow={workflowStages} />}
-                  {activeTab === 'timeline' && <TimelineView milestones={milestones} onMilestonesChange={setMilestones} />}
+                  {activeTab === 'timeline' && <TimelineView milestones={milestones} onMilestonesChange={setMilestones} tasks={tasks} />}
                   {activeTab === 'analytics' && <AnalyticsPanel tasks={filtered} milestones={milestones} stages={workflowStages} />}
                   {activeTab === 'calendar' && <CalendarView tasks={filtered} milestones={milestones} />}
                   {activeTab === 'time' && <TimeTrackingPanel projectId={id} tasks={tasks} />}

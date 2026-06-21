@@ -133,6 +133,11 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
     }
 
     const isDoneStage = stages.find((s) => s.status_key === newStatusKey)?.is_done
+    const wasDoneStage = stages.find((s) => s.status_key === task.status)?.is_done
+    if (!sameCol) {
+      const completedAt = isDoneStage ? new Date().toISOString() : null
+      if (isDoneStage !== wasDoneStage) updateTask(dragTaskId, { completed_at: completedAt })
+    }
     if (user && !sameCol) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: isDoneStage ? 'task_done' : 'task_updated', entity_type: 'task', entity_title: task.title })
 
     // Recurring task: create next occurrence when completed
@@ -290,13 +295,17 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
             const stageTasks = (tasksByStage[stage.status_key] || []).sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
             const DefaultIcon = DEFAULT_EMPTY[stage.status_key]?.Icon || ClipboardList
             const defaultHint = DEFAULT_EMPTY[stage.status_key]?.hint || 'Drop tasks here'
+            const wipLimit = stage.wip_limit || 0
+            const wipExceeded = wipLimit > 0 && stageTasks.length > wipLimit
 
             return (
               <div
                 key={stage.status_key}
                 style={{ minWidth: '200px', flex: '1 0 200px', maxWidth: '320px' }}
                 className={`flex flex-col min-h-[300px] rounded-2xl p-3 transition-all duration-200 ${
-                  isOver
+                  wipExceeded
+                    ? 'bg-orange-500/[0.06] ring-1 ring-orange-500/30'
+                    : isOver
                     ? 'bg-white/[0.06] ring-1 ring-white/20'
                     : stage.is_done
                     ? 'bg-green-500/[0.04]'
@@ -312,15 +321,18 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
                 }}
                 onDrop={() => handleDrop(stage.status_key)}
               >
-                <div className="h-0.5 rounded-full mb-3 -mx-1" style={{ backgroundColor: `${stageColor(stage.color)}55` }} />
+                <div className="h-0.5 rounded-full mb-3 -mx-1" style={{ backgroundColor: wipExceeded ? '#f97316aa' : `${stageColor(stage.color)}55` }} />
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: stageColor(stage.color) }} />
                     <span className="text-xs font-semibold text-white/80">{stage.name}</span>
-                    <span className="text-[10px] text-white/30 bg-white/[0.05] px-1.5 py-0.5 rounded-full">
-                      {stageTasks.length}
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${wipExceeded ? 'bg-orange-500/20 text-orange-400' : 'bg-white/[0.05] text-white/30'}`}>
+                      {stageTasks.length}{wipLimit > 0 ? `/${wipLimit}` : ''}
                     </span>
-                    {stage.is_done && (
+                    {wipExceeded && (
+                      <span className="text-[8px] text-orange-400/80 bg-orange-500/10 px-1 py-0.5 rounded">WIP limit</span>
+                    )}
+                    {stage.is_done && !wipExceeded && (
                       <span className="text-[8px] text-green-400/60 bg-green-500/10 px-1 py-0.5 rounded">Done</span>
                     )}
                   </div>

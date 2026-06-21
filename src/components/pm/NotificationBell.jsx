@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Bell, CheckCircle, AlertCircle, X, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { Bell, CheckCircle, AlertCircle, X, ThumbsUp, ThumbsDown, Clock } from 'lucide-react'
 import { getProjects, getTasks, getMilestones } from '../../lib/pmService'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -14,15 +14,25 @@ export default function NotificationBell() {
     async function load() {
       const projects = await getProjects(user.id)
       const notes = []
-      await Promise.all(projects.slice(0, 5).map(async (p) => {
+      await Promise.all(projects.slice(0, 10).map(async (p) => {
         const [tasks, milestones] = await Promise.all([getTasks(p.id), getMilestones(p.id)])
+        const todayStr = new Date().toISOString().slice(0, 10)
         const overdue = tasks.filter(
-          (t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done'
+          (t) => t.due_date && t.due_date < todayStr && t.status !== 'done'
         )
         overdue.forEach((t) => notes.push({
           id: `task-${t.id}`,
           type: 'overdue',
           message: `"${t.title}" is overdue`,
+          sub: p.name,
+        }))
+        const dueToday = tasks.filter(
+          (t) => t.due_date === todayStr && t.status !== 'done'
+        )
+        dueToday.forEach((t) => notes.push({
+          id: `due-today-${t.id}`,
+          type: 'due_today',
+          message: `"${t.title}" is due today`,
           sub: p.name,
         }))
         const upcomingMs = milestones.filter(
@@ -97,6 +107,8 @@ export default function NotificationBell() {
                     <ThumbsUp size={13} className="text-green-400 flex-shrink-0 mt-0.5" />
                   ) : n.type === 'revision' ? (
                     <ThumbsDown size={13} className="text-orange-400 flex-shrink-0 mt-0.5" />
+                  ) : n.type === 'due_today' ? (
+                    <Clock size={13} className="text-yellow-400 flex-shrink-0 mt-0.5" />
                   ) : (
                     <AlertCircle size={13} className={n.type === 'overdue' ? 'text-red-400 flex-shrink-0 mt-0.5' : 'text-yellow-400 flex-shrink-0 mt-0.5'} />
                   )}

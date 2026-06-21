@@ -42,7 +42,7 @@ function BurndownChart({ tasks, doneKeys }) {
     const existedCount = tasks.filter((t) => new Date(t.created_at) <= dayEnd).length
     const doneCount = tasks.filter((t) => {
       if (!doneKeys.has(t.status)) return false
-      const completedAt = new Date(t.updated_at || t.created_at)
+      const completedAt = new Date(t.completed_at || t.updated_at || t.created_at)
       return completedAt <= dayEnd
     }).length
     points.push({

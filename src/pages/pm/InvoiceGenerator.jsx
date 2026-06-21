@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Printer, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Printer, Plus, Trash2, Save, History, ChevronDown, ChevronUp } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getProject, getMilestones, getProjectTimeLogs } from '../../lib/pmService'
+import { getProject, getMilestones, getProjectTimeLogs, saveInvoice, getInvoices } from '../../lib/pmService'
 import AppHeader from '../../components/AppHeader'
 
 function escHtml(s) {
@@ -43,6 +43,10 @@ export default function InvoiceGenerator() {
   const [currency, setCurrency] = useState('INR')
   const [notes, setNotes] = useState('')
   const [lines, setLines] = useState([])
+  const [saving, setSaving] = useState(false)
+  const [savedMsg, setSavedMsg] = useState('')
+  const [invoiceHistory, setInvoiceHistory] = useState([])
+  const [showHistory, setShowHistory] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) navigate('/login')
@@ -75,6 +79,7 @@ export default function InvoiceGenerator() {
       }
       setLines(initialLines)
       setFetching(false)
+      getInvoices(id).then(setInvoiceHistory)
     }
     load()
   }, [user, id, navigate])
@@ -100,6 +105,49 @@ export default function InvoiceGenerator() {
   const addLine = () => setLines((prev) => [...prev, { id: `line-${Date.now()}`, desc: '', qty: 1, rate: '', unit: 'flat' }])
   const removeLine = (lineId) => setLines((prev) => prev.filter((l) => l.id !== lineId))
   const updateLine = (lineId, field, value) => setLines((prev) => prev.map((l) => l.id === lineId ? { ...l, [field]: value } : l))
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const inv = await saveInvoice({
+        project_id: id,
+        user_id: user.id,
+        invoice_num: invoiceNum,
+        issue_date: issueDate,
+        due_date: dueDate || null,
+        client_name: clientName,
+        client_email: clientEmail,
+        agency_name: agencyName,
+        currency,
+        lines,
+        subtotal,
+        gst,
+        total,
+        notes,
+      })
+      setInvoiceHistory((prev) => [inv, ...prev])
+      setSavedMsg('Saved!')
+      setTimeout(() => setSavedMsg(''), 2000)
+    } catch (err) {
+      setSavedMsg('Save failed')
+      setTimeout(() => setSavedMsg(''), 2000)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const loadHistoryInvoice = (inv) => {
+    setInvoiceNum(inv.invoice_num)
+    setIssueDate(inv.issue_date)
+    setDueDate(inv.due_date || '')
+    setClientName(inv.client_name || '')
+    setClientEmail(inv.client_email || '')
+    setAgencyName(inv.agency_name || 'Vikku Agency')
+    setCurrency(inv.currency || 'INR')
+    setLines(inv.lines || [])
+    setNotes(inv.notes || '')
+    setShowHistory(false)
+  }
 
   const handlePrint = () => {
     const win = window.open('', '_blank')
@@ -193,16 +241,60 @@ export default function InvoiceGenerator() {
           { label: 'Invoice' },
         ]}
         actions={
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 text-xs bg-white text-black font-semibold px-4 py-2 rounded-lg hover:bg-white/90 transition-colors"
-          >
-            <Printer size={13} /> Print / Save PDF
-          </button>
+          <div className="flex items-center gap-2">
+            {invoiceHistory.length > 0 && (
+              <button
+                onClick={() => setShowHistory((v) => !v)}
+                className="flex items-center gap-1.5 text-xs bg-white/[0.06] border border-white/10 text-white/60 font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <History size={13} /> History ({invoiceHistory.length})
+                {showHistory ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+              </button>
+            )}
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-1.5 text-xs bg-white/[0.06] border border-white/10 text-white/60 font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-40"
+            >
+              <Save size={13} /> {savedMsg || (saving ? 'Saving…' : 'Save')}
+            </button>
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 text-xs bg-white text-black font-semibold px-4 py-2 rounded-lg hover:bg-white/90 transition-colors"
+            >
+              <Printer size={13} /> Print / Save PDF
+            </button>
+          </div>
         }
       />
 
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+
+        {/* Invoice history */}
+        {showHistory && invoiceHistory.length > 0 && (
+          <div className="glass rounded-2xl p-5">
+            <p className="text-xs font-semibold text-white/60 mb-3 uppercase tracking-wider">Saved Invoices</p>
+            <div className="space-y-2">
+              {invoiceHistory.map((inv) => (
+                <button
+                  key={inv.id}
+                  onClick={() => loadHistoryInvoice(inv)}
+                  className="w-full flex items-center justify-between glass rounded-xl px-4 py-3 hover:border-white/20 transition-all text-left"
+                >
+                  <div>
+                    <p className="text-xs font-medium text-white">{inv.invoice_num}</p>
+                    <p className="text-[10px] text-white/40 mt-0.5">{inv.client_name || 'No client'} · {inv.issue_date}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-semibold text-white">{inv.currency === 'INR' ? '₹' : inv.currency}{Number(inv.total).toLocaleString('en-IN')}</p>
+                    <p className="text-[10px] text-white/30 mt-0.5">Load</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
 
         {/* Invoice meta */}
         <div className="glass rounded-2xl p-6 grid grid-cols-2 gap-4">

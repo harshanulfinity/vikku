@@ -1,10 +1,19 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, User, Link, ExternalLink } from 'lucide-react'
+import { X, User, Link, ExternalLink, Layers } from 'lucide-react'
 import { getProjectMembers } from '../../lib/pmService'
 import { TASK_LABELS, LABEL_STYLES, DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent']
+
+const TASK_TEMPLATES = [
+  { label: 'Bug Fix', fields: { title: 'Fix: ', priority: 'high', label: 'bug' } },
+  { label: 'Design Review', fields: { title: 'Design review: ', priority: 'medium', label: 'design' } },
+  { label: 'Code Review', fields: { title: 'Code review: ', priority: 'medium', label: 'dev' } },
+  { label: 'Meeting', fields: { title: 'Meeting: ', priority: 'low', label: 'meeting' } },
+  { label: 'Research', fields: { title: 'Research: ', priority: 'low', label: 'research' } },
+  { label: 'Deploy', fields: { title: 'Deploy to production', priority: 'urgent', label: 'dev' } },
+]
 
 function isValidUrl(str) {
   try { return Boolean(new URL(str)) } catch { return false }
@@ -78,6 +87,26 @@ export default function TaskCreateModal({ projectId, initialStatus, initialStatu
 
         <div className="overflow-y-auto flex-1">
           <div className="p-5 space-y-4">
+
+            {/* Templates */}
+            <div>
+              <div className="flex items-center gap-1.5 mb-2">
+                <Layers size={10} className="text-white/30" />
+                <label className="text-[10px] text-white/30 uppercase tracking-wider">Templates</label>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {TASK_TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.label}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, ...tpl.fields }))}
+                    className="text-[10px] px-2 py-1 rounded-lg border border-white/[0.08] text-white/40 hover:text-white/70 hover:border-white/20 transition-all"
+                  >
+                    {tpl.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Title */}
             <div>

@@ -738,3 +738,23 @@ export async function approveTaskAsClient(taskId, shareToken, status, note = nul
   if (error) throw error
   return data
 }
+
+// ── Invoices ──────────────────────────────────────────────────
+
+export async function saveInvoice(fields) {
+  if (!supabase) throw new Error('Database not configured')
+  const { data, error } = await supabase.from('pm_invoices').insert(fields).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function getInvoices(projectId) {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('pm_invoices')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: false })
+  if (error) return []
+  return data || []
+}

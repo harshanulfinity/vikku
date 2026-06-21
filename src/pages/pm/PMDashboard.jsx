@@ -363,7 +363,7 @@ export default function PMDashboard() {
           </div>
         )}
 
-        {/* My Projects grid */}
+        {/* My Projects — grouped by status */}
         {projects.length === 0 ? (
           <div className="glass rounded-2xl p-16 text-center">
             <div className="w-16 h-16 rounded-2xl glass flex items-center justify-center mx-auto mb-5">
@@ -381,26 +381,46 @@ export default function PMDashboard() {
             </button>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects.map((p) => (
-              <ProjectCard
-                key={p.id}
-                project={p}
-                taskCounts={taskCounts[p.id] || {}}
-                onDuplicated={(newP) => setProjects((prev) => [newP, ...prev])}
-              />
-            ))}
+          <>
+            {[
+              { key: 'active',    label: 'Active',    dotColor: 'bg-green-400' },
+              { key: 'on_hold',   label: 'On Hold',   dotColor: 'bg-yellow-400' },
+              { key: 'completed', label: 'Completed', dotColor: 'bg-blue-400' },
+              { key: 'archived',  label: 'Archived',  dotColor: 'bg-white/20' },
+            ].map(({ key, label, dotColor }) => {
+              const group = projects.filter((p) => (p.status || 'active') === key)
+              if (group.length === 0) return null
+              return (
+                <div key={key} className="mb-8">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className={`w-2 h-2 rounded-full ${dotColor}`} />
+                    <h2 className="font-display font-semibold text-white/60 text-sm">{label}</h2>
+                    <span className="text-xs text-white/20">({group.length})</span>
+                  </div>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {group.map((p) => (
+                      <ProjectCard
+                        key={p.id}
+                        project={p}
+                        taskCounts={taskCounts[p.id] || {}}
+                        onDuplicated={(newP) => setProjects((prev) => [newP, ...prev])}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
             {/* Add new card */}
             <div
               onClick={handleNewProject}
-              className={`glass rounded-2xl p-5 cursor-pointer hover:border-white/20 transition-all flex flex-col items-center justify-center gap-3 min-h-[180px] border-dashed ${atLimit ? 'opacity-50' : ''}`}
+              className={`glass rounded-2xl p-5 cursor-pointer hover:border-white/20 transition-all flex flex-col items-center justify-center gap-3 min-h-[140px] border-dashed ${atLimit ? 'opacity-50' : ''}`}
             >
               <div className="w-10 h-10 rounded-xl glass flex items-center justify-center">
                 {atLimit ? <Lock size={16} className="text-white/40" /> : <Plus size={18} className="text-white/40" />}
               </div>
               <p className="text-xs text-white/40">{atLimit ? 'Upgrade to add more' : 'New project'}</p>
             </div>
-          </div>
+          </>
         )}
 
         {/* Shared with me */}
