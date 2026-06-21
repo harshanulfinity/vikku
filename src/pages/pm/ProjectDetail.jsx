@@ -269,10 +269,13 @@ export default function ProjectDetail() {
           currentWorkflowId={project.workflow_id || null}
           projectTasks={tasks}
           onClose={() => setShowWorkflow(false)}
-          onWorkflowAssigned={(wfId) => {
-            const updated = { ...project, workflow_id: wfId }
-            setProject(updated)
-            if (wfId) {
+          onWorkflowAssigned={(wf) => {
+            // wf is the full workflow object, or null when reverting to the default workflow
+            const wfId = wf?.id || null
+            setProject((prev) => ({ ...prev, workflow_id: wfId }))
+            if (wf) {
+              setWorkflow(wf)
+            } else if (wfId) {
               getWorkflow(wfId).then(setWorkflow)
             } else {
               setWorkflow(null)
