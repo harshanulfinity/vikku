@@ -6,10 +6,10 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react':    ['react', 'react-dom', 'react-router-dom'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-lucide':   ['lucide-react'],
+        manualChunks: (id) => {
+          if (id.includes('react-dom') || id.includes('react-router-dom') || (id.includes('node_modules/react/') )) return 'vendor-react'
+          if (id.includes('@supabase')) return 'vendor-supabase'
+          if (id.includes('lucide-react')) return 'vendor-lucide'
         },
       },
     },
