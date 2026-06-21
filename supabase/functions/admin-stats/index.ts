@@ -25,7 +25,6 @@ serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const authHeader = req.headers.get('Authorization') || ''
 
-    // Verify caller is admin
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     })
@@ -38,9 +37,10 @@ serve(async (req) => {
     const url   = new URL(req.url)
     const type  = url.searchParams.get('type') || 'overview'
 
-    // ── POST: change plan ─────────────────────────────────────────
+    // ── POST ──────────────────────────────────────────────────────────
     if (req.method === 'POST') {
       const body = await req.json()
+
       if (body.action === 'change_plan') {
         const periodEnd = new Date()
         periodEnd.setMonth(periodEnd.getMonth() + 1)
@@ -54,10 +54,40 @@ serve(async (req) => {
         if (error) throw error
         return json(req, { ok: true })
       }
+
+      if (body.action === 'create_announcement') {
+        const { error } = await admin.from('admin_announcements').insert({
+          title: body.title,
+          body: body.body,
+          target: body.target || 'all',
+          expires_at: body.expires_at || null,
+        })
+        if (error) throw error
+        return json(req, { ok: true })
+      }
+
+      if (body.action === 'toggle_announcement') {
+        const { error } = await admin.from('admin_announcements').update({ active: body.active }).eq('id', body.id)
+        if (error) throw error
+        return json(req, { ok: true })
+      }
+
+      if (body.action === 'delete_announcement') {
+        const { error } = await admin.from('admin_announcements').delete().eq('id', body.id)
+        if (error) throw error
+        return json(req, { ok: true })
+      }
+
+      if (body.action === 'delete_user') {
+        const { error } = await admin.auth.admin.deleteUser(body.userId)
+        if (error) throw error
+        return json(req, { ok: true })
+      }
+
       return json(req, { error: 'Unknown action' }, 400)
     }
 
-    // ── GET: overview ─────────────────────────────────────────────
+    // ── GET: overview ─────────────────────────────────────────────────
     if (type === 'overview') {
       const [usersRes, subsRes, projectsRes, subscribersRes] = await Promise.all([
         admin.auth.admin.listUsers({ perPage: 1000 }),
@@ -81,8 +111,13 @@ serve(async (req) => {
       const teamSubs = subs.filter(s => s.plan === 'team' && s.status === 'active')
       const mrr      = proSubs.length * 499 + teamSubs.length * 2499
 
-      // Signups last 30 days
       const now = Date.now()
+      const sevenDaysAgo = new Date(now - 7 * 86400000).toISOString()
+      const activeUsers = users.filter(u => u.last_sign_in_at && u.last_sign_in_at >= sevenDaysAgo).length
+
+      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+      const churnedThisMonth = subs.filter(s => s.status === 'cancelled' && s.created_at >= monthStart).length
+
       const signupsByDay: Record<string, number> = {}
       for (let i = 29; i >= 0; i--) {
         const d = new Date(now - i * 86400000).toISOString().split('T')[0]
@@ -93,7 +128,6 @@ serve(async (req) => {
         if (d && signupsByDay[d] !== undefined) signupsByDay[d]++
       })
 
-      // Project status breakdown
       const projectStatus: Record<string, number> = { active: 0, completed: 0, 'on-hold': 0, archived: 0 }
       projects.forEach(p => { if (p.status in projectStatus) projectStatus[p.status]++ })
 
@@ -103,6 +137,8 @@ serve(async (req) => {
         teamUsers: teamSubs.length,
         freeUsers: users.length - proSubs.length - teamSubs.length,
         mrr,
+        activeUsers,
+        churnedThisMonth,
         totalProjects: projects.length,
         signupsByDay: Object.entries(signupsByDay).map(([date, count]) => ({ date, count })),
         projectStatus,
@@ -111,7 +147,7 @@ serve(async (req) => {
       })
     }
 
-    // ── GET: users ────────────────────────────────────────────────
+    // ── GET: users ────────────────────────────────────────────────────
     if (type === 'users') {
       const [usersRes, subsRes, projectsRes] = await Promise.all([
         admin.auth.admin.listUsers({ perPage: 1000 }),
@@ -145,7 +181,7 @@ serve(async (req) => {
       return json(req, { users: result })
     }
 
-    // ── GET: billing ──────────────────────────────────────────────
+    // ── GET: billing ──────────────────────────────────────────────────
     if (type === 'billing') {
       const [usersRes, subsRes] = await Promise.all([
         admin.auth.admin.listUsers({ perPage: 1000 }),
@@ -159,6 +195,88 @@ serve(async (req) => {
 
       const result = subs.map(s => ({ ...s, email: emailMap[s.user_id] || 'Unknown' }))
       return json(req, { subscriptions: result })
+    }
+
+    // ── GET: analytics ────────────────────────────────────────────────
+    if (type === 'analytics') {
+      const [usersRes, subsRes, projectsRes] = await Promise.all([
+        admin.auth.admin.listUsers({ perPage: 1000 }),
+        admin.from('user_subscriptions').select('plan, status, created_at, user_id'),
+        admin.from('pm_projects').select('user_id, created_at'),
+      ])
+      const users    = usersRes.data?.users || []
+      const subs     = subsRes.data || []
+      const projects = projectsRes.data || []
+
+      const now          = Date.now()
+      const sevenDaysAgo = new Date(now - 7 * 86400000).toISOString()
+      const monthStart   = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+
+      const proSubs  = subs.filter(s => s.plan === 'pro'  && s.status === 'active')
+      const teamSubs = subs.filter(s => s.plan === 'team' && s.status === 'active')
+      const mrr      = proSubs.length * 499 + teamSubs.length * 2499
+      const arr      = mrr * 12
+
+      const activeUsers      = users.filter(u => u.last_sign_in_at && u.last_sign_in_at >= sevenDaysAgo).length
+      const paidUsers        = proSubs.length + teamSubs.length
+      const freeUsers        = users.length - paidUsers
+      const churnedThisMonth = subs.filter(s => s.status === 'cancelled' && s.created_at >= monthStart).length
+      const conversionPct    = users.length > 0 ? Math.round((paidUsers / users.length) * 100) : 0
+
+      const signupsByDay: Record<string, number> = {}
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(now - i * 86400000).toISOString().split('T')[0]
+        signupsByDay[d] = 0
+      }
+      users.forEach(u => {
+        const d = u.created_at?.split('T')[0]
+        if (d && signupsByDay[d] !== undefined) signupsByDay[d]++
+      })
+
+      const projectCounts: Record<string, number> = {}
+      projects.forEach(p => { projectCounts[p.user_id] = (projectCounts[p.user_id] || 0) + 1 })
+
+      const emailMap: Record<string, string> = {}
+      users.forEach(u => { if (u.email) emailMap[u.id] = u.email })
+
+      const topUsers = Object.entries(projectCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([userId, count]) => ({ email: emailMap[userId] || userId, projectCount: count }))
+
+      return json(req, {
+        arr, mrr, activeUsers, paidUsers, freeUsers,
+        totalUsers: users.length,
+        churnedThisMonth, conversionPct,
+        signupsByDay: Object.entries(signupsByDay).map(([date, count]) => ({ date, count })),
+        topUsers,
+      })
+    }
+
+    // ── GET: announcements ────────────────────────────────────────────
+    if (type === 'announcements') {
+      const { data, error } = await admin.from('admin_announcements')
+        .select('*').order('created_at', { ascending: false })
+      if (error) throw error
+      return json(req, { announcements: data || [] })
+    }
+
+    // ── GET: user_detail ──────────────────────────────────────────────
+    if (type === 'user_detail') {
+      const userId = url.searchParams.get('userId')
+      if (!userId) return json(req, { error: 'userId required' }, 400)
+
+      const [userRes, subRes, projectsRes] = await Promise.all([
+        admin.auth.admin.getUserById(userId),
+        admin.from('user_subscriptions').select('*').eq('user_id', userId).maybeSingle(),
+        admin.from('pm_projects').select('id, name, status, created_at').eq('user_id', userId),
+      ])
+
+      return json(req, {
+        user:         userRes.data?.user,
+        subscription: subRes.data,
+        projects:     projectsRes.data || [],
+      })
     }
 
     return json(req, { error: 'Unknown type' }, 400)

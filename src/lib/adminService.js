@@ -23,16 +23,25 @@ export const getAdminOverview = () => adminFetch('overview')
 export const getAdminUsers    = () => adminFetch('users')
 export const getAdminBilling  = () => adminFetch('billing')
 
-export async function adminChangePlan(userId, plan) {
+async function adminPost(body) {
   const token = await getToken()
   const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-stats`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'change_plan', userId, plan }),
+    body: JSON.stringify(body),
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error(err.error || 'Change plan failed')
+    throw new Error(err.error || 'Admin action failed')
   }
   return res.json()
 }
+
+export const adminChangePlan         = (userId, plan) => adminPost({ action: 'change_plan', userId, plan })
+export const getAdminAnalytics       = () => adminFetch('analytics')
+export const getAdminAnnouncements   = () => adminFetch('announcements')
+export const getAdminUserDetail      = (userId) => adminFetch(`user_detail&userId=${userId}`)
+export const adminCreateAnnouncement = (data) => adminPost({ action: 'create_announcement', ...data })
+export const adminToggleAnnouncement = (id, active) => adminPost({ action: 'toggle_announcement', id, active })
+export const adminDeleteAnnouncement = (id) => adminPost({ action: 'delete_announcement', id })
+export const adminDeleteUser         = (userId) => adminPost({ action: 'delete_user', userId })

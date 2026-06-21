@@ -79,7 +79,7 @@ export default function AdminDashboard() {
       ) : data ? (
         <>
           {/* Stat cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-6">
             <StatCard
               icon={IndianRupee}
               label="MRR"
@@ -88,10 +88,24 @@ export default function AdminDashboard() {
               color="text-green-400"
             />
             <StatCard
+              icon={IndianRupee}
+              label="ARR"
+              value={`₹${((data.mrr * 12) / 100000).toFixed(1)}L`}
+              sub="annual run rate"
+              color="text-emerald-400"
+            />
+            <StatCard
               icon={Users}
               label="Total Users"
               value={data.totalUsers}
               sub={`${data.freeUsers} free`}
+            />
+            <StatCard
+              icon={Users}
+              label="Active 7d"
+              value={data.activeUsers ?? '—'}
+              sub="signed in recently"
+              color="text-cyan-400"
             />
             <StatCard
               icon={TrendingUp}

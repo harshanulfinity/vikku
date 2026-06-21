@@ -59,7 +59,11 @@ export default function AdminBilling() {
   const activePro   = subs.filter(s => s.plan === 'pro'  && s.status === 'active')
   const activeTeam  = subs.filter(s => s.plan === 'team' && s.status === 'active')
   const mrr         = activePro.length * 499 + activeTeam.length * 2499
+  const arr         = mrr * 12
   const cancelled   = subs.filter(s => s.status === 'cancelled').length
+  const churnRate   = subs.length > 0 ? ((cancelled / subs.length) * 100).toFixed(1) : '0.0'
+  const thisMonth   = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+  const netNew      = subs.filter(s => s.status === 'active' && s.created_at >= thisMonth).length
 
   const filtered = filter === 'all' ? subs : subs.filter(s =>
     filter === 'active' ? s.status === 'active' :
@@ -69,18 +73,30 @@ export default function AdminBilling() {
   return (
     <AdminLayout title="Billing">
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-5">
         <div className="glass rounded-xl p-4 text-center">
           <p className="font-display font-bold text-xl text-green-400">₹{mrr.toLocaleString('en-IN')}</p>
           <p className="text-[10px] text-white/40 mt-0.5">MRR</p>
+        </div>
+        <div className="glass rounded-xl p-4 text-center">
+          <p className="font-display font-bold text-xl text-emerald-400">₹{(arr / 100000).toFixed(1)}L</p>
+          <p className="text-[10px] text-white/40 mt-0.5">ARR</p>
         </div>
         <div className="glass rounded-xl p-4 text-center">
           <p className="font-display font-bold text-xl text-violet-400">{activePro.length + activeTeam.length}</p>
           <p className="text-[10px] text-white/40 mt-0.5">Active Paid</p>
         </div>
         <div className="glass rounded-xl p-4 text-center">
+          <p className="font-display font-bold text-xl text-blue-400">{netNew}</p>
+          <p className="text-[10px] text-white/40 mt-0.5">Net New MTD</p>
+        </div>
+        <div className="glass rounded-xl p-4 text-center">
           <p className="font-display font-bold text-xl text-red-400">{cancelled}</p>
           <p className="text-[10px] text-white/40 mt-0.5">Cancelled</p>
+        </div>
+        <div className="glass rounded-xl p-4 text-center">
+          <p className="font-display font-bold text-xl text-orange-400">{churnRate}%</p>
+          <p className="text-[10px] text-white/40 mt-0.5">Churn Rate</p>
         </div>
       </div>
 

@@ -50,6 +50,9 @@ const NotFound               = lazy(() => import('./pages/NotFound'))
 const AdminDashboard         = lazy(() => import('./pages/admin/AdminDashboard'))
 const AdminUsers             = lazy(() => import('./pages/admin/AdminUsers'))
 const AdminBilling           = lazy(() => import('./pages/admin/AdminBilling'))
+const AdminProfile           = lazy(() => import('./pages/admin/AdminProfile'))
+const AdminAnalytics         = lazy(() => import('./pages/admin/AdminAnalytics'))
+const AdminAnnouncements     = lazy(() => import('./pages/admin/AdminAnnouncements'))
 
 function PMRedirect() {
   const { user, loading } = useAuth()
@@ -132,9 +135,12 @@ export default function App() {
               <Route path="/payment-demo"            element={<PaymentDemo />} />
               <Route path="/privacy"                 element={<PrivacyPolicy />} />
               <Route path="/terms"                   element={<TermsOfService />} />
-              <Route path="/admin"         element={<AdminGate><AdminDashboard /></AdminGate>} />
-              <Route path="/admin/users"   element={<AdminGate><AdminUsers /></AdminGate>} />
-              <Route path="/admin/billing" element={<AdminGate><AdminBilling /></AdminGate>} />
+              <Route path="/admin"                 element={<AdminGate><AdminDashboard /></AdminGate>} />
+              <Route path="/admin/users"         element={<AdminGate><AdminUsers /></AdminGate>} />
+              <Route path="/admin/billing"       element={<AdminGate><AdminBilling /></AdminGate>} />
+              <Route path="/admin/profile"       element={<AdminGate><AdminProfile /></AdminGate>} />
+              <Route path="/admin/analytics"     element={<AdminGate><AdminAnalytics /></AdminGate>} />
+              <Route path="/admin/announcements" element={<AdminGate><AdminAnnouncements /></AdminGate>} />
               <Route path="*"                        element={<NotFound />} />
             </Routes>
           </Suspense>

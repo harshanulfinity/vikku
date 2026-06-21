@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Search, RefreshCw, ChevronDown } from 'lucide-react'
+import { Search, RefreshCw, ChevronDown, Download, X, Folder } from 'lucide-react'
 import AdminLayout from './AdminLayout'
-import { getAdminUsers, adminChangePlan } from '../../lib/adminService'
+import { getAdminUsers, adminChangePlan, getAdminUserDetail, adminDeleteUser } from '../../lib/adminService'
 
 const PLAN_STYLES = {
   free:  'bg-white/10 text-white/50',
@@ -21,22 +21,21 @@ function timeAgo(dateStr) {
   return `${Math.floor(m / 12)}y ago`
 }
 
+function fmt(dateStr) {
+  if (!dateStr) return '—'
+  return new Date(dateStr).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
 function PlanDropdown({ userId, currentPlan, onChanged }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen]     = useState(false)
   const [saving, setSaving] = useState(false)
 
   const change = async (plan) => {
     if (plan === currentPlan) { setOpen(false); return }
     setSaving(true)
-    try {
-      await adminChangePlan(userId, plan)
-      onChanged(userId, plan)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setSaving(false)
-      setOpen(false)
-    }
+    try { await adminChangePlan(userId, plan); onChanged(userId, plan) }
+    catch (err) { console.error(err) }
+    finally { setSaving(false); setOpen(false) }
   }
 
   return (
@@ -56,9 +55,7 @@ function PlanDropdown({ userId, currentPlan, onChanged }) {
               key={p}
               onClick={() => change(p)}
               className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-colors ${
-                p === currentPlan
-                  ? 'text-white/30 cursor-default'
-                  : 'text-white/80 hover:bg-white/[0.07] hover:text-white'
+                p === currentPlan ? 'text-white/30 cursor-default' : 'text-white/80 hover:bg-white/[0.07] hover:text-white'
               }`}
             >
               {p}
@@ -70,15 +67,116 @@ function PlanDropdown({ userId, currentPlan, onChanged }) {
   )
 }
 
-export default function AdminUsers() {
-  const [users, setUsers]     = useState([])
+function UserDetailModal({ userId, onClose, onDeleted }) {
+  const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState('')
-  const [search, setSearch]   = useState('')
+  const [deleting, setDeleting] = useState(false)
+
+  useEffect(() => {
+    getAdminUserDetail(userId)
+      .then(setData)
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [userId])
+
+  const handleDelete = async () => {
+    if (!confirm(`Permanently delete ${data?.user?.email}? This cannot be undone.`)) return
+    setDeleting(true)
+    try {
+      await adminDeleteUser(userId)
+      onDeleted(userId)
+      onClose()
+    } catch (err) {
+      alert(err.message)
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="glass rounded-2xl w-full max-w-md p-6 relative" onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors">
+          <X size={16} />
+        </button>
+        <p className="text-xs text-white/40 uppercase tracking-widest mb-4">User Detail</p>
+
+        {loading ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+          </div>
+        ) : data ? (
+          <>
+            <div className="space-y-2 mb-5">
+              <p className="text-sm font-mono text-white">{data.user?.email}</p>
+              <div className="flex gap-2 flex-wrap">
+                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${PLAN_STYLES[data.subscription?.plan || 'free'] || PLAN_STYLES.free}`}>
+                  {data.subscription?.plan || 'free'}
+                </span>
+                {data.subscription?.status && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-white/40">
+                    {data.subscription.status}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-white/40">Joined: {fmt(data.user?.created_at)}</p>
+              {data.subscription?.current_period_end && (
+                <p className="text-xs text-white/40">Period ends: {fmt(data.subscription.current_period_end)}</p>
+              )}
+            </div>
+
+            {data.projects?.length > 0 && (
+              <div className="mb-5">
+                <p className="text-[10px] text-white/30 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <Folder size={10} /> {data.projects.length} Projects
+                </p>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {data.projects.map(p => (
+                    <div key={p.id} className="flex items-center justify-between text-xs">
+                      <span className="text-white/70 truncate flex-1">{p.name}</span>
+                      <span className="text-white/30 ml-2">{p.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="w-full text-sm font-medium py-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+            >
+              {deleting ? 'Deleting…' : 'Delete User'}
+            </button>
+          </>
+        ) : (
+          <p className="text-sm text-white/40 text-center py-8">Failed to load user</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function exportCSV(rows) {
+  const header = ['Email', 'Plan', 'Projects', 'Joined', 'Last Sign In']
+  const csv = [header, ...rows.map(u => [u.email, u.plan, u.projectCount, u.joinedAt, u.lastSignIn || ''])]
+    .map(r => r.join(',')).join('\n')
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+  a.download = 'users.csv'
+  a.click()
+}
+
+export default function AdminUsers() {
+  const [users, setUsers]         = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [error, setError]         = useState('')
+  const [search, setSearch]       = useState('')
+  const [planFilter, setPlanFilter] = useState('all')
+  const [activeFilter, setActiveFilter] = useState(false)
+  const [detailUserId, setDetailUserId] = useState(null)
 
   const load = async () => {
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
       const d = await getAdminUsers()
       setUsers(d.users || [])
@@ -95,14 +193,23 @@ export default function AdminUsers() {
     setUsers(u => u.map(row => row.id === userId ? { ...row, plan } : row))
   }
 
-  const filtered = users.filter(u =>
-    !search || u.email?.toLowerCase().includes(search.toLowerCase())
-  )
+  const handleDeleted = (userId) => {
+    setUsers(u => u.filter(row => row.id !== userId))
+  }
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString()
+  const filtered = users.filter(u => {
+    if (search && !u.email?.toLowerCase().includes(search.toLowerCase())) return false
+    if (planFilter !== 'all' && u.plan !== planFilter) return false
+    if (activeFilter && (!u.lastSignIn || u.lastSignIn < sevenDaysAgo)) return false
+    return true
+  })
 
   return (
     <AdminLayout title="Users">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="relative flex-1 max-w-xs">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <div className="relative flex-1 min-w-[160px] max-w-xs">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
           <input
             value={search}
@@ -113,12 +220,41 @@ export default function AdminUsers() {
         </div>
         <span className="text-xs text-white/40">{filtered.length} users</span>
         <button
+          onClick={() => exportCSV(filtered)}
+          className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors ml-auto"
+        >
+          <Download size={12} /> CSV
+        </button>
+        <button
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors ml-auto"
+          className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
         >
           <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
           Refresh
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        {['all', 'free', 'pro', 'team'].map(f => (
+          <button
+            key={f}
+            onClick={() => setPlanFilter(f)}
+            className={`text-xs px-3 py-1.5 rounded-lg transition-colors capitalize ${
+              planFilter === f ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'
+            }`}
+          >
+            {f}
+          </button>
+        ))}
+        <button
+          onClick={() => setActiveFilter(a => !a)}
+          className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+            activeFilter ? 'bg-cyan-500/20 text-cyan-300' : 'text-white/40 hover:text-white/70'
+          }`}
+        >
+          Active 7d
         </button>
       </div>
 
@@ -132,7 +268,6 @@ export default function AdminUsers() {
         </div>
       ) : (
         <div className="glass rounded-2xl overflow-hidden">
-          {/* Header */}
           <div className="grid grid-cols-[1fr_80px_56px_88px_88px_80px] gap-3 px-4 py-2.5 border-b border-white/[0.06] text-[10px] text-white/30 uppercase tracking-widest">
             <span>Email</span>
             <span>Plan</span>
@@ -148,7 +283,8 @@ export default function AdminUsers() {
             filtered.map((u, i) => (
               <div
                 key={u.id}
-                className={`grid grid-cols-[1fr_80px_56px_88px_88px_80px] gap-3 px-4 py-3 items-center ${
+                onClick={() => setDetailUserId(u.id)}
+                className={`grid grid-cols-[1fr_80px_56px_88px_88px_80px] gap-3 px-4 py-3 items-center cursor-pointer ${
                   i !== filtered.length - 1 ? 'border-b border-white/[0.04]' : ''
                 } hover:bg-white/[0.02] transition-colors`}
               >
@@ -161,17 +297,21 @@ export default function AdminUsers() {
                 <span className="text-xs text-white/50 text-right">{u.projectCount}</span>
                 <span className="text-xs text-white/40">{timeAgo(u.joinedAt)}</span>
                 <span className="text-xs text-white/40">{timeAgo(u.lastSignIn)}</span>
-                <div className="flex justify-end">
-                  <PlanDropdown
-                    userId={u.id}
-                    currentPlan={u.plan}
-                    onChanged={handlePlanChanged}
-                  />
+                <div className="flex justify-end" onClick={e => e.stopPropagation()}>
+                  <PlanDropdown userId={u.id} currentPlan={u.plan} onChanged={handlePlanChanged} />
                 </div>
               </div>
             ))
           )}
         </div>
+      )}
+
+      {detailUserId && (
+        <UserDetailModal
+          userId={detailUserId}
+          onClose={() => setDetailUserId(null)}
+          onDeleted={handleDeleted}
+        />
       )}
     </AdminLayout>
   )

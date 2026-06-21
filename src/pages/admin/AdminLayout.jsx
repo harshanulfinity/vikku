@@ -1,11 +1,14 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, CreditCard } from 'lucide-react'
+import { LayoutDashboard, Users, CreditCard, BarChart2, Megaphone, User } from 'lucide-react'
 import AppHeader from '../../components/AppHeader'
 
 const nav = [
-  { label: 'Overview',  path: '/admin',          icon: LayoutDashboard },
-  { label: 'Users',     path: '/admin/users',     icon: Users },
-  { label: 'Billing',   path: '/admin/billing',   icon: CreditCard },
+  { label: 'Overview',  path: '/admin',                icon: LayoutDashboard },
+  { label: 'Users',     path: '/admin/users',           icon: Users },
+  { label: 'Billing',   path: '/admin/billing',         icon: CreditCard },
+  { label: 'Analytics', path: '/admin/analytics',       icon: BarChart2 },
+  { label: 'Announce',  path: '/admin/announcements',   icon: Megaphone },
+  { label: 'Profile',   path: '/admin/profile',         icon: User },
 ]
 
 export default function AdminLayout({ children, title }) {
