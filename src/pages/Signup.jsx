@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabaseClient'
 import { ArrowLeft, Mail, Lock, AlertCircle, CheckCircle2, Inbox } from 'lucide-react'
+
+const TURNSTILE_SITE_KEY = '0x4AAAAAADojMJZNzVnM0Jv9'
 
 export default function Signup() {
   const [email, setEmail] = useState('')
@@ -11,16 +13,39 @@ export default function Signup() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
   const { signUp } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const refCode = searchParams.get('ref')
+  const turnstileRef = useRef(null)
+  const widgetIdRef = useRef(null)
 
   useEffect(() => {
     if (refCode) sessionStorage.setItem('vikku_ref', refCode)
     const plan = searchParams.get('plan')
     if (plan === 'pro' || plan === 'team') sessionStorage.setItem('vikku_pending_plan', plan)
   }, [refCode, searchParams])
+
+  useEffect(() => {
+    const render = () => {
+      if (!turnstileRef.current || !window.turnstile) return
+      widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        theme: 'dark',
+        callback: (token) => setCaptchaToken(token),
+        'expired-callback': () => setCaptchaToken(''),
+        'error-callback': () => setCaptchaToken(''),
+      })
+    }
+    if (window.turnstile) render()
+    else window.addEventListener('load', render, { once: true })
+    return () => {
+      if (widgetIdRef.current != null && window.turnstile) {
+        window.turnstile.remove(widgetIdRef.current)
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -38,10 +63,14 @@ export default function Signup() {
 
     setLoading(true)
 
-    const { error, data } = await signUp(email, password)
+    const { error, data } = await signUp(email, password, captchaToken)
 
     if (error) {
       setError(error.message)
+      if (widgetIdRef.current != null && window.turnstile) {
+        window.turnstile.reset(widgetIdRef.current)
+      }
+      setCaptchaToken('')
       setLoading(false)
     } else {
       const ref = sessionStorage.getItem('vikku_ref')
@@ -171,9 +200,11 @@ export default function Signup() {
               </div>
             </div>
 
+            <div ref={turnstileRef} className="flex justify-center" />
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !captchaToken}
               className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating account...' : 'Sign Up'}
