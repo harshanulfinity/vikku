@@ -1,27 +1,78 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { ArrowLeft, Mail, Lock, AlertCircle } from 'lucide-react'
+
+const MAX_ATTEMPTS = 5
+const LOCKOUT_MS = 5 * 60 * 1000 // 5 minutes
+
+function getLockoutState() {
+  try {
+    const raw = sessionStorage.getItem('login_lockout')
+    if (!raw) return { attempts: 0, lockedUntil: 0 }
+    return JSON.parse(raw)
+  } catch { return { attempts: 0, lockedUntil: 0 } }
+}
+
+function saveLockoutState(state) {
+  sessionStorage.setItem('login_lockout', JSON.stringify(state))
+}
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [lockoutSecsLeft, setLockoutSecsLeft] = useState(0)
   const { signIn } = useAuth()
   const navigate = useNavigate()
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    const { lockedUntil } = getLockoutState()
+    if (lockedUntil > Date.now()) startLockoutTimer(lockedUntil)
+    return () => clearInterval(timerRef.current)
+  }, [])
+
+  function startLockoutTimer(lockedUntil) {
+    clearInterval(timerRef.current)
+    timerRef.current = setInterval(() => {
+      const secs = Math.ceil((lockedUntil - Date.now()) / 1000)
+      if (secs <= 0) {
+        clearInterval(timerRef.current)
+        setLockoutSecsLeft(0)
+        saveLockoutState({ attempts: 0, lockedUntil: 0 })
+      } else {
+        setLockoutSecsLeft(secs)
+      }
+    }, 1000)
+    setLockoutSecsLeft(Math.ceil((lockedUntil - Date.now()) / 1000))
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const state = getLockoutState()
+    if (state.lockedUntil > Date.now()) return
+
     setError('')
     setLoading(true)
 
     const { error } = await signIn(email, password)
 
     if (error) {
-      setError(error.message)
+      const newAttempts = state.attempts + 1
+      if (newAttempts >= MAX_ATTEMPTS) {
+        const lockedUntil = Date.now() + LOCKOUT_MS
+        saveLockoutState({ attempts: newAttempts, lockedUntil })
+        startLockoutTimer(lockedUntil)
+        setError('')
+      } else {
+        saveLockoutState({ attempts: newAttempts, lockedUntil: 0 })
+        setError(`${error.message} (${MAX_ATTEMPTS - newAttempts} attempt${MAX_ATTEMPTS - newAttempts === 1 ? '' : 's'} left)`)
+      }
       setLoading(false)
     } else {
+      saveLockoutState({ attempts: 0, lockedUntil: 0 })
       navigate('/dashboard')
     }
   }
@@ -41,7 +92,16 @@ export default function Login() {
             <p className="text-white/60 text-sm">Sign in to access AI tools and resources</p>
           </div>
 
-          {error && (
+          {lockoutSecsLeft > 0 && (
+            <div className="glass rounded-lg p-4 mb-6 flex items-start gap-3 border border-red-500/20">
+              <AlertCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-400">
+                Too many failed attempts. Try again in {Math.floor(lockoutSecsLeft / 60)}:{String(lockoutSecsLeft % 60).padStart(2, '0')}.
+              </p>
+            </div>
+          )}
+
+          {error && lockoutSecsLeft === 0 && (
             <div className="glass rounded-lg p-4 mb-6 flex items-start gap-3 border border-red-500/20">
               <AlertCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-400">{error}</p>
@@ -81,10 +141,10 @@ export default function Login() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || lockoutSecsLeft > 0}
               className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Signing in...' : lockoutSecsLeft > 0 ? `Locked (${lockoutSecsLeft}s)` : 'Sign In'}
             </button>
           </form>
 

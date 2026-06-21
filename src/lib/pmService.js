@@ -71,6 +71,26 @@ export async function createProject(fields) {
 
 export async function updateProject(id, fields) {
   if (!supabase) throw new Error('Database not configured')
+
+  // share_pin must be hashed server-side via set_share_pin RPC — never written directly.
+  if ('share_pin' in fields) {
+    const pin = fields.share_pin
+    const { error: pinErr } = await supabase.rpc('set_share_pin', {
+      p_project_id: id,
+      p_pin: pin ?? '',
+    })
+    if (pinErr) throw pinErr
+    const { share_pin: _omit, ...rest } = fields
+    if (Object.keys(rest).length === 0) {
+      // Nothing else to update — return current project row
+      const { data, error } = await supabase.from('pm_projects').select().eq('id', id).single()
+      if (error) throw error
+      const { share_pin, ...safeData } = data
+      return { ...safeData, has_share_pin: !!share_pin }
+    }
+    fields = rest
+  }
+
   const { data, error } = await supabase
     .from('pm_projects')
     .update(fields)
