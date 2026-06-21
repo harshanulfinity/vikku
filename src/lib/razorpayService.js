@@ -9,6 +9,14 @@ export const PLAN_PRICING = {
   team: { monthly: 999, annual: 9999 },
 }
 
+// Normalized monthly recurring revenue (pre-GST) for a subscription.
+// Annual plans are divided by 12 so MRR is comparable across cycles.
+export function monthlyRevenue(plan, billingCycle = 'monthly') {
+  const p = PLAN_PRICING[plan]
+  if (!p) return 0
+  return billingCycle === 'annual' ? p.annual / 12 : p.monthly
+}
+
 const PLAN_META = {
   pro:  { name: 'Vikku PM Pro',  description: 'Unlimited projects, AI planning, client share links' },
   team: { name: 'Vikku PM Team', description: 'Everything in Pro + unlimited team members' },

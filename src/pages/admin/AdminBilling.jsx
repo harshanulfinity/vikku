@@ -3,6 +3,7 @@ import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { RefreshCw, Copy, Check } from 'lucide-react'
 import AdminLayout from './AdminLayout'
 import { getAdminBilling } from '../../lib/adminService'
+import { monthlyRevenue } from '../../lib/razorpayService'
 
 const PLAN_STYLES = {
   free:  'bg-white/10 text-white/50',
@@ -60,7 +61,7 @@ export default function AdminBilling() {
 
   const activePro   = subs.filter(s => s.plan === 'pro'  && (s.status === 'active' || s.status === 'cancelling'))
   const activeTeam  = subs.filter(s => s.plan === 'team' && (s.status === 'active' || s.status === 'cancelling'))
-  const mrr         = activePro.length * 499 + activeTeam.length * 2499
+  const mrr         = Math.round([...activePro, ...activeTeam].reduce((sum, s) => sum + monthlyRevenue(s.plan, s.billing_cycle), 0))
   const arr         = mrr * 12
   const cancelled   = subs.filter(s => s.status === 'cancelled').length
   const churnRate   = subs.length > 0 ? ((cancelled / subs.length) * 100).toFixed(1) : '0.0'

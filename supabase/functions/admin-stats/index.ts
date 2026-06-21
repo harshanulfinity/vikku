@@ -4,6 +4,19 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const ADMIN_EMAILS = (Deno.env.get('ADMIN_EMAILS') || 'sanikommuharshavardhanreddy6@gmail.com')
   .split(',').map(e => e.trim()).filter(Boolean)
 
+// Pre-GST base prices in ₹ (mirrors src/lib/razorpayService.js PLAN_PRICES)
+const PLAN_PRICE: Record<string, { monthly: number; annual: number }> = {
+  pro:  { monthly: 299, annual: 2999 },
+  team: { monthly: 999, annual: 9999 },
+}
+// Normalized monthly recurring revenue for a subscription (annual ÷ 12)
+function monthlyRevenue(plan?: string, cycle?: string): number {
+  const p = PLAN_PRICE[plan || '']
+  if (!p) return 0
+  return cycle === 'annual' ? p.annual / 12 : p.monthly
+}
+const isPaidStatus = (s?: string) => s === 'active' || s === 'cancelling'
+
 const ALLOWED_ORIGINS = new Set(['https://vikku.in', 'https://www.vikku.in'])
 
 function corsHeaders(req: Request) {
@@ -154,7 +167,7 @@ serve(async (req) => {
     if (type === 'overview') {
       const [users, subsRes, projectsRes, subscribersRes] = await Promise.all([
         listAllUsers(),
-        admin.from('user_subscriptions').select('plan, status, updated_at'),
+        admin.from('user_subscriptions').select('plan, status, updated_at, billing_cycle'),
         admin.from('pm_projects').select('status, created_at'),
         admin.from('subscribers').select('source, created_at', { count: 'exact', head: false }),
       ])
@@ -169,9 +182,9 @@ serve(async (req) => {
         subscribersBySource[src] = (subscribersBySource[src] || 0) + 1
       })
 
-      const proSubs  = subs.filter(s => s.plan === 'pro'  && (s.status === 'active' || s.status === 'cancelling'))
-      const teamSubs = subs.filter(s => s.plan === 'team' && (s.status === 'active' || s.status === 'cancelling'))
-      const mrr      = proSubs.length * 499 + teamSubs.length * 2499
+      const proSubs  = subs.filter(s => s.plan === 'pro'  && isPaidStatus(s.status))
+      const teamSubs = subs.filter(s => s.plan === 'team' && isPaidStatus(s.status))
+      const mrr      = Math.round([...proSubs, ...teamSubs].reduce((sum, s) => sum + monthlyRevenue(s.plan, s.billing_cycle), 0))
 
       const now = Date.now()
       const sevenDaysAgo = new Date(now - 7 * 86400000).toISOString()
@@ -267,7 +280,7 @@ serve(async (req) => {
     if (type === 'analytics') {
       const [users, subsRes, projectsRes] = await Promise.all([
         listAllUsers(),
-        admin.from('user_subscriptions').select('plan, status, updated_at, user_id'),
+        admin.from('user_subscriptions').select('plan, status, updated_at, user_id, billing_cycle'),
         admin.from('pm_projects').select('user_id, created_at'),
       ])
       const subs     = subsRes.data || []
@@ -277,9 +290,9 @@ serve(async (req) => {
       const sevenDaysAgo = new Date(now - 7 * 86400000).toISOString()
       const monthStart   = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
 
-      const proSubs  = subs.filter(s => s.plan === 'pro'  && (s.status === 'active' || s.status === 'cancelling'))
-      const teamSubs = subs.filter(s => s.plan === 'team' && (s.status === 'active' || s.status === 'cancelling'))
-      const mrr      = proSubs.length * 499 + teamSubs.length * 2499
+      const proSubs  = subs.filter(s => s.plan === 'pro'  && isPaidStatus(s.status))
+      const teamSubs = subs.filter(s => s.plan === 'team' && isPaidStatus(s.status))
+      const mrr      = Math.round([...proSubs, ...teamSubs].reduce((sum, s) => sum + monthlyRevenue(s.plan, s.billing_cycle), 0))
       const arr      = mrr * 12
 
       const activeUsers      = users.filter(u => u.last_sign_in_at && u.last_sign_in_at >= sevenDaysAgo).length
@@ -329,7 +342,7 @@ serve(async (req) => {
     // ── GET: mrr_history ─────────────────────────────────────────────
     if (type === 'mrr_history') {
       const { data: subs } = await admin.from('user_subscriptions')
-        .select('plan, status, updated_at')
+        .select('plan, status, updated_at, billing_cycle')
       const allSubs = subs || []
 
       // Build last 6 months of MRR snapshots. The table has no created_at, so we
@@ -340,15 +353,12 @@ serve(async (req) => {
         const d     = new Date(now.getFullYear(), now.getMonth() - i, 1)
         const end   = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59).toISOString()
         const label = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })
-        const activePro = allSubs.filter(s =>
-          s.plan === 'pro' && s.updated_at <= end &&
+        const activeInMonth = allSubs.filter(s =>
+          (s.plan === 'pro' || s.plan === 'team') && s.updated_at <= end &&
           (s.status === 'active' || s.status === 'cancelling' || (s.status === 'cancelled' && s.updated_at > end))
-        ).length
-        const activeTeam = allSubs.filter(s =>
-          s.plan === 'team' && s.updated_at <= end &&
-          (s.status === 'active' || s.status === 'cancelling' || (s.status === 'cancelled' && s.updated_at > end))
-        ).length
-        months.push({ label, mrr: activePro * 499 + activeTeam * 2499, users: activePro + activeTeam })
+        )
+        const mrr = Math.round(activeInMonth.reduce((sum, s) => sum + monthlyRevenue(s.plan, s.billing_cycle), 0))
+        months.push({ label, mrr, users: activeInMonth.length })
       }
       return json(req, { months })
     }
