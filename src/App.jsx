@@ -53,6 +53,8 @@ const AdminBilling           = lazy(() => import('./pages/admin/AdminBilling'))
 const AdminProfile           = lazy(() => import('./pages/admin/AdminProfile'))
 const AdminAnalytics         = lazy(() => import('./pages/admin/AdminAnalytics'))
 const AdminAnnouncements     = lazy(() => import('./pages/admin/AdminAnnouncements'))
+const AdminEmail             = lazy(() => import('./pages/admin/AdminEmail'))
+const AdminActivity          = lazy(() => import('./pages/admin/AdminActivity'))
 
 function PMRedirect() {
   const { user, loading } = useAuth()
@@ -141,6 +143,8 @@ export default function App() {
               <Route path="/admin/profile"       element={<AdminGate><AdminProfile /></AdminGate>} />
               <Route path="/admin/analytics"     element={<AdminGate><AdminAnalytics /></AdminGate>} />
               <Route path="/admin/announcements" element={<AdminGate><AdminAnnouncements /></AdminGate>} />
+              <Route path="/admin/email"         element={<AdminGate><AdminEmail /></AdminGate>} />
+              <Route path="/admin/activity"      element={<AdminGate><AdminActivity /></AdminGate>} />
               <Route path="*"                        element={<NotFound />} />
             </Routes>
           </Suspense>

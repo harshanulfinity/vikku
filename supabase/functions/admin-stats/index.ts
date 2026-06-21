@@ -86,6 +86,50 @@ serve(async (req) => {
         return json(req, { ok: true })
       }
 
+      if (body.action === 'send_email') {
+        const resendKey = Deno.env.get('RESEND_API_KEY')
+        if (!resendKey) throw new Error('RESEND_API_KEY not configured')
+
+        // Fetch target users
+        const usersRes = await admin.auth.admin.listUsers({ perPage: 1000 })
+        const allUsers = usersRes.data?.users || []
+
+        let targets: string[] = []
+        if (body.audience === 'all') {
+          targets = allUsers.map(u => u.email).filter(Boolean) as string[]
+        } else {
+          const subsRes = await admin.from('user_subscriptions').select('user_id, plan, status')
+          const subs = subsRes.data || []
+          const emailMap: Record<string, string> = {}
+          allUsers.forEach(u => { if (u.email) emailMap[u.id] = u.email })
+          if (body.audience === 'pro') {
+            targets = subs.filter(s => (s.plan === 'pro' || s.plan === 'team') && s.status === 'active')
+              .map(s => emailMap[s.user_id]).filter(Boolean) as string[]
+          } else {
+            const paidIds = new Set(subs.filter(s => s.status === 'active').map(s => s.user_id))
+            targets = allUsers.filter(u => !paidIds.has(u.id)).map(u => u.email).filter(Boolean) as string[]
+          }
+        }
+
+        // Send via Resend (batch in groups of 50)
+        let sent = 0
+        for (let i = 0; i < targets.length; i += 50) {
+          const batch = targets.slice(i, i + 50)
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: 'Vikku <hello@vikku.in>',
+              to: batch,
+              subject: body.subject,
+              html: body.body.includes('<') ? body.body : `<p>${body.body.replace(/\n/g, '<br>')}</p>`,
+            }),
+          })
+          sent += batch.length
+        }
+        return json(req, { ok: true, count: sent })
+      }
+
       return json(req, { error: 'Unknown action' }, 400)
     }
 
@@ -261,6 +305,123 @@ serve(async (req) => {
         .select('*').order('created_at', { ascending: false })
       if (error) throw error
       return json(req, { announcements: data || [] })
+    }
+
+    // ── GET: mrr_history ─────────────────────────────────────────────
+    if (type === 'mrr_history') {
+      const { data: subs } = await admin.from('user_subscriptions')
+        .select('plan, status, created_at, updated_at')
+      const allSubs = subs || []
+
+      // Build last 6 months of MRR snapshots
+      const months: { label: string; mrr: number; users: number }[] = []
+      const now = new Date()
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59).toISOString()
+        const start = d.toISOString()
+        const label = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })
+        // Active paid subs as of end of that month (created before end, not cancelled before start)
+        const activePro  = allSubs.filter(s => s.plan === 'pro'  && s.status === 'active' && s.created_at <= end).length
+        const activeTeam = allSubs.filter(s => s.plan === 'team' && s.status === 'active' && s.created_at <= end).length
+        months.push({ label, mrr: activePro * 499 + activeTeam * 2499, users: 0 })
+      }
+      // Current month is accurate; past months are approximations based on still-active subs
+      return json(req, { months })
+    }
+
+    // ── GET: user_growth ─────────────────────────────────────────────
+    if (type === 'user_growth') {
+      const usersRes = await admin.auth.admin.listUsers({ perPage: 1000 })
+      const users = usersRes.data?.users || []
+
+      const months: { label: string; total: number; new: number }[] = []
+      const now = new Date()
+      let cumulative = 0
+      for (let i = 5; i >= 0; i--) {
+        const d     = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        const end   = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59).toISOString()
+        const start = d.toISOString()
+        const label = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })
+        const newThisMonth = users.filter(u => u.created_at >= start && u.created_at <= end).length
+        cumulative += newThisMonth
+        months.push({ label, total: cumulative, new: newThisMonth })
+      }
+      // Fix cumulative: count all users created before each month end
+      const fixed = []
+      for (let i = 5; i >= 0; i--) {
+        const d   = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59).toISOString()
+        const s   = new Date(now.getFullYear(), now.getMonth() - i, 1).toISOString()
+        const label = new Date(now.getFullYear(), now.getMonth() - i, 1).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })
+        fixed.push({
+          label,
+          total: users.filter(u => u.created_at <= d).length,
+          new:   users.filter(u => u.created_at >= s && u.created_at <= d).length,
+        })
+      }
+      return json(req, { months: fixed })
+    }
+
+    // ── GET: activity ─────────────────────────────────────────────────
+    if (type === 'activity') {
+      const [usersRes, subsRes, projectsRes] = await Promise.all([
+        admin.auth.admin.listUsers({ perPage: 1000 }),
+        admin.from('user_subscriptions').select('user_id, plan, status, updated_at').order('updated_at', { ascending: false }).limit(30),
+        admin.from('pm_projects').select('user_id, name, created_at').order('created_at', { ascending: false }).limit(30),
+      ])
+      const users    = usersRes.data?.users || []
+      const subs     = subsRes.data  || []
+      const projects = projectsRes.data || []
+
+      const emailMap: Record<string, string> = {}
+      users.forEach(u => { if (u.email) emailMap[u.id] = u.email })
+
+      const events: { type: string; email: string; detail: string; timestamp: string }[] = []
+
+      // Signups (last 30 days)
+      const cutoff = new Date(Date.now() - 30 * 86400000).toISOString()
+      users
+        .filter(u => u.created_at >= cutoff)
+        .forEach(u => events.push({ type: 'signup', email: u.email || '', detail: '', timestamp: u.created_at }))
+
+      // Upgrades
+      subs
+        .filter(s => s.status === 'active' && (s.plan === 'pro' || s.plan === 'team'))
+        .forEach(s => events.push({ type: 'upgrade', email: emailMap[s.user_id] || '', detail: s.plan, timestamp: s.updated_at }))
+
+      // Projects created
+      projects.forEach(p => events.push({ type: 'project', email: emailMap[p.user_id] || '', detail: p.name, timestamp: p.created_at }))
+
+      // Recent sign-ins (last 7 days)
+      const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString()
+      users
+        .filter(u => u.last_sign_in_at && u.last_sign_in_at >= sevenDaysAgo)
+        .slice(0, 20)
+        .forEach(u => events.push({ type: 'signin', email: u.email || '', detail: '', timestamp: u.last_sign_in_at! }))
+
+      events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      return json(req, { events: events.slice(0, 50) })
+    }
+
+    // ── POST: send_email ──────────────────────────────────────────────
+    // (handled in POST block above)
+
+    // ── GET: expiring ─────────────────────────────────────────────────
+    if (type === 'expiring') {
+      const sevenDaysFromNow = new Date(Date.now() + 7 * 86400000).toISOString()
+      const [subsRes, usersRes] = await Promise.all([
+        admin.from('user_subscriptions')
+          .select('*')
+          .eq('status', 'active')
+          .lte('current_period_end', sevenDaysFromNow)
+          .gte('current_period_end', new Date().toISOString()),
+        admin.auth.admin.listUsers({ perPage: 1000 }),
+      ])
+      const subs  = subsRes.data  || []
+      const users = usersRes.data?.users || []
+      const emailMap: Record<string, string> = {}
+      users.forEach(u => { if (u.email) emailMap[u.id] = u.email })
+      return json(req, { expiring: subs.map(s => ({ ...s, email: emailMap[s.user_id] || 'Unknown' })) })
     }
 
     // ── GET: user_detail ──────────────────────────────────────────────

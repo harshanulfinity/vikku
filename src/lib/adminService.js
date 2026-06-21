@@ -45,3 +45,8 @@ export const adminCreateAnnouncement = (data) => adminPost({ action: 'create_ann
 export const adminToggleAnnouncement = (id, active) => adminPost({ action: 'toggle_announcement', id, active })
 export const adminDeleteAnnouncement = (id) => adminPost({ action: 'delete_announcement', id })
 export const adminDeleteUser         = (userId) => adminPost({ action: 'delete_user', userId })
+export const adminSendEmail          = (data)   => adminPost({ action: 'send_email', ...data })
+export const getAdminActivity        = ()        => adminFetch('activity')
+export const getAdminMrrHistory      = ()        => adminFetch('mrr_history')
+export const getAdminUserGrowth      = ()        => adminFetch('user_growth')
+export const getAdminExpiring        = ()        => adminFetch('expiring')

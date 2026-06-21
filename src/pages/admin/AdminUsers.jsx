@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Search, RefreshCw, ChevronDown, Download, X, Folder } from 'lucide-react'
+import { Search, RefreshCw, ChevronDown, Download, X, Folder, AlertTriangle } from 'lucide-react'
 import AdminLayout from './AdminLayout'
-import { getAdminUsers, adminChangePlan, getAdminUserDetail, adminDeleteUser } from '../../lib/adminService'
+import { getAdminUsers, adminChangePlan, getAdminUserDetail, adminDeleteUser, getAdminExpiring } from '../../lib/adminService'
 
 const PLAN_STYLES = {
   free:  'bg-white/10 text-white/50',
@@ -167,19 +167,21 @@ function exportCSV(rows) {
 }
 
 export default function AdminUsers() {
-  const [users, setUsers]         = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [error, setError]         = useState('')
-  const [search, setSearch]       = useState('')
-  const [planFilter, setPlanFilter] = useState('all')
+  const [users, setUsers]               = useState([])
+  const [expiring, setExpiring]         = useState([])
+  const [loading, setLoading]           = useState(true)
+  const [error, setError]               = useState('')
+  const [search, setSearch]             = useState('')
+  const [planFilter, setPlanFilter]     = useState('all')
   const [activeFilter, setActiveFilter] = useState(false)
   const [detailUserId, setDetailUserId] = useState(null)
 
   const load = async () => {
     setLoading(true); setError('')
     try {
-      const d = await getAdminUsers()
+      const [d, e] = await Promise.all([getAdminUsers(), getAdminExpiring()])
       setUsers(d.users || [])
+      setExpiring(e.expiring || [])
     } catch (err) {
       setError(err.message)
     } finally {
@@ -207,6 +209,24 @@ export default function AdminUsers() {
 
   return (
     <AdminLayout title="Users">
+      {/* Expiry alerts */}
+      {expiring.length > 0 && (
+        <div className="glass rounded-xl p-4 mb-4 border border-orange-500/20">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle size={13} className="text-orange-400" />
+            <p className="text-xs font-medium text-orange-400">{expiring.length} subscription{expiring.length !== 1 ? 's' : ''} expiring within 7 days</p>
+          </div>
+          <div className="space-y-1">
+            {expiring.map(s => (
+              <div key={s.id} className="flex items-center justify-between text-xs">
+                <span className="text-white/60 font-mono truncate flex-1">{s.email}</span>
+                <span className="text-orange-400/70 ml-3 flex-shrink-0">expires {new Date(s.current_period_end).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <div className="relative flex-1 min-w-[160px] max-w-xs">
