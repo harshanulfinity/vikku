@@ -6,7 +6,7 @@ import { bulkCreateTasks, bulkCreateMilestones } from '../../lib/pmService'
 import { useAuth } from '../../contexts/AuthContext'
 import UpgradeModal from './UpgradeModal'
 
-export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
+export default function AIAssistant({ projectId, projectName, onDone, isPro, workflow }) {
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
@@ -53,7 +53,17 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
   const handleAddToProject = async (plan) => {
     setAdding(true)
     try {
-      const tasksWithProject = plan.tasks.map((t) => ({ ...t, project_id: projectId }))
+      // Map every task into a valid stage of the active workflow. The AI/templates
+      // emit generic statuses (e.g. 'todo') that may not exist in a custom workflow,
+      // which would otherwise leave the tasks orphaned off the board.
+      const stages = (workflow && workflow.length > 0) ? workflow : []
+      const stageKeys = new Set(stages.map((s) => s.status_key))
+      const firstKey = (stages.find((s) => !s.is_done) || stages[0])?.status_key
+      const tasksWithProject = plan.tasks.map((t) => ({
+        ...t,
+        project_id: projectId,
+        status: (firstKey && !stageKeys.has(t.status)) ? firstKey : t.status,
+      }))
       const milestonesWithProject = plan.milestones.map((m) => ({ ...m, project_id: projectId }))
       await Promise.all([bulkCreateTasks(tasksWithProject), bulkCreateMilestones(milestonesWithProject)])
       onDone()

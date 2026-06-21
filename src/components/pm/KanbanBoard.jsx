@@ -42,6 +42,7 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState(new Set())
   const [bulkWorking, setBulkWorking] = useState(false)
+  const [migratingOrphans, setMigratingOrphans] = useState(false)
   const [viewMode, setViewMode] = useState('kanban') // 'kanban' | 'list'
 
   const filteredTasks = labelFilter ? tasks.filter((t) => t.label === labelFilter) : tasks
@@ -243,11 +244,36 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
       </div>
 
       {/* Orphaned tasks warning */}
-      {orphanedTasks.length > 0 && (
-        <div className="mb-4 px-4 py-2.5 rounded-xl border border-yellow-500/20 bg-yellow-500/[0.06] text-[10px] text-yellow-400/80">
-          {orphanedTasks.length} task{orphanedTasks.length !== 1 ? 's' : ''} have stages not in the current workflow. Change their status to move them.
-        </div>
-      )}
+      {orphanedTasks.length > 0 && (() => {
+        const firstStage = stages.find((s) => !s.is_done) || stages[0]
+        const moveOrphans = async () => {
+          if (!firstStage || migratingOrphans) return
+          setMigratingOrphans(true)
+          const ids = orphanedTasks.map((t) => t.id)
+          onTasksChange(tasks.map((t) => ids.includes(t.id) ? { ...t, status: firstStage.status_key } : t))
+          try {
+            await Promise.all(ids.map((id) => updateTask(id, { status: firstStage.status_key })))
+          } finally {
+            setMigratingOrphans(false)
+          }
+        }
+        return (
+          <div className="mb-4 px-4 py-2.5 rounded-xl border border-yellow-500/20 bg-yellow-500/[0.06] text-[10px] text-yellow-400/80 flex items-center justify-between gap-3">
+            <span>
+              {orphanedTasks.length} task{orphanedTasks.length !== 1 ? 's' : ''} have stages not in the current workflow.
+            </span>
+            {firstStage && (
+              <button
+                onClick={moveOrphans}
+                disabled={migratingOrphans}
+                className="flex-shrink-0 px-2.5 py-1 rounded-lg bg-yellow-500/15 hover:bg-yellow-500/25 text-yellow-300 font-medium transition-colors disabled:opacity-50"
+              >
+                {migratingOrphans ? 'Moving…' : `Move all to "${firstStage.name}"`}
+              </button>
+            )}
+          </div>
+        )
+      })()}
 
       {/* List View */}
       {viewMode === 'list' && (

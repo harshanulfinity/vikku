@@ -304,6 +304,7 @@ export default function ProjectDetail() {
             <AIAssistant
               projectId={id}
               projectName={project.name}
+              workflow={workflowStages}
               isPro={isPro}
               onDone={async () => {
                 const [t, m] = await Promise.all([getTasks(id), getMilestones(id)])
