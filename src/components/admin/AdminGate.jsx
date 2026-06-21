@@ -7,20 +7,27 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
 export default function AdminGate({ children }) {
   const { user, loading } = useAuth()
-  const [isAdmin, setIsAdmin] = useState(null)
+  const [isAdmin, setIsAdmin]   = useState(null)
+  const [checkErr, setCheckErr] = useState('')
 
   useEffect(() => {
+    if (loading) return
     if (!user) { setIsAdmin(false); return }
+
     supabase.auth.getSession().then(({ data }) => {
       const token = data?.session?.access_token
       if (!token) { setIsAdmin(false); return }
+
       fetch(`${SUPABASE_URL}/functions/v1/admin-stats?type=overview`, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       })
-        .then(res => setIsAdmin(res.ok))
-        .catch(() => setIsAdmin(false))
+        .then(res => {
+          if (res.ok) { setIsAdmin(true) }
+          else { res.json().then(j => setCheckErr(j.error || `HTTP ${res.status}`)).catch(() => setCheckErr(`HTTP ${res.status}`)); setIsAdmin(false) }
+        })
+        .catch(err => { setCheckErr(err.message); setIsAdmin(false) })
     })
-  }, [user])
+  }, [user, loading])
 
   if (loading || isAdmin === null) {
     return (
@@ -29,6 +36,17 @@ export default function AdminGate({ children }) {
       </div>
     )
   }
-  if (!user || !isAdmin) return <Navigate to="/" replace />
+
+  if (!user) return <Navigate to="/login" replace />
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center flex-col gap-3">
+        <p className="text-white/60 text-sm">Access denied</p>
+        {checkErr && <p className="text-red-400 text-xs font-mono">{checkErr}</p>}
+      </div>
+    )
+  }
+
   return children
 }
