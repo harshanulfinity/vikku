@@ -8,9 +8,12 @@ const ALLOWED_ORIGINS = new Set(['https://vikku.in', 'https://www.vikku.in'])
 
 function corsHeaders(req: Request) {
   const origin = req.headers.get('origin') ?? ''
+  const allowed = ALLOWED_ORIGINS.has(origin) ? origin : 'https://www.vikku.in'
   return {
-    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : '',
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Max-Age': '86400',
     'Vary': 'Origin',
   }
 }
