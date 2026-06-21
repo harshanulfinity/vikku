@@ -50,7 +50,7 @@ function loadRazorpayScript() {
   })
 }
 
-export async function openRazorpayCheckout({ plan, billingCycle = 'monthly', user, onSuccess, onFailure, onDismiss }) {
+export async function openRazorpayCheckout({ plan, billingCycle = 'monthly', mode = 'subscription', user, onSuccess, onFailure, onDismiss }) {
   const loaded = await loadRazorpayScript()
   if (!loaded) {
     onFailure?.('Failed to load payment gateway. Please try again.')
@@ -66,19 +66,23 @@ export async function openRazorpayCheckout({ plan, billingCycle = 'monthly', use
   // ── Try an auto-renewing subscription first ──────────────────────────────
   // Needs Razorpay Plan IDs configured server-side. If not configured, the
   // endpoint returns { configured: false } and we fall back to a one-time order.
+  // Skipped entirely in 'once' mode — a one-time order gives a reliable UPI QR
+  // (recurring UPI-Autopay mandate QRs cannot be scanned by most UPI apps).
   let subscriptionId = null
-  try {
-    const res = await fetch('/api/create-subscription', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan, billingCycle: cycle, email: user?.email || '' }),
-    })
-    if (res.ok) {
-      const data = await res.json()
-      if (data.configured && data.subscription_id) subscriptionId = data.subscription_id
+  if (mode === 'subscription') {
+    try {
+      const res = await fetch('/api/create-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, billingCycle: cycle, email: user?.email || '' }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.configured && data.subscription_id) subscriptionId = data.subscription_id
+      }
+    } catch {
+      // ignore — fall back to one-time order
     }
-  } catch {
-    // ignore — fall back to one-time order
   }
 
   // ── Fallback: one-time order (GST-inclusive) ─────────────────────────────
