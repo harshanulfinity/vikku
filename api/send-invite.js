@@ -153,7 +153,7 @@ If you didn't expect this invitation, you can safely ignore this email.
 
     if (error) {
       console.error('Resend error:', error);
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Failed to send invitation email' });
     }
 
     return res.status(200).json({ 

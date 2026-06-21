@@ -15,9 +15,12 @@ serve(async (req) => {
   }
 
   try {
-    const { requirements, location } = await req.json()
+    const rawBody = await req.text()
+    if (rawBody.length > 8000) return new Response(JSON.stringify({ error: 'Request too large' }), { status: 413, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
+    const { requirements, location } = JSON.parse(rawBody)
+    const safeRequirements = String(requirements ?? '').slice(0, 2000)
 
-    if (!requirements || requirements.length < 50) {
+    if (!safeRequirements || safeRequirements.length < 50) {
       return new Response(JSON.stringify({ error: 'Requirements too short' }), {
         status: 400,
         headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
@@ -30,7 +33,7 @@ serve(async (req) => {
 
     const prompt = `You are an expert software project estimator. Analyze these requirements and provide a detailed cost estimate.
 
-Requirements: ${requirements}
+Requirements: ${safeRequirements}
 
 ${locationContext}
 
