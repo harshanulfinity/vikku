@@ -1,26 +1,10 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Sparkles, X, Check, Loader2, Lock } from 'lucide-react'
+import { Sparkles, X, Check, Loader2 } from 'lucide-react'
 import { planProject } from '../../lib/openaiService'
 import { bulkCreateTasks, bulkCreateMilestones } from '../../lib/pmService'
 import { useAuth } from '../../contexts/AuthContext'
 import UpgradeModal from './UpgradeModal'
-
-const FREE_LIMIT = 6
-
-function getUsageKey(userId) {
-  const month = new Date().toISOString().slice(0, 7)
-  return `vikku_ai_uses_${userId}_${month}`
-}
-
-function getUsageCount(userId) {
-  return parseInt(localStorage.getItem(getUsageKey(userId)) || '0', 10)
-}
-
-function incrementUsage(userId) {
-  const key = getUsageKey(userId)
-  localStorage.setItem(key, String(getUsageCount(userId) + 1))
-}
 
 export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
   const { user } = useAuth()
@@ -32,12 +16,7 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
   const [adding, setAdding] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
 
-  const usedCount = user ? getUsageCount(user.id) : 0
-  const remaining = Math.max(0, FREE_LIMIT - usedCount)
-  const freeExhausted = !isPro && remaining === 0
-
   const handleOpen = () => {
-    if (freeExhausted) { setShowUpgrade(true); return }
     setOpen(true)
   }
 
@@ -48,7 +27,6 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
     try {
       const result = await planProject(`${projectName}: ${description}`)
       setPreview(result)
-      if (!isPro && user) incrementUsage(user.id)
     } catch (err) {
       // Server-side gate (free monthly limit / pro-only) → prompt upgrade
       if (err.message === 'limit_reached' || err.message === 'pro_required') {
@@ -100,17 +78,12 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
         >
           {isPro ? (
             <Sparkles size={14} className="text-yellow-400" />
-          ) : freeExhausted ? (
-            <Lock size={13} className="text-white/40" />
           ) : (
             <Sparkles size={14} className="text-white/60" />
           )}
           <span className="hidden sm:inline">Plan with AI</span>
-          {!isPro && !freeExhausted && (
-            <span className="hidden sm:inline text-[10px] text-white/30 ml-0.5">{remaining}/{FREE_LIMIT} free</span>
-          )}
-          {!isPro && freeExhausted && (
-            <span className="hidden sm:inline text-[10px] text-yellow-400/60 ml-0.5">Upgrade</span>
+          {!isPro && (
+            <span className="hidden sm:inline text-[10px] text-white/30 ml-0.5">Free</span>
           )}
         </button>
       )}
@@ -139,6 +112,7 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro }) {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
+                    maxLength={1000}
                     placeholder={`e.g. "Build a 6-page website for a clothing brand with home, shop, about, and contact pages. Launch in 6 weeks."`}
                     className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-white/20 resize-none mb-4"
                   />

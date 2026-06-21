@@ -114,6 +114,7 @@ export default function QuickAdd() {
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit() }}
             placeholder="Task title..."
+            maxLength={300}
             className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-white/20 transition-colors"
           />
 

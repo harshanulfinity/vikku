@@ -1,16 +1,20 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const RESEND_KEY = Deno.env.get('RESEND_API_KEY')!
 const FROM = 'Vikku PM <noreply@vikku.in>'
 
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+function corsHeaders(req: Request) {
+  const origin = req.headers.get('origin') ?? ''
+  return {
+    'Access-Control-Allow-Origin': origin === 'https://vikku.in' ? origin : '',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Vary': 'Origin',
+  }
 }
 
-const json = (data: unknown, status = 200) =>
-  new Response(JSON.stringify(data), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
+const json = (req: Request, data: unknown, status = 200) =>
+  new Response(JSON.stringify(data), { status, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
 
 async function send(to: string, subject: string, html: string) {
   const res = await fetch('https://api.resend.com/emails', {
@@ -22,6 +26,15 @@ async function send(to: string, subject: string, html: string) {
     const err = await res.text()
     throw new Error(`Resend error: ${err}`)
   }
+}
+
+function escHtml(s: string): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 // ── Email templates ────────────────────────────────────────────────────────────
@@ -48,9 +61,9 @@ function base(content: string) {
 function taskAssignedHtml(d: { taskTitle: string; projectName: string; assignorName: string; dueDate?: string }) {
   return base(`
     <h2>You've been assigned a task</h2>
-    <p style="margin-bottom:4px"><strong style="color:#fff">${d.taskTitle}</strong></p>
-    <p>in <strong style="color:#fff">${d.projectName}</strong>${d.assignorName ? ` — assigned by ${d.assignorName}` : ''}</p>
-    ${d.dueDate ? `<p style="margin:0"><span class="badge" style="background:rgba(234,179,8,0.12);color:#eab308">Due ${d.dueDate}</span></p>` : ''}
+    <p style="margin-bottom:4px"><strong style="color:#fff">${escHtml(d.taskTitle)}</strong></p>
+    <p>in <strong style="color:#fff">${escHtml(d.projectName)}</strong>${d.assignorName ? ` — assigned by ${escHtml(d.assignorName)}` : ''}</p>
+    ${d.dueDate ? `<p style="margin:0"><span class="badge" style="background:rgba(234,179,8,0.12);color:#eab308">Due ${escHtml(d.dueDate)}</span></p>` : ''}
     <a href="https://vikku.in/pm/dashboard" class="cta">Open Project Manager</a>
   `)
 }
@@ -58,9 +71,9 @@ function taskAssignedHtml(d: { taskTitle: string; projectName: string; assignorN
 function clientCommentHtml(d: { projectName: string; authorName: string; comment: string; shareUrl: string }) {
   return base(`
     <h2>New client comment</h2>
-    <p><strong style="color:#fff">${d.authorName}</strong> left a comment on <strong style="color:#fff">${d.projectName}</strong>:</p>
-    <blockquote>${d.comment}</blockquote>
-    <a href="${d.shareUrl}" class="cta">View Project</a>
+    <p><strong style="color:#fff">${escHtml(d.authorName)}</strong> left a comment on <strong style="color:#fff">${escHtml(d.projectName)}</strong>:</p>
+    <blockquote>${escHtml(d.comment)}</blockquote>
+    <a href="https://vikku.in/pm/share/${escHtml(d.shareUrl.split('/').pop() ?? '')}" class="cta">View Project</a>
   `)
 }
 
@@ -72,10 +85,10 @@ function clientApprovalHtml(d: { projectName: string; taskTitle: string; status:
   const statusLabel = isApproved ? 'Approved' : 'Needs revision'
   return base(`
     <h2>${isApproved ? '✓ Task approved' : '↩ Revision requested'}</h2>
-    <p>Your client reviewed <strong style="color:#fff">${d.taskTitle}</strong> in <strong style="color:#fff">${d.projectName}</strong>.</p>
+    <p>Your client reviewed <strong style="color:#fff">${escHtml(d.taskTitle)}</strong> in <strong style="color:#fff">${escHtml(d.projectName)}</strong>.</p>
     <span class="badge" style="${badgeColor}">${statusLabel}</span>
-    ${d.note ? `<blockquote>${d.note}</blockquote>` : ''}
-    <a href="${d.shareUrl}" class="cta">View Details</a>
+    ${d.note ? `<blockquote>${escHtml(d.note)}</blockquote>` : ''}
+    <a href="https://vikku.in/pm/share/${escHtml(d.shareUrl.split('/').pop() ?? '')}" class="cta">View Details</a>
   `)
 }
 
@@ -86,17 +99,17 @@ function milestoneApprovalHtml(d: { projectName: string; milestoneTitle: string;
     : 'background:rgba(234,179,8,0.12);color:#eab308'
   return base(`
     <h2>${isApproved ? '✓ Milestone approved' : '↩ Milestone revision requested'}</h2>
-    <p>Your client reviewed milestone <strong style="color:#fff">${d.milestoneTitle}</strong> in <strong style="color:#fff">${d.projectName}</strong>.</p>
+    <p>Your client reviewed milestone <strong style="color:#fff">${escHtml(d.milestoneTitle)}</strong> in <strong style="color:#fff">${escHtml(d.projectName)}</strong>.</p>
     <span class="badge" style="${badgeColor}">${isApproved ? 'Approved' : 'Needs revision'}</span>
-    ${d.note ? `<blockquote>${d.note}</blockquote>` : ''}
-    <a href="${d.shareUrl}" class="cta">View Project</a>
+    ${d.note ? `<blockquote>${escHtml(d.note)}</blockquote>` : ''}
+    <a href="https://vikku.in/pm/share/${escHtml(d.shareUrl.split('/').pop() ?? '')}" class="cta">View Project</a>
   `)
 }
 
 // ── Handler ────────────────────────────────────────────────────────────────────
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) })
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -112,10 +125,10 @@ serve(async (req) => {
       const authHeader = req.headers.get('Authorization') || ''
       const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } })
       const { data: { user } } = await userClient.auth.getUser()
-      if (!user) return json({ error: 'Unauthorized' }, 401)
+      if (!user) return json(req, { error: 'Unauthorized' }, 401)
 
       const { taskTitle, projectName, assigneeEmail, dueDate } = body
-      if (!assigneeEmail || assigneeEmail === user.email) return json({ ok: true })
+      if (!assigneeEmail || assigneeEmail === user.email) return json(req, { ok: true })
 
       await send(
         assigneeEmail,
@@ -127,21 +140,36 @@ serve(async (req) => {
           dueDate,
         }),
       )
-      return json({ ok: true })
+      return json(req, { ok: true })
+    }
+
+    // ── Rate limit helper for share-token-based notifications (10/hour per token) ─
+    async function checkTokenRateLimit(shareToken: string): Promise<boolean> {
+      const windowStart = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+      const { count } = await admin
+        .from('notification_rate_limits')
+        .select('*', { count: 'exact', head: true })
+        .eq('share_token', shareToken)
+        .gte('created_at', windowStart)
+      if ((count ?? 0) >= 10) return false
+      await admin.from('notification_rate_limits').insert({ share_token: shareToken })
+      return true
     }
 
     // ── client_comment: verified via share_token ───────────────────────────
     if (type === 'client_comment') {
       const { shareToken, authorName, comment } = body
+      if (!comment || comment.length > 2000) return json(req, { error: 'Invalid comment' }, 400)
       const { data: project } = await admin
         .from('pm_projects')
         .select('user_id, name')
         .eq('share_token', shareToken)
         .single()
-      if (!project) return json({ error: 'Invalid token' }, 400)
+      if (!project) return json(req, { error: 'Invalid token' }, 400)
+      if (!(await checkTokenRateLimit(shareToken))) return json(req, { error: 'Rate limit exceeded' }, 429)
 
       const { data: { user: owner } } = await admin.auth.admin.getUserById(project.user_id)
-      if (!owner?.email) return json({ ok: true })
+      if (!owner?.email) return json(req, { ok: true })
 
       const shareUrl = `https://vikku.in/pm/share/${shareToken}`
       await send(
@@ -149,7 +177,7 @@ serve(async (req) => {
         `${authorName} commented on ${project.name}`,
         clientCommentHtml({ projectName: project.name, authorName, comment, shareUrl }),
       )
-      return json({ ok: true })
+      return json(req, { ok: true })
     }
 
     // ── client_approval (task): verified via share_token ──────────────────
@@ -160,10 +188,11 @@ serve(async (req) => {
         .select('user_id, name')
         .eq('share_token', shareToken)
         .single()
-      if (!project) return json({ error: 'Invalid token' }, 400)
+      if (!project) return json(req, { error: 'Invalid token' }, 400)
+      if (!(await checkTokenRateLimit(shareToken))) return json(req, { error: 'Rate limit exceeded' }, 429)
 
       const { data: { user: owner } } = await admin.auth.admin.getUserById(project.user_id)
-      if (!owner?.email) return json({ ok: true })
+      if (!owner?.email) return json(req, { ok: true })
 
       const shareUrl = `https://vikku.in/pm/share/${shareToken}`
       const isApproved = status === 'approved'
@@ -172,7 +201,7 @@ serve(async (req) => {
         `Client ${isApproved ? 'approved' : 'requested revision on'}: ${taskTitle}`,
         clientApprovalHtml({ projectName: project.name, taskTitle, status, note, shareUrl }),
       )
-      return json({ ok: true })
+      return json(req, { ok: true })
     }
 
     // ── milestone_approval: verified via share_token ───────────────────────
@@ -183,10 +212,11 @@ serve(async (req) => {
         .select('user_id, name')
         .eq('share_token', shareToken)
         .single()
-      if (!project) return json({ error: 'Invalid token' }, 400)
+      if (!project) return json(req, { error: 'Invalid token' }, 400)
+      if (!(await checkTokenRateLimit(shareToken))) return json(req, { error: 'Rate limit exceeded' }, 429)
 
       const { data: { user: owner } } = await admin.auth.admin.getUserById(project.user_id)
-      if (!owner?.email) return json({ ok: true })
+      if (!owner?.email) return json(req, { ok: true })
 
       const shareUrl = `https://vikku.in/pm/share/${shareToken}`
       const isApproved = status === 'approved'
@@ -195,12 +225,12 @@ serve(async (req) => {
         `Client ${isApproved ? 'approved' : 'requested revision on'} milestone: ${milestoneTitle}`,
         milestoneApprovalHtml({ projectName: project.name, milestoneTitle, status, note, shareUrl }),
       )
-      return json({ ok: true })
+      return json(req, { ok: true })
     }
 
-    return json({ error: 'Unknown type' }, 400)
+    return json(req, { error: 'Unknown type' }, 400)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Internal error'
-    return json({ error: msg }, 500)
+    return json(req, { error: msg }, 500)
   }
 })

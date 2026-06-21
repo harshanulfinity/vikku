@@ -1,14 +1,18 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+function corsHeaders(req: Request) {
+  const origin = req.headers.get('origin') ?? ''
+  return {
+    'Access-Control-Allow-Origin': origin === 'https://vikku.in' ? origin : '',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Vary': 'Origin',
+  }
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders(req) })
   }
 
   try {
@@ -29,7 +33,7 @@ serve(async (req) => {
     if (!user) {
       return new Response(
         JSON.stringify({ error: 'unauthorized', message: 'Please sign in to use the AI planner.' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } }
       )
     }
 
@@ -57,7 +61,7 @@ serve(async (req) => {
       if (used >= FREE_MONTHLY_LIMIT) {
         return new Response(
           JSON.stringify({ error: 'limit_reached', message: `You've used all ${FREE_MONTHLY_LIMIT} free AI plans this month. Upgrade to Pro for unlimited.` }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 403, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } }
         )
       }
       await adminClient
@@ -65,12 +69,13 @@ serve(async (req) => {
         .upsert({ user_id: user.id, period, count: used + 1, updated_at: new Date().toISOString() }, { onConflict: 'user_id,period' })
     }
 
-    const { description } = await req.json()
+    const { description: rawDesc } = await req.json()
+    const description = String(rawDesc ?? '').slice(0, 1000)
 
     if (!description || description.length < 10) {
       return new Response(JSON.stringify({ error: 'Description too short' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
       })
     }
 
@@ -104,13 +109,13 @@ serve(async (req) => {
     const result = JSON.parse(data.choices[0].message.content)
 
     return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     })
   }
 })

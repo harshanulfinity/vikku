@@ -114,17 +114,18 @@ export async function openRazorpayCheckout({ plan, billingCycle = 'monthly', use
       : { amount: totalPaise, currency: 'INR', order_id: orderId }),
     handler: async (response) => {
       try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token || ''
         // The server verifies the signature + amount and grants the plan with
         // the service-role key. The client never writes the subscription itself.
         const verifyRes = await fetch('/api/verify-payment', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_order_id: response.razorpay_order_id,
             razorpay_subscription_id: response.razorpay_subscription_id,
             razorpay_signature: response.razorpay_signature,
-            userId: user.id,
             plan,
             billingCycle: cycle,
           }),
@@ -186,10 +187,12 @@ export async function cancelSubscription(userId) {
     .eq('user_id', userId)
     .single()
 
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token || ''
   const res = await fetch('/api/cancel-subscription', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, subscription_id: sub?.razorpay_subscription_id || null }),
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ subscription_id: sub?.razorpay_subscription_id || null }),
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))

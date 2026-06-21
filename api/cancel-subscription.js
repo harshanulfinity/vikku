@@ -7,16 +7,23 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { userId, subscription_id } = req.body || {};
-    if (!userId) {
-      return res.status(400).json({ error: 'Missing userId' });
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const anonKey = process.env.SUPABASE_ANON_KEY;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !anonKey || !serviceKey) {
+      return res.status(500).json({ error: 'Server misconfigured' });
     }
 
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !serviceKey) {
-      return res.status(500).json({ error: 'Database not configured' });
+    // Authenticate caller via JWT — never trust userId from request body
+    const authHeader = req.headers['authorization'] || '';
+    const callerClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
+    const { data: { user: caller } } = await callerClient.auth.getUser();
+    if (!caller) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
+    const userId = caller.id;
+
+    const { subscription_id } = req.body || {};
     const admin = createClient(supabaseUrl, serviceKey);
 
     // Stop auto-renewal at Razorpay (best-effort; access stays until period end)
@@ -48,6 +55,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, accessUntil: data?.current_period_end });
   } catch (error) {
     console.error('Error cancelling subscription:', error);
-    return res.status(500).json({ error: 'Failed to cancel subscription', message: error.message });
+    return res.status(500).json({ error: 'Failed to cancel subscription' });
   }
 }

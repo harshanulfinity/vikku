@@ -69,7 +69,6 @@ Be specific to their business type. A restaurant has different website benefits 
     console.error('OpenAI API error:', error);
     return res.status(500).json({ 
       error: 'Failed to calculate ROI',
-      message: error.message 
     });
   }
 }

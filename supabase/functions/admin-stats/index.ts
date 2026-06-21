@@ -1,18 +1,23 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const ADMIN_EMAILS = ['sanikommuharshavardhanreddy6@gmail.com']
+const ADMIN_EMAILS = (Deno.env.get('ADMIN_EMAILS') || 'sanikommuharshavardhanreddy6@gmail.com')
+  .split(',').map(e => e.trim()).filter(Boolean)
 
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+function corsHeaders(req: Request) {
+  const origin = req.headers.get('origin') ?? ''
+  return {
+    'Access-Control-Allow-Origin': origin === 'https://vikku.in' ? origin : '',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Vary': 'Origin',
+  }
 }
 
-const json = (data: unknown, status = 200) =>
-  new Response(JSON.stringify(data), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
+const json = (req: Request, data: unknown, status = 200) =>
+  new Response(JSON.stringify(data), { status, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) })
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -26,7 +31,7 @@ serve(async (req) => {
     })
     const { data: { user } } = await userClient.auth.getUser()
     if (!user || !ADMIN_EMAILS.includes(user.email!)) {
-      return json({ error: 'Unauthorized' }, 403)
+      return json(req, { error: 'Unauthorized' }, 403)
     }
 
     const admin = createClient(supabaseUrl, serviceKey)
@@ -47,9 +52,9 @@ serve(async (req) => {
           updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id' })
         if (error) throw error
-        return json({ ok: true })
+        return json(req, { ok: true })
       }
-      return json({ error: 'Unknown action' }, 400)
+      return json(req, { error: 'Unknown action' }, 400)
     }
 
     // ── GET: overview ─────────────────────────────────────────────
@@ -92,7 +97,7 @@ serve(async (req) => {
       const projectStatus: Record<string, number> = { active: 0, completed: 0, 'on-hold': 0, archived: 0 }
       projects.forEach(p => { if (p.status in projectStatus) projectStatus[p.status]++ })
 
-      return json({
+      return json(req, {
         totalUsers: users.length,
         proUsers: proSubs.length,
         teamUsers: teamSubs.length,
@@ -137,7 +142,7 @@ serve(async (req) => {
         }))
         .sort((a, b) => new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime())
 
-      return json({ users: result })
+      return json(req, { users: result })
     }
 
     // ── GET: billing ──────────────────────────────────────────────
@@ -153,12 +158,12 @@ serve(async (req) => {
       users.forEach(u => { if (u.email) emailMap[u.id] = u.email })
 
       const result = subs.map(s => ({ ...s, email: emailMap[s.user_id] || 'Unknown' }))
-      return json({ subscriptions: result })
+      return json(req, { subscriptions: result })
     }
 
-    return json({ error: 'Unknown type' }, 400)
+    return json(req, { error: 'Unknown type' }, 400)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Internal error'
-    return json({ error: msg }, 500)
+    return json(req, { error: msg }, 500)
   }
 })

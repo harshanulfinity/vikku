@@ -3,9 +3,9 @@ import { ArrowRight, CheckCircle2, Mail, AlertCircle } from 'lucide-react'
 import emailjs from '@emailjs/browser'
 import { trackContactSubmit } from '../utils/analytics'
 
-const EMAILJS_SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID  || 'service_7o8yirw'
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_z9ostcn'
-const EMAILJS_PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY  || 'EJRbwncJqpddV9jdj'
+const EMAILJS_SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+const EMAILJS_PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
 
 const budgets      = ['Under ₹50k', '₹50k – ₹2L', '₹2L – ₹10L', '₹10L – ₹20L', '₹20L+', 'Not sure yet']
 const services     = ['Business / Corporate Website', 'E-Commerce Store', 'Product Catalog + Admin Portal', 'Staffing & HR Management Platform', 'Booking & Appointment System', 'CRM / Client Management Portal', 'Custom Web Application', 'Landing Page / Marketing Site']

@@ -78,7 +78,6 @@ Be realistic and conservative with estimates. Use actual current market rates fo
     console.error('OpenAI API error:', error);
     return res.status(500).json({ 
       error: 'Failed to generate cost estimate',
-      message: error.message 
     });
   }
 }

@@ -166,12 +166,14 @@ export default function ProjectDetail() {
     }
   }
 
+  const escHtml = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+
   const handleExportPDF = () => {
     const done = tasks.filter((t) => t.status === 'done').length
     const total = tasks.length
     const pct = total > 0 ? Math.round((done / total) * 100) : 0
     const win = window.open('', '_blank')
-    win.document.write(`<!DOCTYPE html><html><head><title>${project.name} - Project Report</title>
+    win.document.write(`<!DOCTYPE html><html><head><title>${escHtml(project.name)} - Project Report</title>
     <style>
       body{font-family:system-ui,sans-serif;background:#fff;color:#111;padding:40px;max-width:700px;margin:0 auto}
       h1{font-size:24px;font-weight:800;margin-bottom:4px}
@@ -192,8 +194,8 @@ export default function ProjectDetail() {
       .milestone{padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px;display:flex;justify-content:space-between}
       @media print{body{padding:20px}}
     </style></head><body>
-    <h1>${project.name}</h1>
-    <p class="meta">Generated ${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}${project.client_name ? ' · Client: '+project.client_name : ''}</p>
+    <h1>${escHtml(project.name)}</h1>
+    <p class="meta">Generated ${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}${project.client_name ? ' · Client: '+escHtml(project.client_name) : ''}</p>
     <div class="stat-row">
       <div class="stat"><div class="val">${pct}%</div><div class="lbl">Progress</div></div>
       <div class="stat"><div class="val">${done}/${total}</div><div class="lbl">Tasks Done</div></div>
@@ -201,8 +203,8 @@ export default function ProjectDetail() {
     </div>
     <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
     <h2>Tasks</h2>
-    ${tasks.map(t=>`<div class="task"><span class="badge ${t.status||''}">${(t.status||'').replace('_',' ')}</span>${t.title||''}</div>`).join('')}
-    ${milestones.length>0?`<h2>Milestones</h2>${milestones.map(m=>`<div class="milestone"><span>${m.completed?'✓ ':''} ${m.title}</span><span style="color:#888">${new Date(m.due_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span></div>`).join('')}`:''}
+    ${tasks.map(t=>`<div class="task"><span class="badge ${escHtml(t.status||'')}">${escHtml((t.status||'').replace('_',' '))}</span>${escHtml(t.title)}</div>`).join('')}
+    ${milestones.length>0?`<h2>Milestones</h2>${milestones.map(m=>`<div class="milestone"><span>${m.completed?'✓ ':''} ${escHtml(m.title)}</span><span style="color:#888">${new Date(m.due_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span></div>`).join('')}`:''}
     <script>window.onload=()=>window.print()</script></body></html>`)
     win.document.close()
   }

@@ -66,7 +66,6 @@ Generate 10-15 tasks spread realistically across all 4 statuses. Generate 3-5 mi
     console.error('OpenAI API error:', error);
     return res.status(500).json({ 
       error: 'Failed to plan project',
-      message: error.message 
     });
   }
 }

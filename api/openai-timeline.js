@@ -66,7 +66,6 @@ Respond with this exact JSON structure:
     console.error('OpenAI API error:', error);
     return res.status(500).json({ 
       error: 'Failed to calculate timeline',
-      message: error.message 
     });
   }
 }

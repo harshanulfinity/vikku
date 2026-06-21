@@ -5,6 +5,15 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getProject, getMilestones, getProjectTimeLogs } from '../../lib/pmService'
 import AppHeader from '../../components/AppHeader'
 
+function escHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function fmtMins(m) {
   if (!m) return '0h'
   const h = Math.floor(m / 60)
@@ -122,31 +131,31 @@ export default function InvoiceGenerator() {
     </style></head><body>
     <div class="header">
       <div>
-        <div class="agency">${agencyName}</div>
-        <div class="meta-row">Invoice for: ${project?.name || ''}</div>
+        <div class="agency">${escHtml(agencyName)}</div>
+        <div class="meta-row">Invoice for: ${escHtml(project?.name)}</div>
       </div>
       <div class="invoice-meta">
-        <div class="invoice-num">${invoiceNum}</div>
-        <div class="meta-row">Issue date: ${issueDate}</div>
-        ${dueDate ? `<div class="meta-row">Due: ${dueDate}</div>` : ''}
+        <div class="invoice-num">${escHtml(invoiceNum)}</div>
+        <div class="meta-row">Issue date: ${escHtml(issueDate)}</div>
+        ${dueDate ? `<div class="meta-row">Due: ${escHtml(dueDate)}</div>` : ''}
       </div>
     </div>
     <div class="parties">
       <div>
         <div class="party-label">Bill From</div>
-        <div class="party-name">${agencyName}</div>
+        <div class="party-name">${escHtml(agencyName)}</div>
       </div>
       <div>
         <div class="party-label">Bill To</div>
-        <div class="party-name">${clientName || 'Client'}</div>
-        ${clientEmail ? `<div class="party-detail">${clientEmail}</div>` : ''}
+        <div class="party-name">${escHtml(clientName) || 'Client'}</div>
+        ${clientEmail ? `<div class="party-detail">${escHtml(clientEmail)}</div>` : ''}
       </div>
     </div>
     <table>
       <tr><th>Description</th><th class="text-right">Qty</th><th class="text-right">Rate</th><th class="text-right">Amount</th></tr>
       ${lines.map((l) => `<tr>
-        <td>${l.desc || '—'}</td>
-        <td class="text-right">${l.qty}</td>
+        <td>${escHtml(l.desc) || '—'}</td>
+        <td class="text-right">${escHtml(String(l.qty))}</td>
         <td class="text-right">${fmtAmount(parseFloat(l.rate) || 0)}</td>
         <td class="text-right">${fmtAmount(lineTotal(l))}</td>
       </tr>`).join('')}
@@ -159,7 +168,7 @@ export default function InvoiceGenerator() {
       </div>
     </div>
     ${totalMinutes > 0 ? `<div class="notes"><strong>Time tracked:</strong> ${fmtMins(totalMinutes)} logged on this project</div>` : ''}
-    ${notes ? `<div class="notes">${notes}</div>` : ''}
+    ${notes ? `<div class="notes">${escHtml(notes)}</div>` : ''}
     <div class="footer">Generated with Vikku PM · ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
     <script>window.onload=()=>window.print()</script>
     </body></html>`)

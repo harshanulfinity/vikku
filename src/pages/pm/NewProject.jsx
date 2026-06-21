@@ -269,6 +269,7 @@ export default function NewProject() {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="e.g. HSO CCTV Website"
+              maxLength={200}
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-white/20"
             />
           </div>
@@ -281,6 +282,7 @@ export default function NewProject() {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={3}
               placeholder="What are you building? Keep it brief."
+              maxLength={2000}
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-white/20 resize-none"
             />
           </div>

@@ -1,6 +1,8 @@
 import { Resend } from 'resend';
+import { createClient } from '@supabase/supabase-js';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const ALLOWED_URL_PREFIX = 'https://vikku.in/pm/';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -8,12 +10,26 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Authenticate caller
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const anonKey = process.env.SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !anonKey) return res.status(500).json({ error: 'Server misconfigured' });
+    const authHeader = req.headers['authorization'] || '';
+    const callerClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
+    const { data: { user: caller } } = await callerClient.auth.getUser();
+    if (!caller) return res.status(401).json({ error: 'Unauthorized' });
+
     const { email, projectName, projectUrl, inviterName, role } = req.body;
 
     if (!email || !projectName || !projectUrl) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: email, projectName, or projectUrl' 
+      return res.status(400).json({
+        error: 'Missing required fields: email, projectName, or projectUrl'
       });
+    }
+
+    // Validate projectUrl to prevent phishing via arbitrary URLs
+    if (!projectUrl.startsWith(ALLOWED_URL_PREFIX)) {
+      return res.status(400).json({ error: 'Invalid project URL' });
     }
 
     const roleDescriptions = {
@@ -147,9 +163,6 @@ If you didn't expect this invitation, you can safely ignore this email.
 
   } catch (error) {
     console.error('Error sending invitation:', error);
-    return res.status(500).json({ 
-      error: 'Failed to send invitation email',
-      message: error.message 
-    });
+    return res.status(500).json({ error: 'Failed to send invitation email' });
   }
 }

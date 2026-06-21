@@ -1,6 +1,5 @@
 import crypto from 'crypto'
 import Razorpay from 'razorpay'
-import { createClient } from '@supabase/supabase-js'
 
 // GST-inclusive price floor per plan/cycle (paise) — mirrors priceBreakdown()
 const GST = 0.18
@@ -18,15 +17,32 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  // ── 0. Authenticate caller via Supabase JWT ──────────────────────────────
+  const supabaseUrl = process.env.SUPABASE_URL
+  const anonKey = process.env.SUPABASE_ANON_KEY
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!supabaseUrl || !anonKey || !serviceKey) {
+    return res.status(500).json({ success: false, error: 'Server misconfigured' })
+  }
+  const authHeader = req.headers['authorization'] || ''
+  const { createClient: _create } = await import('@supabase/supabase-js')
+  const callerClient = _create(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } })
+  const { data: { user: caller } } = await callerClient.auth.getUser()
+  if (!caller) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' })
+  }
+
   const {
     razorpay_order_id,
     razorpay_payment_id,
     razorpay_signature,
     razorpay_subscription_id,
-    userId,
     plan,
     billingCycle,
   } = req.body || {}
+
+  // Use the verified caller's id — never trust userId from the body
+  const userId = caller.id
 
   const secret = process.env.RAZORPAY_KEY_SECRET
   if (!secret) {
@@ -57,11 +73,6 @@ export default async function handler(req, res) {
   }
 
   const keyId = process.env.RAZORPAY_KEY_ID
-  const supabaseUrl = process.env.SUPABASE_URL
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!supabaseUrl || !serviceKey) {
-    return res.status(500).json({ success: false, error: 'Database not configured' })
-  }
 
   // ── 3. Verify the amount actually paid (blocks ₹1-for-Team forgery) ───────
   // Subscriptions are fixed by their Razorpay Plan, so only the one-time
@@ -97,7 +108,7 @@ export default async function handler(req, res) {
   }
   if (razorpay_subscription_id) row.razorpay_subscription_id = razorpay_subscription_id
 
-  const admin = createClient(supabaseUrl, serviceKey)
+  const admin = _create(supabaseUrl, serviceKey)
   const { error } = await admin.from('user_subscriptions').upsert(row, { onConflict: 'user_id' })
   if (error) {
     console.error('subscription grant failed:', error)
