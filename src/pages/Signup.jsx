@@ -28,8 +28,10 @@ export default function Signup() {
   }, [refCode, searchParams])
 
   useEffect(() => {
+    let interval
     const render = () => {
-      if (!turnstileRef.current || !window.turnstile) return
+      if (!turnstileRef.current || !window.turnstile) return false
+      if (widgetIdRef.current != null) return true
       widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
         sitekey: TURNSTILE_SITE_KEY,
         theme: 'dark',
@@ -37,12 +39,16 @@ export default function Signup() {
         'expired-callback': () => setCaptchaToken(''),
         'error-callback': () => setCaptchaToken(''),
       })
+      return true
     }
-    if (window.turnstile) render()
-    else window.addEventListener('load', render, { once: true })
+    if (!render()) {
+      interval = setInterval(() => { if (render()) clearInterval(interval) }, 200)
+    }
     return () => {
+      clearInterval(interval)
       if (widgetIdRef.current != null && window.turnstile) {
         window.turnstile.remove(widgetIdRef.current)
+        widgetIdRef.current = null
       }
     }
   }, [])
