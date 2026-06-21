@@ -1,5 +1,4 @@
 const { createClient } = require('@supabase/supabase-js')
-const { Resend } = require('resend')
 
 const TOOL_LABELS = {
   cost_estimator:      'Cost Estimate',
@@ -92,13 +91,21 @@ module.exports = async function handler(req, res) {
         <p style="color:#999;font-size:12px;margin-top:24px">Want this built? Reply to this email or book a free consultation at vikku.in.</p>
       </div>`
 
-    const resend = new Resend(process.env.RESEND_API_KEY)
-    await resend.emails.send({
-      from: 'Vikku <hello@vikku.in>',
-      to: email.trim().toLowerCase(),
-      subject: `Your ${label} from Vikku`,
-      html,
+    const resendRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'Vikku <hello@vikku.in>',
+        to: [email.trim().toLowerCase()],
+        subject: `Your ${label} from Vikku`,
+        html,
+      }),
     })
+    if (!resendRes.ok) {
+      const detail = await resendRes.text()
+      console.error('Resend error:', resendRes.status, detail)
+      return res.status(502).json({ error: 'Email provider rejected the request' })
+    }
 
     return res.status(200).json({ ok: true })
   } catch (err) {
