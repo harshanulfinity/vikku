@@ -96,7 +96,7 @@ export default function AdminBilling() {
         </div>
         <div className="glass rounded-xl p-4 text-center">
           <p className="font-display font-bold text-xl text-orange-400">{churnRate}%</p>
-          <p className="text-[10px] text-white/40 mt-0.5">Churn Rate</p>
+          <p className="text-[10px] text-white/40 mt-0.5">Churn (all-time)</p>
         </div>
       </div>
 

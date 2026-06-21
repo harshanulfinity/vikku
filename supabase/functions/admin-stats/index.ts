@@ -165,7 +165,7 @@ serve(async (req) => {
       const activeUsers = users.filter(u => u.last_sign_in_at && u.last_sign_in_at >= sevenDaysAgo).length
 
       const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
-      const churnedThisMonth = subs.filter(s => s.status === 'cancelled' && s.created_at >= monthStart).length
+      const churnedThisMonth = subs.filter(s => s.status === 'cancelled' && s.updated_at >= monthStart).length
 
       const signupsByDay: Record<string, number> = {}
       for (let i = 29; i >= 0; i--) {
@@ -269,7 +269,7 @@ serve(async (req) => {
       const activeUsers      = users.filter(u => u.last_sign_in_at && u.last_sign_in_at >= sevenDaysAgo).length
       const paidUsers        = proSubs.length + teamSubs.length
       const freeUsers        = users.length - paidUsers
-      const churnedThisMonth = subs.filter(s => s.status === 'cancelled' && s.created_at >= monthStart).length
+      const churnedThisMonth = subs.filter(s => s.status === 'cancelled' && s.updated_at >= monthStart).length
       const conversionPct    = users.length > 0 ? Math.round((paidUsers / users.length) * 100) : 0
 
       const signupsByDay: Record<string, number> = {}
@@ -317,19 +317,23 @@ serve(async (req) => {
       const allSubs = subs || []
 
       // Build last 6 months of MRR snapshots
+      // A sub was active in a given month if: created_at <= month_end AND (still active OR cancelled after month_end)
       const months: { label: string; mrr: number; users: number }[] = []
       const now = new Date()
       for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-        const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59).toISOString()
-        const start = d.toISOString()
+        const d     = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        const end   = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59).toISOString()
         const label = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })
-        // Active paid subs as of end of that month (created before end, not cancelled before start)
-        const activePro  = allSubs.filter(s => s.plan === 'pro'  && s.status === 'active' && s.created_at <= end).length
-        const activeTeam = allSubs.filter(s => s.plan === 'team' && s.status === 'active' && s.created_at <= end).length
-        months.push({ label, mrr: activePro * 499 + activeTeam * 2499, users: 0 })
+        const activePro = allSubs.filter(s =>
+          s.plan === 'pro' && s.created_at <= end &&
+          (s.status === 'active' || (s.status === 'cancelled' && s.updated_at > end))
+        ).length
+        const activeTeam = allSubs.filter(s =>
+          s.plan === 'team' && s.created_at <= end &&
+          (s.status === 'active' || (s.status === 'cancelled' && s.updated_at > end))
+        ).length
+        months.push({ label, mrr: activePro * 499 + activeTeam * 2499, users: activePro + activeTeam })
       }
-      // Current month is accurate; past months are approximations based on still-active subs
       return json(req, { months })
     }
 
