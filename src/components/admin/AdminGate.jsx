@@ -3,17 +3,23 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabaseClient'
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+
 export default function AdminGate({ children }) {
   const { user, loading } = useAuth()
-  const [isAdmin, setIsAdmin] = useState(null) // null = checking
+  const [isAdmin, setIsAdmin] = useState(null)
 
   useEffect(() => {
     if (!user) { setIsAdmin(false); return }
-    // Probe the admin-stats endpoint — it verifies server-side.
-    // A 403 means not admin; any 2xx means admin.
-    supabase.functions.invoke('admin-stats', { body: null, method: 'GET' })
-      .then(({ error }) => setIsAdmin(!error))
-      .catch(() => setIsAdmin(false))
+    supabase.auth.getSession().then(({ data }) => {
+      const token = data?.session?.access_token
+      if (!token) { setIsAdmin(false); return }
+      fetch(`${SUPABASE_URL}/functions/v1/admin-stats?type=overview`, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      })
+        .then(res => setIsAdmin(res.ok))
+        .catch(() => setIsAdmin(false))
+    })
   }, [user])
 
   if (loading || isAdmin === null) {
@@ -23,8 +29,6 @@ export default function AdminGate({ children }) {
       </div>
     )
   }
-  if (!user || !isAdmin) {
-    return <Navigate to="/" replace />
-  }
+  if (!user || !isAdmin) return <Navigate to="/" replace />
   return children
 }
