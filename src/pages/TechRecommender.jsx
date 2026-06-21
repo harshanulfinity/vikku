@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, LayoutDashboard, Loader2, AlertTriangle, ExternalLink, AlertCircle } from 'lucide-react'
 import { recommendStack } from '../lib/openaiService'
 import LeadCaptureModal from '../components/LeadCaptureModal'
+import ToolResultActions from '../components/tools/ToolResultActions'
+import ToolFAQ from '../components/tools/ToolFAQ'
+import { saveToolResult } from '../lib/toolResultsService'
+import { TOOL_FAQ } from '../lib/toolContent'
 import { useAuth } from '../contexts/AuthContext'
 
 const PROJECT_TYPES = [
@@ -58,6 +62,7 @@ export default function TechRecommender() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+  const [shareId, setShareId] = useState(null)
   const [showLead, setShowLead] = useState(false)
 
   const toggleReq = (req) => {
@@ -81,6 +86,12 @@ export default function TechRecommender() {
       const res = await recommendStack(form)
       setResult(res)
       setShowLead(true)
+      saveToolResult({
+        tool: 'tech_recommender',
+        title: [res.recommendedStack?.frontend, res.recommendedStack?.backend, res.recommendedStack?.database].filter(Boolean).join(' · ') || 'Tech stack',
+        input: form,
+        result: res,
+      }).then(({ shareId }) => setShareId(shareId))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -191,12 +202,16 @@ export default function TechRecommender() {
                 </button>
               </form>
             </div>
+
+            <ToolFAQ content={TOOL_FAQ.tech_recommender} />
           </>
         ) : (
           <>
             <div className="mb-10">
               <h2 className="font-display font-extrabold text-3xl text-white mb-3">Your Tech Stack Recommendation</h2>
             </div>
+
+            <ToolResultActions shareId={shareId} tool="tech_recommender" navigate={navigate} />
 
             {/* Stack overview */}
             <div className="glass-strong rounded-2xl p-8 mb-6">

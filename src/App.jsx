@@ -34,6 +34,7 @@ const CostEstimator         = lazy(() => import('./pages/CostEstimator'))
 const ROICalculator         = lazy(() => import('./pages/ROICalculator'))
 const TimelineCalculator    = lazy(() => import('./pages/TimelineCalculator'))
 const TechRecommender       = lazy(() => import('./pages/TechRecommender'))
+const ShareableResult       = lazy(() => import('./pages/ShareableResult'))
 const Pricing               = lazy(() => import('./pages/Pricing'))
 const PMDashboard           = lazy(() => import('./pages/pm/PMDashboard'))
 const NewProject            = lazy(() => import('./pages/pm/NewProject'))
@@ -121,6 +122,7 @@ export default function App() {
               <Route path="/tools/timeline-calculator"     element={<TimelineCalculator />} />
               <Route path="/tools/tech-recommender"        element={<TechRecommender />} />
               <Route path="/tools"                        element={<Pricing />} />
+              <Route path="/r/:shareId"                    element={<ShareableResult />} />
               <Route path="/pm"                          element={<PMRedirect />} />
               <Route path="/pm/dashboard"               element={<PMDashboard />} />
               <Route path="/pm/projects/new"            element={<NewProject />} />

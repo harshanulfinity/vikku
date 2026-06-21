@@ -186,3 +186,13 @@ html.light .bg-white.text-black {
 html.light .bg-black\/95.backdrop-blur-xl {
   background-color: rgba(241, 245, 249, 0.97) !important;
 }
+
+/* Print / Download-PDF styles for tool results & shareable pages */
+@media print {
+  html, body { background: #fff !important; }
+  .print\:hidden { display: none !important; }
+  /* Force readable dark text on white when printing tool results */
+  .min-h-screen.bg-black, .bg-black { background: #fff !important; }
+  .text-white, .text-white\/80, .text-white\/70, .text-white\/60, .text-white\/50, .text-white\/40 { color: #111 !important; }
+  .glass, .glass-strong { background: #fff !important; border: 1px solid #e5e5e5 !important; box-shadow: none !important; }
+}

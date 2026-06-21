@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Clock, Loader2, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react'
 import { calculateTimeline } from '../lib/openaiService'
 import LeadCaptureModal from '../components/LeadCaptureModal'
+import ToolResultActions from '../components/tools/ToolResultActions'
+import ToolFAQ from '../components/tools/ToolFAQ'
+import { saveToolResult } from '../lib/toolResultsService'
+import { TOOL_FAQ } from '../lib/toolContent'
 import { useAuth } from '../contexts/AuthContext'
 
 const PROJECT_TYPES = [
@@ -52,6 +56,7 @@ export default function TimelineCalculator() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+  const [shareId, setShareId] = useState(null)
   const [showLead, setShowLead] = useState(false)
 
   const handleSubmit = async (e) => {
@@ -64,6 +69,12 @@ export default function TimelineCalculator() {
       const res = await calculateTimeline(form)
       setResult(res)
       setShowLead(true)
+      saveToolResult({
+        tool: 'timeline_calculator',
+        title: `${res.totalWeeksMin}–${res.totalWeeksMax} week timeline`,
+        input: form,
+        result: res,
+      }).then(({ shareId }) => setShareId(shareId))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -162,6 +173,8 @@ export default function TimelineCalculator() {
                 </button>
               </form>
             </div>
+
+            <ToolFAQ content={TOOL_FAQ.timeline_calculator} />
           </>
         ) : (
           <>
@@ -169,6 +182,8 @@ export default function TimelineCalculator() {
               <h2 className="font-display font-extrabold text-3xl text-white mb-3">Your Project Timeline</h2>
               <p className="text-white/60 text-sm">Estimated total: <span className="text-white font-semibold">{result.totalWeeksMin}–{result.totalWeeksMax} weeks</span></p>
             </div>
+
+            <ToolResultActions shareId={shareId} tool="timeline_calculator" navigate={navigate} />
 
             {/* Total */}
             <div className="glass-strong rounded-2xl p-8 mb-6 flex items-center gap-4">

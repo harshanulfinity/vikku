@@ -1,0 +1,105 @@
+import { useState } from 'react'
+import { Mail, Link2, Download, Check, ArrowRight, Loader2 } from 'lucide-react'
+import { emailToolResult } from '../../lib/toolResultsService'
+
+const CROSS_TOOL = {
+  cost_estimator:      { to: '/tools/timeline-calculator', label: 'See the timeline for this' },
+  timeline_calculator: { to: '/tools/tech-recommender',    label: 'Get the recommended tech stack' },
+  tech_recommender:    { to: '/tools/roi-calculator',      label: 'Calculate the ROI' },
+  roi_calculator:      { to: '/tools/cost-estimator',      label: 'Estimate the build cost' },
+}
+
+/**
+ * Shared actions shown under any tool result:
+ * email the result, copy a shareable link, download as PDF, and a cross-tool next step.
+ */
+export default function ToolResultActions({ shareId, tool, navigate }) {
+  const [emailing, setEmailing]   = useState(false)
+  const [emailOpen, setEmailOpen] = useState(false)
+  const [email, setEmail]         = useState('')
+  const [sent, setSent]           = useState(false)
+  const [copied, setCopied]       = useState(false)
+  const [err, setErr]             = useState('')
+
+  const shareUrl = shareId ? `${window.location.origin}/r/${shareId}` : ''
+  const cross = CROSS_TOOL[tool]
+
+  const copyLink = async () => {
+    if (!shareUrl) return
+    await navigator.clipboard.writeText(shareUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1800)
+  }
+
+  const sendEmail = async (e) => {
+    e.preventDefault()
+    if (!email.includes('@') || !shareId) return
+    setEmailing(true); setErr('')
+    try {
+      await emailToolResult({ shareId, email: email.trim(), tool })
+      setSent(true)
+    } catch (e2) {
+      setErr(e2.message || 'Failed to send')
+    } finally {
+      setEmailing(false)
+    }
+  }
+
+  return (
+    <div className="glass rounded-2xl p-5 mb-6 print:hidden">
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => setEmailOpen((o) => !o)}
+          className="flex items-center gap-2 text-sm glass rounded-xl px-4 py-2.5 text-white/80 hover:text-white transition-colors"
+        >
+          <Mail size={14} /> Email me this
+        </button>
+        <button
+          onClick={copyLink}
+          disabled={!shareId}
+          className="flex items-center gap-2 text-sm glass rounded-xl px-4 py-2.5 text-white/80 hover:text-white transition-colors disabled:opacity-40"
+        >
+          {copied ? <Check size={14} className="text-green-400" /> : <Link2 size={14} />}
+          {copied ? 'Link copied' : 'Copy share link'}
+        </button>
+        <button
+          onClick={() => window.print()}
+          className="flex items-center gap-2 text-sm glass rounded-xl px-4 py-2.5 text-white/80 hover:text-white transition-colors"
+        >
+          <Download size={14} /> Download PDF
+        </button>
+        {cross && (
+          <button
+            onClick={() => navigate(cross.to)}
+            className="flex items-center gap-2 text-sm bg-white/10 hover:bg-white/15 rounded-xl px-4 py-2.5 text-white transition-colors ml-auto"
+          >
+            {cross.label} <ArrowRight size={14} />
+          </button>
+        )}
+      </div>
+
+      {emailOpen && !sent && (
+        <form onSubmit={sendEmail} className="mt-4 flex flex-col sm:flex-row gap-2">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            className="flex-1 glass rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none"
+            required
+            autoFocus
+          />
+          <button
+            type="submit"
+            disabled={emailing}
+            className="flex items-center justify-center gap-2 bg-white text-black text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-white/90 transition-colors disabled:opacity-50"
+          >
+            {emailing ? <Loader2 size={15} className="animate-spin" /> : 'Send'}
+          </button>
+        </form>
+      )}
+      {sent && <p className="mt-3 text-sm text-green-400 flex items-center gap-2"><Check size={14} /> Sent! Check your inbox.</p>}
+      {err && <p className="mt-2 text-xs text-red-400">{err}</p>}
+    </div>
+  )
+}

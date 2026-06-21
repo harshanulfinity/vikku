@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Clock, AlertTriangle, Lightbulb, Loader2 } from 'lucide-react'
 import { estimateProjectCost } from '../lib/openaiService'
 import LeadCaptureModal from '../components/LeadCaptureModal'
+import ToolResultActions from '../components/tools/ToolResultActions'
+import ToolFAQ from '../components/tools/ToolFAQ'
+import { saveToolResult } from '../lib/toolResultsService'
+import { COST_PRESETS, TOOL_FAQ } from '../lib/toolContent'
 import { useAuth } from '../contexts/AuthContext'
 
 function formatCurrency(amount, symbol) {
@@ -16,12 +20,14 @@ export default function CostEstimator() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+  const [shareId, setShareId] = useState(null)
   const [showLead, setShowLead] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setResult(null)
+    setShareId(null)
 
     if (!requirements.trim()) return
 
@@ -30,6 +36,12 @@ export default function CostEstimator() {
       const estimate = await estimateProjectCost(requirements, null)
       setResult(estimate)
       setShowLead(true)
+      saveToolResult({
+        tool: 'cost_estimator',
+        title: `${estimate.currencySymbol || '₹'}${(estimate.totalCostMin || 0).toLocaleString('en-IN')}–${(estimate.totalCostMax || 0).toLocaleString('en-IN')} estimate`,
+        input: { requirements },
+        result: estimate,
+      }).then(({ shareId }) => setShareId(shareId))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -68,6 +80,19 @@ export default function CostEstimator() {
             <div className="glass rounded-2xl p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <span className="text-xs text-white/40 self-center mr-1">Try:</span>
+                    {COST_PRESETS.map((p) => (
+                      <button
+                        key={p.label}
+                        type="button"
+                        onClick={() => setRequirements(p.text)}
+                        className="text-xs px-3 py-1.5 rounded-lg glass text-white/60 hover:text-white transition-colors"
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
                   <textarea
                     value={requirements}
                     onChange={(e) => setRequirements(e.target.value)}
@@ -97,6 +122,8 @@ export default function CostEstimator() {
                 </button>
               </form>
             </div>
+
+            <ToolFAQ content={TOOL_FAQ.cost_estimator} />
           </>
         ) : (
           <>
@@ -106,6 +133,8 @@ export default function CostEstimator() {
                 Based on your requirements, here's a detailed cost breakdown for your project.
               </p>
             </div>
+
+            <ToolResultActions shareId={shareId} tool="cost_estimator" navigate={navigate} />
 
             {/* Total Cost Card */}
             <div className="glass-strong rounded-2xl p-8 mb-6">
