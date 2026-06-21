@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { RefreshCw, Copy, Check } from 'lucide-react'
 import AdminLayout from './AdminLayout'
 import { getAdminBilling } from '../../lib/adminService'
@@ -55,6 +56,7 @@ export default function AdminBilling() {
   }
 
   useEffect(() => { load() }, [])
+  useAutoRefresh(load)
 
   const activePro   = subs.filter(s => s.plan === 'pro'  && (s.status === 'active' || s.status === 'cancelling'))
   const activeTeam  = subs.filter(s => s.plan === 'team' && (s.status === 'active' || s.status === 'cancelling'))

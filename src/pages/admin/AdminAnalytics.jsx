@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { RefreshCw, TrendingUp, Users, IndianRupee, BarChart2 } from 'lucide-react'
 import AdminLayout from './AdminLayout'
 import { getAdminAnalytics, getAdminMrrHistory, getAdminUserGrowth } from '../../lib/adminService'
@@ -86,6 +87,7 @@ export default function AdminAnalytics() {
   }
 
   useEffect(() => { load() }, [])
+  useAutoRefresh(load)
 
   const maxSignup = data ? Math.max(...data.signupsByDay.map(d => d.count), 1) : 1
 

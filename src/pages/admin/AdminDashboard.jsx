@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { TrendingUp, Users, Folder, IndianRupee, RefreshCw, Mail } from 'lucide-react'
 import AdminLayout from './AdminLayout'
 import { getAdminOverview } from '../../lib/adminService'
@@ -50,6 +51,7 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => { load() }, [])
+  useAutoRefresh(load)
 
   const totalPlans = data ? data.freeUsers + data.proUsers + data.teamUsers : 1
   const maxSignup  = data ? Math.max(...data.signupsByDay.map(d => d.count), 1) : 1

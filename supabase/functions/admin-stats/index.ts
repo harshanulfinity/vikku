@@ -136,16 +136,29 @@ serve(async (req) => {
       return json(req, { error: 'Unknown action' }, 400)
     }
 
+    // Helper: fetch all auth users with pagination
+    async function listAllUsers() {
+      let all: any[] = []
+      let pg = 1
+      while (true) {
+        const r = await admin.auth.admin.listUsers({ perPage: 1000, page: pg })
+        const batch = r.data?.users || []
+        all = all.concat(batch)
+        if (batch.length < 1000) break
+        pg++
+      }
+      return all
+    }
+
     // ── GET: overview ─────────────────────────────────────────────────
     if (type === 'overview') {
-      const [usersRes, subsRes, projectsRes, subscribersRes] = await Promise.all([
-        admin.auth.admin.listUsers({ perPage: 1000 }),
-        admin.from('user_subscriptions').select('plan, status, created_at'),
+      const [users, subsRes, projectsRes, subscribersRes] = await Promise.all([
+        listAllUsers(),
+        admin.from('user_subscriptions').select('plan, status, created_at, updated_at'),
         admin.from('pm_projects').select('status, created_at'),
         admin.from('subscribers').select('source, created_at', { count: 'exact', head: false }),
       ])
 
-      const users       = usersRes.data?.users || []
       const subs        = subsRes.data || []
       const projects    = projectsRes.data || []
       const subscribers = subscribersRes.data || []
@@ -198,33 +211,38 @@ serve(async (req) => {
 
     // ── GET: users ────────────────────────────────────────────────────
     if (type === 'users') {
-      const [usersRes, subsRes, projectsRes] = await Promise.all([
-        admin.auth.admin.listUsers({ perPage: 1000 }),
+      const [allUsers, subsRes, projectsRes] = await Promise.all([
+        listAllUsers(),
         admin.from('user_subscriptions').select('*'),
         admin.from('pm_projects').select('user_id'),
       ])
-      const users    = usersRes.data?.users || []
       const subs     = subsRes.data || []
       const projects = projectsRes.data || []
 
-      const subMap: Record<string, typeof subs[0]> = {}
+      const subMap: Record<string, any> = {}
       subs.forEach(s => { subMap[s.user_id] = s })
 
       const projectCounts: Record<string, number> = {}
       projects.forEach(p => { projectCounts[p.user_id] = (projectCounts[p.user_id] || 0) + 1 })
 
-      const result = users
-        .map(u => ({
-          id:           u.id,
-          email:        u.email,
-          joinedAt:     u.created_at,
-          lastSignIn:   u.last_sign_in_at,
-          projectCount: projectCounts[u.id] || 0,
-          plan:         subMap[u.id]?.plan   || 'free',
-          planStatus:   subMap[u.id]?.status || null,
-          periodEnd:    subMap[u.id]?.current_period_end || null,
-          paymentId:    subMap[u.id]?.razorpay_payment_id || null,
-        }))
+      const result = allUsers
+        .map(u => {
+          const sub = subMap[u.id]
+          // Effective plan: only active/cancelling paid subs grant paid access
+          const effectivePlan = (sub && (sub.status === 'active' || sub.status === 'cancelling') && sub.plan !== 'free')
+            ? sub.plan : 'free'
+          return {
+            id:           u.id,
+            email:        u.email,
+            joinedAt:     u.created_at,
+            lastSignIn:   u.last_sign_in_at,
+            projectCount: projectCounts[u.id] || 0,
+            plan:         effectivePlan,
+            planStatus:   sub?.status || null,
+            periodEnd:    sub?.current_period_end || null,
+            paymentId:    sub?.razorpay_payment_id || null,
+          }
+        })
         .sort((a, b) => new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime())
 
       return json(req, { users: result })
@@ -232,12 +250,11 @@ serve(async (req) => {
 
     // ── GET: billing ──────────────────────────────────────────────────
     if (type === 'billing') {
-      const [usersRes, subsRes] = await Promise.all([
-        admin.auth.admin.listUsers({ perPage: 1000 }),
+      const [users, subsRes] = await Promise.all([
+        listAllUsers(),
         admin.from('user_subscriptions').select('*').order('updated_at', { ascending: false }),
       ])
-      const users = usersRes.data?.users || []
-      const subs  = subsRes.data || []
+      const subs = subsRes.data || []
 
       const emailMap: Record<string, string> = {}
       users.forEach(u => { if (u.email) emailMap[u.id] = u.email })
@@ -248,12 +265,11 @@ serve(async (req) => {
 
     // ── GET: analytics ────────────────────────────────────────────────
     if (type === 'analytics') {
-      const [usersRes, subsRes, projectsRes] = await Promise.all([
-        admin.auth.admin.listUsers({ perPage: 1000 }),
-        admin.from('user_subscriptions').select('plan, status, created_at, user_id'),
+      const [users, subsRes, projectsRes] = await Promise.all([
+        listAllUsers(),
+        admin.from('user_subscriptions').select('plan, status, created_at, updated_at, user_id'),
         admin.from('pm_projects').select('user_id, created_at'),
       ])
-      const users    = usersRes.data?.users || []
       const subs     = subsRes.data || []
       const projects = projectsRes.data || []
 
@@ -339,8 +355,7 @@ serve(async (req) => {
 
     // ── GET: user_growth ─────────────────────────────────────────────
     if (type === 'user_growth') {
-      const usersRes = await admin.auth.admin.listUsers({ perPage: 1000 })
-      const users = usersRes.data?.users || []
+      const users = await listAllUsers()
 
       const months: { label: string; total: number; new: number }[] = []
       const now = new Date()
@@ -371,12 +386,11 @@ serve(async (req) => {
 
     // ── GET: activity ─────────────────────────────────────────────────
     if (type === 'activity') {
-      const [usersRes, subsRes, projectsRes] = await Promise.all([
-        admin.auth.admin.listUsers({ perPage: 1000 }),
+      const [users, subsRes, projectsRes] = await Promise.all([
+        listAllUsers(),
         admin.from('user_subscriptions').select('user_id, plan, status, updated_at').order('updated_at', { ascending: false }).limit(30),
         admin.from('pm_projects').select('user_id, name, created_at').order('created_at', { ascending: false }).limit(30),
       ])
-      const users    = usersRes.data?.users || []
       const subs     = subsRes.data  || []
       const projects = projectsRes.data || []
 
@@ -416,16 +430,15 @@ serve(async (req) => {
     // ── GET: expiring ─────────────────────────────────────────────────
     if (type === 'expiring') {
       const sevenDaysFromNow = new Date(Date.now() + 7 * 86400000).toISOString()
-      const [subsRes, usersRes] = await Promise.all([
+      const [subsRes, users] = await Promise.all([
         admin.from('user_subscriptions')
           .select('*')
-          .eq('status', 'active')
+          .in('status', ['active', 'cancelling'])
           .lte('current_period_end', sevenDaysFromNow)
           .gte('current_period_end', new Date().toISOString()),
-        admin.auth.admin.listUsers({ perPage: 1000 }),
+        listAllUsers(),
       ])
-      const subs  = subsRes.data  || []
-      const users = usersRes.data?.users || []
+      const subs = subsRes.data || []
       const emailMap: Record<string, string> = {}
       users.forEach(u => { if (u.email) emailMap[u.id] = u.email })
       return json(req, { expiring: subs.map(s => ({ ...s, email: emailMap[s.user_id] || 'Unknown' })) })

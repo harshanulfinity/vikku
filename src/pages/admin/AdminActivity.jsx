@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { RefreshCw, UserPlus, TrendingUp, Folder, CreditCard, LogIn } from 'lucide-react'
 import AdminLayout from './AdminLayout'
 import { getAdminActivity } from '../../lib/adminService'
@@ -40,6 +41,7 @@ export default function AdminActivity() {
   }
 
   useEffect(() => { load() }, [])
+  useAutoRefresh(load, 30000)
 
   return (
     <AdminLayout title="Activity Feed">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { Search, RefreshCw, ChevronDown, Download, X, Folder, AlertTriangle } from 'lucide-react'
 import AdminLayout from './AdminLayout'
 import { getAdminUsers, adminChangePlan, getAdminUserDetail, adminDeleteUser, getAdminExpiring } from '../../lib/adminService'
@@ -190,6 +191,7 @@ export default function AdminUsers() {
   }
 
   useEffect(() => { load() }, [])
+  useAutoRefresh(load)
 
   const handlePlanChanged = (userId, plan) => {
     setUsers(u => u.map(row => row.id === userId ? { ...row, plan } : row))
