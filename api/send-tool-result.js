@@ -65,15 +65,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
+    const supabase = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY)
     const { data: rowData, error } = await supabase
       .from('tool_results').select('*').eq('share_id', shareId).maybeSingle()
-    if (error || !rowData) {
-      return res.status(404).json({
-        error: 'Result not found',
-        _debug: { host: (process.env.SUPABASE_URL || '').replace(/^https?:\/\//, '').split('.')[0], dbError: error?.message || null, found: !!rowData },
-      })
-    }
+    if (error || !rowData) return res.status(404).json({ error: 'Result not found' })
 
     const tool = rowData.tool
     const label = TOOL_LABELS[tool] || 'Result'
