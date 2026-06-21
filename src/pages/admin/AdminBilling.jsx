@@ -56,8 +56,8 @@ export default function AdminBilling() {
 
   useEffect(() => { load() }, [])
 
-  const activePro   = subs.filter(s => s.plan === 'pro'  && s.status === 'active')
-  const activeTeam  = subs.filter(s => s.plan === 'team' && s.status === 'active')
+  const activePro   = subs.filter(s => s.plan === 'pro'  && (s.status === 'active' || s.status === 'cancelling'))
+  const activeTeam  = subs.filter(s => s.plan === 'team' && (s.status === 'active' || s.status === 'cancelling'))
   const mrr         = activePro.length * 499 + activeTeam.length * 2499
   const arr         = mrr * 12
   const cancelled   = subs.filter(s => s.status === 'cancelled').length

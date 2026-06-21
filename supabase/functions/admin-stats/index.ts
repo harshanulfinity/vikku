@@ -156,8 +156,8 @@ serve(async (req) => {
         subscribersBySource[src] = (subscribersBySource[src] || 0) + 1
       })
 
-      const proSubs  = subs.filter(s => s.plan === 'pro'  && s.status === 'active')
-      const teamSubs = subs.filter(s => s.plan === 'team' && s.status === 'active')
+      const proSubs  = subs.filter(s => s.plan === 'pro'  && (s.status === 'active' || s.status === 'cancelling'))
+      const teamSubs = subs.filter(s => s.plan === 'team' && (s.status === 'active' || s.status === 'cancelling'))
       const mrr      = proSubs.length * 499 + teamSubs.length * 2499
 
       const now = Date.now()
@@ -261,8 +261,8 @@ serve(async (req) => {
       const sevenDaysAgo = new Date(now - 7 * 86400000).toISOString()
       const monthStart   = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
 
-      const proSubs  = subs.filter(s => s.plan === 'pro'  && s.status === 'active')
-      const teamSubs = subs.filter(s => s.plan === 'team' && s.status === 'active')
+      const proSubs  = subs.filter(s => s.plan === 'pro'  && (s.status === 'active' || s.status === 'cancelling'))
+      const teamSubs = subs.filter(s => s.plan === 'team' && (s.status === 'active' || s.status === 'cancelling'))
       const mrr      = proSubs.length * 499 + teamSubs.length * 2499
       const arr      = mrr * 12
 
@@ -326,11 +326,11 @@ serve(async (req) => {
         const label = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })
         const activePro = allSubs.filter(s =>
           s.plan === 'pro' && s.created_at <= end &&
-          (s.status === 'active' || (s.status === 'cancelled' && s.updated_at > end))
+          (s.status === 'active' || s.status === 'cancelling' || (s.status === 'cancelled' && s.updated_at > end))
         ).length
         const activeTeam = allSubs.filter(s =>
           s.plan === 'team' && s.created_at <= end &&
-          (s.status === 'active' || (s.status === 'cancelled' && s.updated_at > end))
+          (s.status === 'active' || s.status === 'cancelling' || (s.status === 'cancelled' && s.updated_at > end))
         ).length
         months.push({ label, mrr: activePro * 499 + activeTeam * 2499, users: activePro + activeTeam })
       }
