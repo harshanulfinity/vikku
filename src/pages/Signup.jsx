@@ -1,10 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabaseClient'
-import { ArrowLeft, Mail, Lock, AlertCircle, CheckCircle2, Inbox } from 'lucide-react'
-
-const TURNSTILE_SITE_KEY = '0x4AAAAAADojMJZNzVnM0Jv9'
+import { ArrowLeft, Mail, Lock, AlertCircle, Inbox } from 'lucide-react'
 
 export default function Signup() {
   const [email, setEmail] = useState('')
@@ -13,45 +11,16 @@ export default function Signup() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState('')
   const { signUp } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const refCode = searchParams.get('ref')
-  const turnstileRef = useRef(null)
-  const widgetIdRef = useRef(null)
 
   useEffect(() => {
     if (refCode) sessionStorage.setItem('vikku_ref', refCode)
     const plan = searchParams.get('plan')
     if (plan === 'pro' || plan === 'team') sessionStorage.setItem('vikku_pending_plan', plan)
   }, [refCode, searchParams])
-
-  useEffect(() => {
-    let interval
-    const render = () => {
-      if (!turnstileRef.current || !window.turnstile) return false
-      if (widgetIdRef.current != null) return true
-      widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
-        sitekey: TURNSTILE_SITE_KEY,
-        theme: 'dark',
-        callback: (token) => setCaptchaToken(token),
-        'expired-callback': () => setCaptchaToken(''),
-        'error-callback': () => setCaptchaToken(''),
-      })
-      return true
-    }
-    if (!render()) {
-      interval = setInterval(() => { if (render()) clearInterval(interval) }, 200)
-    }
-    return () => {
-      clearInterval(interval)
-      if (widgetIdRef.current != null && window.turnstile) {
-        window.turnstile.remove(widgetIdRef.current)
-        widgetIdRef.current = null
-      }
-    }
-  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -67,27 +36,17 @@ export default function Signup() {
       return
     }
 
-    if (!captchaToken) {
-      setError('Please complete the CAPTCHA challenge.')
-      return
-    }
-
     setLoading(true)
 
-    const { error, data } = await signUp(email, password, captchaToken)
+    const { error, data } = await signUp(email, password)
 
     if (error) {
       setError(error.message)
-      if (widgetIdRef.current != null && window.turnstile) {
-        window.turnstile.reset(widgetIdRef.current)
-      }
-      setCaptchaToken('')
       setLoading(false)
     } else {
       const ref = sessionStorage.getItem('vikku_ref')
       if (ref && data?.user?.id) {
         sessionStorage.removeItem('vikku_ref')
-        // Supabase query builders are thenables without .catch — wrap in try/catch
         try {
           await supabase.from('referrals').insert({ referrer_code: ref, referred_user_id: data.user.id })
         } catch { /* referral is best-effort; never block signup */ }
@@ -101,7 +60,6 @@ export default function Signup() {
       <div className="min-h-screen bg-black text-white flex items-center justify-center px-4 sm:px-6 py-8">
         <div className="w-full max-w-md text-center">
           <div className="glass rounded-2xl p-6 sm:p-10">
-            {/* Icon */}
             <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mx-auto mb-6">
               <Inbox size={28} className="text-black" />
             </div>
@@ -211,11 +169,9 @@ export default function Signup() {
               </div>
             </div>
 
-            <div ref={turnstileRef} className="flex justify-center" />
-
             <button
               type="submit"
-              disabled={loading || !captchaToken}
+              disabled={loading}
               className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating account...' : 'Sign Up'}

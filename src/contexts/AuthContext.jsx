@@ -30,27 +30,19 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signUp = async (email, password, captchaToken) => {
+  const signUp = async (email, password) => {
     if (!supabase) {
       return { data: null, error: { message: 'Authentication not configured' } }
     }
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: captchaToken ? { captchaToken } : undefined,
-    })
+    const { data, error } = await supabase.auth.signUp({ email, password })
     return { data, error }
   }
 
-  const signIn = async (email, password, captchaToken) => {
+  const signIn = async (email, password) => {
     if (!supabase) {
       return { data: null, error: { message: 'Authentication not configured' } }
     }
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-      options: captchaToken ? { captchaToken } : undefined,
-    })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     return { data, error }
   }
 

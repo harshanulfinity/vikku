@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { ArrowLeft, Mail, Lock, AlertCircle } from 'lucide-react'
 
-const TURNSTILE_SITE_KEY = '0x4AAAAAADojMJZNzVnM0Jv9'
 const MAX_ATTEMPTS = 5
 const LOCKOUT_MS = 5 * 60 * 1000 // 5 minutes
 
@@ -25,43 +24,14 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [lockoutSecsLeft, setLockoutSecsLeft] = useState(0)
-  const [captchaToken, setCaptchaToken] = useState('')
   const { signIn } = useAuth()
   const navigate = useNavigate()
   const timerRef = useRef(null)
-  const turnstileRef = useRef(null)
-  const widgetIdRef = useRef(null)
 
   useEffect(() => {
     const { lockedUntil } = getLockoutState()
     if (lockedUntil > Date.now()) startLockoutTimer(lockedUntil)
     return () => clearInterval(timerRef.current)
-  }, [])
-
-  useEffect(() => {
-    let interval
-    const render = () => {
-      if (!turnstileRef.current || !window.turnstile) return false
-      if (widgetIdRef.current != null) return true
-      widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
-        sitekey: TURNSTILE_SITE_KEY,
-        theme: 'dark',
-        callback: (token) => setCaptchaToken(token),
-        'expired-callback': () => setCaptchaToken(''),
-        'error-callback': () => setCaptchaToken(''),
-      })
-      return true
-    }
-    if (!render()) {
-      interval = setInterval(() => { if (render()) clearInterval(interval) }, 200)
-    }
-    return () => {
-      clearInterval(interval)
-      if (widgetIdRef.current != null && window.turnstile) {
-        window.turnstile.remove(widgetIdRef.current)
-        widgetIdRef.current = null
-      }
-    }
   }, [])
 
   function startLockoutTimer(lockedUntil) {
@@ -84,14 +54,10 @@ export default function Login() {
     const state = getLockoutState()
     if (state.lockedUntil > Date.now()) return
 
-    if (!captchaToken) {
-      setError('Please complete the CAPTCHA challenge.')
-      return
-    }
     setError('')
     setLoading(true)
 
-    const { error } = await signIn(email, password, captchaToken)
+    const { error } = await signIn(email, password)
 
     if (error) {
       const newAttempts = state.attempts + 1
@@ -104,11 +70,6 @@ export default function Login() {
         saveLockoutState({ attempts: newAttempts, lockedUntil: 0 })
         setError(`${error.message} (${MAX_ATTEMPTS - newAttempts} attempt${MAX_ATTEMPTS - newAttempts === 1 ? '' : 's'} left)`)
       }
-      // Reset Turnstile so user gets a fresh token on next attempt
-      if (widgetIdRef.current != null && window.turnstile) {
-        window.turnstile.reset(widgetIdRef.current)
-      }
-      setCaptchaToken('')
       setLoading(false)
     } else {
       saveLockoutState({ attempts: 0, lockedUntil: 0 })
@@ -119,12 +80,10 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center px-6">
       <div className="w-full max-w-md">
-        {/* Back button */}
         <Link to="/" className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-8">
           <ArrowLeft size={16} /> Back to Home
         </Link>
 
-        {/* Login card */}
         <div className="glass rounded-2xl p-8">
           <div className="mb-8">
             <h1 className="font-display font-extrabold text-2xl text-white mb-2">Welcome Back</h1>
@@ -178,11 +137,9 @@ export default function Login() {
               </div>
             </div>
 
-            <div ref={turnstileRef} className="flex justify-center" />
-
             <button
               type="submit"
-              disabled={loading || lockoutSecsLeft > 0 || !captchaToken}
+              disabled={loading || lockoutSecsLeft > 0}
               className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Signing in...' : lockoutSecsLeft > 0 ? `Locked (${lockoutSecsLeft}s)` : 'Sign In'}
