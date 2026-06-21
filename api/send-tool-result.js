@@ -1,4 +1,4 @@
-const { createClient } = require('@supabase/supabase-js')
+import { createClient } from '@supabase/supabase-js'
 
 const TOOL_LABELS = {
   cost_estimator:      'Cost Estimate',
@@ -56,7 +56,7 @@ function renderBody(tool, r) {
   return '<p>Your result is ready.</p>'
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { shareId, email } = req.body || {}
