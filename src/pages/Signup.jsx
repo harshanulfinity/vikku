@@ -67,6 +67,11 @@ export default function Signup() {
       return
     }
 
+    if (!captchaToken) {
+      setError('Please complete the CAPTCHA challenge.')
+      return
+    }
+
     setLoading(true)
 
     const { error, data } = await signUp(email, password, captchaToken)

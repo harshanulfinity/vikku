@@ -84,6 +84,10 @@ export default function Login() {
     const state = getLockoutState()
     if (state.lockedUntil > Date.now()) return
 
+    if (!captchaToken) {
+      setError('Please complete the CAPTCHA challenge.')
+      return
+    }
     setError('')
     setLoading(true)
 
