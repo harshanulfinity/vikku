@@ -4,10 +4,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const ADMIN_EMAILS = (Deno.env.get('ADMIN_EMAILS') || 'sanikommuharshavardhanreddy6@gmail.com')
   .split(',').map(e => e.trim()).filter(Boolean)
 
+const ALLOWED_ORIGINS = new Set(['https://vikku.in', 'https://www.vikku.in'])
+
 function corsHeaders(req: Request) {
   const origin = req.headers.get('origin') ?? ''
   return {
-    'Access-Control-Allow-Origin': origin === 'https://vikku.in' ? origin : '',
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : '',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Vary': 'Origin',
   }
