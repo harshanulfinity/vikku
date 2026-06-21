@@ -154,7 +154,7 @@ serve(async (req) => {
     if (type === 'overview') {
       const [users, subsRes, projectsRes, subscribersRes] = await Promise.all([
         listAllUsers(),
-        admin.from('user_subscriptions').select('plan, status, created_at, updated_at'),
+        admin.from('user_subscriptions').select('plan, status, updated_at'),
         admin.from('pm_projects').select('status, created_at'),
         admin.from('subscribers').select('source, created_at', { count: 'exact', head: false }),
       ])
@@ -267,7 +267,7 @@ serve(async (req) => {
     if (type === 'analytics') {
       const [users, subsRes, projectsRes] = await Promise.all([
         listAllUsers(),
-        admin.from('user_subscriptions').select('plan, status, created_at, updated_at, user_id'),
+        admin.from('user_subscriptions').select('plan, status, updated_at, user_id'),
         admin.from('pm_projects').select('user_id, created_at'),
       ])
       const subs     = subsRes.data || []
@@ -329,11 +329,11 @@ serve(async (req) => {
     // ── GET: mrr_history ─────────────────────────────────────────────
     if (type === 'mrr_history') {
       const { data: subs } = await admin.from('user_subscriptions')
-        .select('plan, status, created_at, updated_at')
+        .select('plan, status, updated_at')
       const allSubs = subs || []
 
-      // Build last 6 months of MRR snapshots
-      // A sub was active in a given month if: created_at <= month_end AND (still active OR cancelled after month_end)
+      // Build last 6 months of MRR snapshots. The table has no created_at, so we
+      // use updated_at as the best proxy for when a sub became active/changed.
       const months: { label: string; mrr: number; users: number }[] = []
       const now = new Date()
       for (let i = 5; i >= 0; i--) {
@@ -341,11 +341,11 @@ serve(async (req) => {
         const end   = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59).toISOString()
         const label = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })
         const activePro = allSubs.filter(s =>
-          s.plan === 'pro' && s.created_at <= end &&
+          s.plan === 'pro' && s.updated_at <= end &&
           (s.status === 'active' || s.status === 'cancelling' || (s.status === 'cancelled' && s.updated_at > end))
         ).length
         const activeTeam = allSubs.filter(s =>
-          s.plan === 'team' && s.created_at <= end &&
+          s.plan === 'team' && s.updated_at <= end &&
           (s.status === 'active' || s.status === 'cancelling' || (s.status === 'cancelled' && s.updated_at > end))
         ).length
         months.push({ label, mrr: activePro * 499 + activeTeam * 2499, users: activePro + activeTeam })

@@ -65,7 +65,7 @@ export default function AdminBilling() {
   const cancelled   = subs.filter(s => s.status === 'cancelled').length
   const churnRate   = subs.length > 0 ? ((cancelled / subs.length) * 100).toFixed(1) : '0.0'
   const thisMonth   = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
-  const netNew      = subs.filter(s => s.status === 'active' && s.created_at >= thisMonth).length
+  const netNew      = subs.filter(s => s.status === 'active' && s.updated_at >= thisMonth).length
 
   const filtered = filter === 'all' ? subs : subs.filter(s =>
     filter === 'active' ? s.status === 'active' :
