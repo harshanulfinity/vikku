@@ -115,7 +115,7 @@ export default function Packages() {
                 ))}
               </ul>
 
-              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 mb-5">
+              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 mb-5 flex-1">
                 <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/40 mb-2">
                   <Gift size={11} className="text-yellow-400/70" /> Bonus
                 </p>
@@ -125,8 +125,6 @@ export default function Packages() {
                   ))}
                 </ul>
               </div>
-
-              <p className="text-[13px] italic text-white/45 mb-5 leading-snug flex-1">“{p.feels}”</p>
 
               <button
                 onClick={scrollToContact}
