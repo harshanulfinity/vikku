@@ -1,29 +1,70 @@
-import { Check, ArrowRight } from 'lucide-react'
+import { Check, Gift, ArrowRight } from 'lucide-react'
 
-// Fixed-price productized offers. Edit prices/scope freely — they're just data.
+// Fixed-price productized offers. Edit prices / deliverables freely — just data.
 const PACKAGES = [
   {
     name: 'Business Website',
     price: '₹40,000',
-    timeline: '2 weeks',
-    tagline: 'Get online fast with a site that converts.',
-    features: ['Up to 6 custom-designed pages', 'Mobile-first, fast & SEO-ready', 'Contact form + WhatsApp integration', 'Launch in 2 weeks'],
+    feels: 'I can start getting leads immediately.',
+    deliverables: [
+      '5–6 custom pages',
+      'Mobile responsive design',
+      'Basic SEO setup',
+      'Contact forms',
+      'WhatsApp integration',
+      'Google Analytics setup',
+      'Google Search Console setup',
+      'SSL & security configuration',
+      'Speed optimization',
+      '1 month support',
+      'Domain & hosting assistance',
+    ],
+    bonus: ['3 custom banners', 'Business email setup', 'Google Business Profile optimization guide'],
     highlight: false,
   },
   {
     name: 'MVP / Web App',
     price: '₹1,50,000',
-    timeline: '4–6 weeks',
-    tagline: 'Validate your idea with a real product.',
-    features: ['User accounts & dashboard', 'Core features built end-to-end', 'Payments / integrations', 'Deployed & production-ready'],
+    feels: 'I can validate my startup idea without hiring a full team.',
+    deliverables: [
+      'Discovery workshop',
+      'Wireframes',
+      'UI/UX design',
+      'Authentication (Login/Signup)',
+      'Dashboard',
+      '3–5 core features',
+      'Payment gateway integration',
+      'Admin panel',
+      'Email notifications',
+      'Production deployment',
+      'Basic analytics',
+      'Documentation',
+      '30 days support',
+    ],
+    bonus: ['AI feature consultation', 'Landing page included', 'Investor demo version'],
     highlight: true,
   },
   {
     name: 'Custom Platform',
     price: '₹3,00,000+',
-    timeline: 'Scoped to you',
-    tagline: 'Staffing, marketplace, SaaS or internal tools.',
-    features: ['Full discovery & architecture', 'Complex workflows & roles', 'Scalable, secure, documented', 'Ongoing support available'],
+    feels: 'This is a serious business system, not just a website.',
+    deliverables: [
+      'Requirements gathering',
+      'System architecture',
+      'Custom workflows',
+      'Multiple user roles',
+      'Advanced dashboards',
+      'API integrations',
+      'Payment systems',
+      'Security implementation',
+      'Audit logs',
+      'Documentation',
+      'CI/CD deployment',
+      'Performance optimization',
+      'Team training',
+      '3 months support',
+    ],
+    bonus: ['Product roadmap session', 'Growth strategy consultation', 'Dedicated project manager'],
     highlight: false,
   },
 ]
@@ -47,7 +88,7 @@ export default function Packages() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
           {PACKAGES.map((p) => (
             <div
               key={p.name}
@@ -61,20 +102,31 @@ export default function Packages() {
                 </span>
               )}
               <h3 className="font-display font-bold text-white text-lg">{p.name}</h3>
-              <p className="text-xs text-white/50 mt-1 mb-4">{p.tagline}</p>
-              <div className="flex items-baseline gap-1.5 mb-1">
+              <div className="flex items-baseline gap-1.5 mt-2 mb-5">
                 <span className="font-display font-extrabold text-2xl text-white">{p.price}</span>
               </div>
-              <p className="text-[11px] text-white/40 mb-5">Delivered in {p.timeline}</p>
 
-              <ul className="space-y-2.5 mb-6 flex-1">
-                {p.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-white/70">
-                    <Check size={14} className={`flex-shrink-0 mt-0.5 ${p.highlight ? 'text-violet-400' : 'text-white/40'}`} />
-                    {f}
+              <ul className="space-y-2 mb-5">
+                {p.deliverables.map((d) => (
+                  <li key={d} className="flex items-start gap-2 text-[13px] text-white/70">
+                    <Check size={13} className={`flex-shrink-0 mt-0.5 ${p.highlight ? 'text-violet-400' : 'text-white/40'}`} />
+                    {d}
                   </li>
                 ))}
               </ul>
+
+              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 mb-5">
+                <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/40 mb-2">
+                  <Gift size={11} className="text-yellow-400/70" /> Bonus
+                </p>
+                <ul className="space-y-1.5">
+                  {p.bonus.map((b) => (
+                    <li key={b} className="text-[12px] text-white/55">{b}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <p className="text-[13px] italic text-white/45 mb-5 leading-snug flex-1">“{p.feels}”</p>
 
               <button
                 onClick={scrollToContact}
