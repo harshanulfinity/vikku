@@ -331,11 +331,16 @@ export default function TechRecommender() {
               </div>
             </div>
 
-            <div className="mt-6 text-center">
-              <button onClick={() => { setResult(null); setForm({ projectType: '', scale: '', budget: '', hasDevTeam: '', requirements: [] }); setError('') }}
-                className="text-white/60 hover:text-white transition-colors text-sm"
+            <div className="mt-6 flex items-center justify-center gap-5">
+              <button onClick={() => { setResult(null); setError('') }}
+                className="text-white hover:text-white/80 transition-colors text-sm font-medium"
               >
-                Recommend for a Different Project
+                ↺ Refine &amp; regenerate
+              </button>
+              <button onClick={() => { setResult(null); setForm({ projectType: '', scale: '', budget: '', hasDevTeam: '', requirements: [] }); setError('') }}
+                className="text-white/50 hover:text-white transition-colors text-sm"
+              >
+                Different project
               </button>
             </div>
           </>

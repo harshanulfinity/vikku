@@ -241,12 +241,18 @@ export default function CostEstimator() {
               </button>
             </div>
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 flex items-center justify-center gap-5">
+              <button
+                onClick={() => { setResult(null); setError('') }}
+                className="text-white hover:text-white/80 transition-colors text-sm font-medium"
+              >
+                ↺ Refine &amp; regenerate
+              </button>
               <button
                 onClick={() => { setResult(null); setRequirements(''); setError('') }}
-                className="text-white/60 hover:text-white transition-colors text-sm"
+                className="text-white/50 hover:text-white transition-colors text-sm"
               >
-                Estimate Another Project
+                Start over
               </button>
             </div>
           </>
