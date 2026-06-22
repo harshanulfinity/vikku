@@ -44,7 +44,7 @@ export default function LeadCaptureModal({ open, onClose, source }) {
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-white/30 hover:text-white transition-colors"
-        >
+         aria-label="Close">
           <X size={16} />
         </button>
 

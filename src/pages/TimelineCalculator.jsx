@@ -6,7 +6,8 @@ import LeadCaptureModal from '../components/LeadCaptureModal'
 import ToolResultActions from '../components/tools/ToolResultActions'
 import ToolFAQ from '../components/tools/ToolFAQ'
 import { saveToolResult } from '../lib/toolResultsService'
-import { TOOL_FAQ } from '../lib/toolContent'
+import { TOOL_FAQ, TOOL_SEO, faqJsonLd } from '../lib/toolContent'
+import Seo from '../components/Seo'
 import { useAuth } from '../contexts/AuthContext'
 
 const PROJECT_TYPES = [
@@ -104,6 +105,7 @@ export default function TimelineCalculator() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      <Seo {...TOOL_SEO.timeline_calculator} jsonLd={faqJsonLd('timeline_calculator')} />
       <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="timeline_calculator" />
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">

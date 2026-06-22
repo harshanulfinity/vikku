@@ -6,7 +6,8 @@ import LeadCaptureModal from '../components/LeadCaptureModal'
 import ToolResultActions from '../components/tools/ToolResultActions'
 import ToolFAQ from '../components/tools/ToolFAQ'
 import { saveToolResult } from '../lib/toolResultsService'
-import { COST_PRESETS, TOOL_FAQ } from '../lib/toolContent'
+import { COST_PRESETS, TOOL_FAQ, TOOL_SEO, faqJsonLd } from '../lib/toolContent'
+import Seo from '../components/Seo'
 import { useAuth } from '../contexts/AuthContext'
 
 function formatCurrency(amount, symbol) {
@@ -51,6 +52,7 @@ export default function CostEstimator() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      <Seo {...TOOL_SEO.cost_estimator} jsonLd={faqJsonLd('cost_estimator')} />
       <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="cost_estimator" />
       {/* Header */}
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">

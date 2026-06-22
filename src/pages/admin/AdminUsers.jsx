@@ -96,7 +96,7 @@ function UserDetailModal({ userId, onClose, onDeleted }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="glass rounded-2xl w-full max-w-md p-6 relative" onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors">
+        <button onClick={onClose} className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors" aria-label="Close">
           <X size={16} />
         </button>
         <p className="text-xs text-white/40 uppercase tracking-widest mb-4">User Detail</p>
