@@ -73,8 +73,8 @@ export default async function handler(req, res) {
 
     const tool = rowData.tool
     const label = TOOL_LABELS[tool] || 'Result'
-    const origin = req.headers.origin || 'https://www.vikku.in'
-    const shareUrl = `${origin}/r/${shareId}`
+    // Hardcoded — never reflect a caller-controlled Origin header into an email we send.
+    const shareUrl = `https://www.vikku.in/r/${shareId}`
 
     // Also record the email against the result + subscribers list
     await supabase.from('tool_results').update({ email: email.trim().toLowerCase() }).eq('share_id', shareId)

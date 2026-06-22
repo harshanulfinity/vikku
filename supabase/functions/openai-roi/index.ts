@@ -3,16 +3,38 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 function corsHeaders(req: Request) {
   const origin = req.headers.get('origin') ?? ''
   return {
-    'Access-Control-Allow-Origin': origin === 'https://vikku.in' ? origin : '',
+    'Access-Control-Allow-Origin': new Set(['https://vikku.in','https://www.vikku.in']).has(origin) ? origin : 'https://www.vikku.in',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Vary': 'Origin',
   }
+}
+
+async function rateLimited(fn: string, ip: string): Promise<boolean> {
+  try {
+    const url = Deno.env.get('SUPABASE_URL')!
+    const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const hit = async (bucket: string, max: number, win: number) => {
+      const r = await fetch(`${url}/rest/v1/rpc/ai_rate_hit`, {
+        method: 'POST',
+        headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_key: bucket, p_max: max, p_window_seconds: win }),
+      })
+      return (await r.json()) === false
+    }
+    if (await hit(`${fn}:${ip}`, 30, 3600)) return true   // 30 / hour / IP
+    if (await hit(`${fn}:global`, 1000, 86400)) return true // 1000 / day total
+    return false
+  } catch { return false }
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) })
 
   try {
+
+    const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown'
+    if (await rateLimited('roi', ip)) return new Response(JSON.stringify({ error: 'Too many requests. Please try again in a bit.' }), { status: 429, headers: { ...corsHeaders(req), 'Content-Type': 'application/json' } })
     const rawBody = await req.text()
     if (rawBody.length > 8000) return new Response(JSON.stringify({ error: "Request too large" }), { status: 413, headers: { ...corsHeaders(req), "Content-Type": "application/json" } })
     const inputs = JSON.parse(rawBody)

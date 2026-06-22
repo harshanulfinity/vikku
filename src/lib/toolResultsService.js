@@ -46,13 +46,12 @@ export async function saveToolResult({ tool, title, input, result, email = null 
 
 export async function getToolResultByShareId(shareId) {
   if (!supabase) return null
+  // Reads through a SECURITY DEFINER function — the table is no longer publicly
+  // selectable, so emails/PII can't be dumped via the anon key.
   const { data, error } = await supabase
-    .from('tool_results')
-    .select('*')
-    .eq('share_id', shareId)
-    .maybeSingle()
+    .rpc('get_tool_result', { p_share_id: shareId })
   if (error) { console.error('getToolResultByShareId failed:', error); return null }
-  return data
+  return Array.isArray(data) ? (data[0] || null) : data
 }
 
 export async function getMyToolResults(userId) {
