@@ -191,7 +191,7 @@ export default function TimelineCalculator() {
               <p className="text-white/60 text-sm">Estimated total: <span className="text-white font-semibold">{result.totalWeeksMin}–{result.totalWeeksMax} weeks</span></p>
             </div>
 
-            <ToolResultActions shareId={shareId} tool="timeline_calculator" navigate={navigate} />
+            <ToolResultActions shareId={shareId} tool="timeline_calculator" navigate={navigate} result={result} title="Project timeline" />
 
             {/* Total */}
             <div className="glass-strong rounded-2xl p-8 mb-6 flex items-center gap-4">

@@ -143,7 +143,7 @@ export default function CostEstimator() {
               </p>
             </div>
 
-            <ToolResultActions shareId={shareId} tool="cost_estimator" navigate={navigate} />
+            <ToolResultActions shareId={shareId} tool="cost_estimator" navigate={navigate} result={result} title="Project cost estimate" />
 
             {/* Total Cost Card */}
             <div className="glass-strong rounded-2xl p-8 mb-6">

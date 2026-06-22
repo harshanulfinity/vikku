@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowRight, Download, Loader2 } from 'lucide-react'
 import { getToolResultByShareId, TOOL_LABELS } from '../lib/toolResultsService'
+import { downloadResultPdf } from '../lib/pdfGenerator'
 
 const money = (n, sym = '₹') => `${sym}${Number(n || 0).toLocaleString('en-IN')}`
 
@@ -142,7 +143,7 @@ export default function ShareableResult() {
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4 print:hidden">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <a href="/" className="font-display font-bold text-lg">vikku</a>
-          <button onClick={() => window.print()} className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors">
+          <button onClick={() => downloadResultPdf({ tool: row.tool, title: row.title, result: row.result || {} }).catch(() => window.print())} className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors">
             <Download size={14} /> Download PDF
           </button>
         </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Mail, Link2, Download, Check, ArrowRight, Loader2, MessageCircle } from 'lucide-react'
 import { emailToolResult, TOOL_LABELS } from '../../lib/toolResultsService'
+import { downloadResultPdf } from '../../lib/pdfGenerator'
 
 const CROSS_TOOL = {
   cost_estimator:      { to: '/tools/timeline-calculator', label: 'See the timeline for this' },
@@ -13,13 +14,22 @@ const CROSS_TOOL = {
  * Shared actions shown under any tool result:
  * email the result, copy a shareable link, download as PDF, and a cross-tool next step.
  */
-export default function ToolResultActions({ shareId, tool, navigate }) {
+export default function ToolResultActions({ shareId, tool, navigate, result, title }) {
   const [emailing, setEmailing]   = useState(false)
   const [emailOpen, setEmailOpen] = useState(false)
   const [email, setEmail]         = useState('')
   const [sent, setSent]           = useState(false)
   const [copied, setCopied]       = useState(false)
   const [err, setErr]             = useState('')
+  const [pdfing, setPdfing]       = useState(false)
+
+  const downloadPdf = async () => {
+    if (!result) { window.print(); return }
+    setPdfing(true)
+    try { await downloadResultPdf({ tool, title, result }) }
+    catch { window.print() }
+    finally { setPdfing(false) }
+  }
 
   const shareUrl = shareId ? `${window.location.origin}/r/${shareId}` : ''
   const cross = CROSS_TOOL[tool]
@@ -74,10 +84,11 @@ export default function ToolResultActions({ shareId, tool, navigate }) {
           <MessageCircle size={14} className="text-green-400" /> WhatsApp
         </a>
         <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 text-sm glass rounded-xl px-4 py-2.5 text-white/80 hover:text-white transition-colors"
+          onClick={downloadPdf}
+          disabled={pdfing}
+          className="flex items-center gap-2 text-sm glass rounded-xl px-4 py-2.5 text-white/80 hover:text-white transition-colors disabled:opacity-50"
         >
-          <Download size={14} /> Download PDF
+          {pdfing ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} Download PDF
         </button>
         {cross && (
           <button

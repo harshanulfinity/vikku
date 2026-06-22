@@ -219,7 +219,7 @@ export default function TechRecommender() {
               <h2 className="font-display font-extrabold text-3xl text-white mb-3">Your Tech Stack Recommendation</h2>
             </div>
 
-            <ToolResultActions shareId={shareId} tool="tech_recommender" navigate={navigate} />
+            <ToolResultActions shareId={shareId} tool="tech_recommender" navigate={navigate} result={result} title="Recommended tech stack" />
 
             {/* Stack overview */}
             <div className="glass-strong rounded-2xl p-8 mb-6">

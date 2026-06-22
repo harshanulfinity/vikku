@@ -227,7 +227,7 @@ export default function ROICalculator() {
               <h2 className="font-display font-extrabold text-3xl text-white mb-3">Your ROI Report</h2>
             </div>
 
-            <ToolResultActions shareId={shareId} tool="roi_calculator" navigate={navigate} />
+            <ToolResultActions shareId={shareId} tool="roi_calculator" navigate={navigate} result={result} title="Website ROI report" />
 
             {/* Revenue Lost Cards */}
             <div className="grid md:grid-cols-3 gap-4 mb-6">
