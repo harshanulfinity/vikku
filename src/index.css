@@ -148,18 +148,28 @@ html.light .bg-\[\#1a1a1a\] {
   background-color: #ffffff !important;
 }
 
+/* Catch-all FALLBACK for any text-white/<opacity> (incl. odd values like /45,/55
+   and future ones). Listed BEFORE the precise ladder so the ladder wins for the
+   exact opacities it defines, and anything else still gets readable dark text.
+   Floor the alpha at 0.5 so muted body copy never drops to unreadable on light. */
+html.light [class*="text-white/"] { color: rgba(15,23,42,0.6) !important; }
+
 /* text-white opacity ladder → slate-900 */
 html.light .text-white        { color: #0f172a !important; }
 html.light .text-white\/90    { color: rgba(15,23,42,0.90) !important; }
 html.light .text-white\/80    { color: rgba(15,23,42,0.80) !important; }
 html.light .text-white\/70    { color: rgba(15,23,42,0.70) !important; }
-html.light .text-white\/60    { color: rgba(15,23,42,0.60) !important; }
-html.light .text-white\/50    { color: rgba(15,23,42,0.50) !important; }
-html.light .text-white\/40    { color: rgba(15,23,42,0.40) !important; }
-html.light .text-white\/30    { color: rgba(15,23,42,0.30) !important; }
-html.light .text-white\/25    { color: rgba(15,23,42,0.25) !important; }
-html.light .text-white\/20    { color: rgba(15,23,42,0.20) !important; }
-html.light .text-white\/10    { color: rgba(15,23,42,0.10) !important; }
+html.light .text-white\/60    { color: rgba(15,23,42,0.65) !important; }
+html.light .text-white\/55    { color: rgba(15,23,42,0.62) !important; }
+html.light .text-white\/50    { color: rgba(15,23,42,0.60) !important; }
+html.light .text-white\/45    { color: rgba(15,23,42,0.58) !important; }
+html.light .text-white\/40    { color: rgba(15,23,42,0.55) !important; }
+html.light .text-white\/35    { color: rgba(15,23,42,0.52) !important; }
+html.light .text-white\/30    { color: rgba(15,23,42,0.50) !important; }
+html.light .text-white\/25    { color: rgba(15,23,42,0.45) !important; }
+html.light .text-white\/20    { color: rgba(15,23,42,0.40) !important; }
+html.light .text-white\/15    { color: rgba(15,23,42,0.35) !important; }
+html.light .text-white\/10    { color: rgba(15,23,42,0.30) !important; }
 
 /* border-white/* → dark borders */
 html.light [class*="border-white"] {
