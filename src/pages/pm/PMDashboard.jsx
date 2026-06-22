@@ -4,7 +4,7 @@ import { Plus, LayoutDashboard, Lock, Users, Gift, CheckCircle, AlertTriangle, T
 import { useAuth } from '../../contexts/AuthContext'
 import { getProjects, getTasks, getSharedProjects } from '../../lib/pmService'
 import { sendWeeklyDigest } from '../../lib/openaiService'
-import { cancelSubscription } from '../../lib/razorpayService'
+
 import ProjectCard from '../../components/pm/ProjectCard'
 import UpgradeModal from '../../components/pm/UpgradeModal'
 import QuickAdd from '../../components/pm/QuickAdd'
@@ -25,8 +25,6 @@ export default function PMDashboard() {
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [pendingCycle, setPendingCycle] = useState('monthly')
   const [showManageSub, setShowManageSub] = useState(false)
-  const [cancelConfirm, setCancelConfirm] = useState(false)
-  const [cancelling, setCancelling] = useState(false)
   const [showMyTasks, setShowMyTasks] = useState(true)
   const [showAllTasks, setShowAllTasks] = useState(false)
   const [sendingDigest, setSendingDigest] = useState(false)
@@ -44,20 +42,6 @@ export default function PMDashboard() {
     }
   }, [user])
 
-  const handleCancelSubscription = async () => {
-    setCancelling(true)
-    try {
-      const result = await cancelSubscription(user.id)
-      setSubscription((prev) => ({ ...prev, status: 'cancelling' }))
-      setCancelConfirm(false)
-      setShowManageSub(false)
-      alert(`Subscription cancelled. You keep Pro access until ${result?.accessUntil ? new Date(result.accessUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'the end of your billing period'}.`)
-    } catch (err) {
-      alert('Failed to cancel: ' + err.message)
-    } finally {
-      setCancelling(false)
-    }
-  }
 
   const handleSendDigest = async () => {
     setSendingDigest(true)
@@ -166,7 +150,7 @@ export default function PMDashboard() {
       {showManageSub && (
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-          onClick={() => { setShowManageSub(false); setCancelConfirm(false) }}
+          onClick={() => { setShowManageSub(false) }}
         >
           <div
             className="w-full max-w-[300px] bg-[#111] border border-white/10 rounded-2xl p-4 max-h-[90vh] overflow-y-auto"
@@ -174,7 +158,7 @@ export default function PMDashboard() {
           >
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display font-bold text-white text-sm">My Subscription</h2>
-              <button onClick={() => { setShowManageSub(false); setCancelConfirm(false) }} className="text-white/40 hover:text-white transition-colors">
+              <button onClick={() => { setShowManageSub(false) }} className="text-white/40 hover:text-white transition-colors">
                 <X size={15} />
               </button>
             </div>
@@ -191,22 +175,18 @@ export default function PMDashboard() {
               </div>
               {subscription?.current_period_end && (
                 <div>
-                  <p className="text-[10px] text-white/40 uppercase tracking-wider mb-0.5">
-                    {subscription.status === 'cancelling' ? 'Access until' : 'Renews on'}
-                  </p>
+                  <p className="text-[10px] text-white/40 uppercase tracking-wider mb-0.5">Access until</p>
                   <p className="text-xs text-white">
                     {new Date(subscription.current_period_end).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
+                  <p className="text-[10px] text-white/40 mt-2">One-time plan — it won't auto-renew. Pay again before this date to keep access.</p>
                 </div>
-              )}
-              {subscription?.status === 'cancelling' && (
-                <p className="text-[10px] text-yellow-400/80 mt-2">Cancellation scheduled — Pro access continues until the date above.</p>
               )}
             </div>
 
             {plan === 'pro' && subscription?.status !== 'cancelling' && (
               <button
-                onClick={() => { setShowManageSub(false); setCancelConfirm(false); setShowUpgrade(true) }}
+                onClick={() => { setShowManageSub(false); setShowUpgrade(true) }}
                 className="w-full text-xs font-semibold text-white bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 rounded-xl py-2 mb-2 transition-colors flex items-center justify-center gap-1.5"
               >
                 <Sparkles size={12} className="text-violet-400" />
@@ -214,38 +194,12 @@ export default function PMDashboard() {
               </button>
             )}
 
-            {subscription?.status !== 'cancelling' && (
-              <>
-                {!cancelConfirm ? (
-                  <button
-                    onClick={() => setCancelConfirm(true)}
-                    className="w-full text-xs text-white/40 hover:text-red-400 transition-colors py-2 border border-white/[0.06] rounded-xl"
-                  >
-                    Cancel subscription
-                  </button>
-                ) : (
-                  <div className="glass rounded-xl p-4 border border-red-500/20">
-                    <p className="text-sm text-white mb-1">Cancel your subscription?</p>
-                    <p className="text-xs text-white/40 mb-4">You keep Pro access until the end of the current billing period. No refunds for partial periods.</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleCancelSubscription}
-                        disabled={cancelling}
-                        className="flex-1 py-2 rounded-xl bg-red-500/15 text-red-400 text-sm font-semibold hover:bg-red-500/25 transition-colors disabled:opacity-50"
-                      >
-                        {cancelling ? 'Cancelling…' : 'Yes, cancel'}
-                      </button>
-                      <button
-                        onClick={() => setCancelConfirm(false)}
-                        className="flex-1 py-2 rounded-xl glass text-white/60 text-sm hover:text-white transition-colors"
-                      >
-                        Keep Pro
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
+            <button
+              onClick={() => { setShowManageSub(false); setShowUpgrade(true) }}
+              className="w-full text-xs font-semibold text-white/70 hover:text-white transition-colors py-2 border border-white/[0.06] rounded-xl"
+            >
+              Renew {plan === 'team' ? 'Team' : 'Pro'}
+            </button>
           </div>
         </div>
       )}
