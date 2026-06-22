@@ -166,10 +166,44 @@ html.light [class*="border-white"] {
   border-color: rgba(0, 0, 0, 0.10) !important;
 }
 
-/* bg-white/[0.0x] subtle panel tints → very light dark tint */
-html.light [class*="bg-white\/\[0\.0"] {
-  background-color: rgba(0, 0, 0, 0.03) !important;
+/* bg-white/[0.0x] subtle panel tints → very light dark tint.
+   NOTE: inside a CSS attribute-value string the characters / [ . are literal —
+   they must NOT be backslash-escaped (the old selector was escaped and never matched). */
+html.light [class*="bg-white/[0.0"] {
+  background-color: rgba(15, 23, 42, 0.04) !important;
 }
+
+/* ── White tint SURFACES (slash-number) → subtle dark tints in light mode ──
+   These were previously uncovered, so translucent-white panels, badges and
+   hover states were invisible on the light background. */
+html.light .bg-white\/5   { background-color: rgba(15, 23, 42, 0.04) !important; }
+html.light .bg-white\/10  { background-color: rgba(15, 23, 42, 0.06) !important; }
+html.light .bg-white\/20  { background-color: rgba(15, 23, 42, 0.10) !important; }
+html.light .bg-white\/25  { background-color: rgba(15, 23, 42, 0.12) !important; }
+html.light .bg-white\/30  { background-color: rgba(15, 23, 42, 0.14) !important; }
+html.light .bg-white\/40  { background-color: rgba(15, 23, 42, 0.18) !important; }
+html.light .bg-white\/60  { background-color: rgba(15, 23, 42, 0.28) !important; }
+
+/* Hover variants (only apply on :hover so resting state stays transparent) */
+html.light .hover\:bg-white\/5:hover         { background-color: rgba(15, 23, 42, 0.05) !important; }
+html.light .hover\:bg-white\/10:hover        { background-color: rgba(15, 23, 42, 0.08) !important; }
+html.light .hover\:bg-white\/15:hover        { background-color: rgba(15, 23, 42, 0.10) !important; }
+html.light .hover\:bg-white\/20:hover        { background-color: rgba(15, 23, 42, 0.12) !important; }
+html.light .hover\:bg-white\/\[0\.06\]:hover { background-color: rgba(15, 23, 42, 0.06) !important; }
+html.light .hover\:bg-white\/\[0\.07\]:hover { background-color: rgba(15, 23, 42, 0.07) !important; }
+html.light .hover\:bg-white\/\[0\.08\]:hover { background-color: rgba(15, 23, 42, 0.08) !important; }
+
+/* Near-solid white CTA hover (primary buttons are flipped to dark, so darken on hover too) */
+html.light .hover\:bg-white\/90:hover { background-color: #1e293b !important; }
+
+/* Input placeholders → readable on light inputs (were staying near-white) */
+html.light .placeholder-white\/20::placeholder,
+html.light .placeholder-white\/25::placeholder,
+html.light .placeholder-white\/30::placeholder { color: rgba(15, 23, 42, 0.45) !important; }
+
+/* Low-contrast accents that fail on a light background */
+html.light .text-yellow-400 { color: #b45309 !important; } /* amber-700 */
+html.light .text-yellow-400\/80 { color: rgba(180, 83, 9, 0.85) !important; }
 
 /* Form field prefix icons (Mail, Lock, Search) - absolute-positioned lucide icons */
 html.light svg.lucide.absolute {
