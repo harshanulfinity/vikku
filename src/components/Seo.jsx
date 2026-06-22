@@ -19,7 +19,7 @@ function setMeta(attr, key, content) {
 
 /**
  * Per-route SEO for the SPA: sets a unique <title>, meta description, canonical,
- * Open Graph / Twitter tags, and optional JSON-LD structured data — then restores
+ * Open Graph / Twitter tags, and optional JSON-LD structured data - then restores
  * the previous values on unmount so routes don't bleed into each other.
  */
 export default function Seo({ title, description, canonical, image = DEFAULT_OG, jsonLd }) {

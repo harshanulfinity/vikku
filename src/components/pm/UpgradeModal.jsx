@@ -155,7 +155,7 @@ export default function UpgradeModal({ onClose, onUpgraded, reason, currentPlan 
                 <p className="font-display font-extrabold text-xs text-white">₹0</p>
                 <p className="text-[9px] text-white/30">forever</p>
                 <div className="mt-2 py-1 rounded-lg bg-white/[0.06] text-[9px] text-white/30 font-medium">
-                  {currentPlan === 'free' ? 'Current plan' : '—'}
+                  {currentPlan === 'free' ? 'Current plan' : '-'}
                 </div>
               </div>
               {/* Pro */}

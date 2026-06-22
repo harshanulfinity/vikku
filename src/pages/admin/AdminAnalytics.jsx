@@ -136,7 +136,7 @@ export default function AdminAnalytics() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
             {mrrHist?.months?.length > 0 && (
               <div className="glass rounded-2xl p-5">
-                <p className="text-xs text-white/40 uppercase tracking-widest mb-4">MRR — Last 6 Months</p>
+                <p className="text-xs text-white/40 uppercase tracking-widest mb-4">MRR - Last 6 Months</p>
                 <LineChart
                   data={mrrHist.months}
                   valueKey="mrr"
@@ -153,7 +153,7 @@ export default function AdminAnalytics() {
 
             {growth?.months?.length > 0 && (
               <div className="glass rounded-2xl p-5">
-                <p className="text-xs text-white/40 uppercase tracking-widest mb-4">User Growth — Last 6 Months</p>
+                <p className="text-xs text-white/40 uppercase tracking-widest mb-4">User Growth - Last 6 Months</p>
                 <BarChart
                   data={growth.months}
                   valueKey="new"
@@ -215,7 +215,7 @@ export default function AdminAnalytics() {
 
           {/* Signup trend */}
           <div className="glass rounded-2xl p-5 mb-4">
-            <p className="text-xs text-white/40 uppercase tracking-widest mb-4">Signups — Last 30 Days</p>
+            <p className="text-xs text-white/40 uppercase tracking-widest mb-4">Signups - Last 30 Days</p>
             <div className="flex items-end gap-0.5 h-24">
               {data.signupsByDay.map(({ date, count }) => (
                 <div key={date} className="relative flex-1 group">

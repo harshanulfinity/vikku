@@ -19,21 +19,21 @@ export const STACK_PRESETS = [
 export const TOOL_SEO = {
   cost_estimator: {
     title: 'Free App & Website Cost Estimator (India) | Vikku',
-    description: 'Get an instant, itemised cost estimate for your app, website, or software project in your local currency. Free AI estimator — no sales call.',
+    description: 'Get an instant, itemised cost estimate for your app, website, or software project in your local currency. Free AI estimator - no sales call.',
     canonical: '/tools/cost-estimator',
   },
   roi_calculator: {
-    title: 'Website ROI Calculator — How Much Are You Losing? | Vikku',
+    title: 'Website ROI Calculator - How Much Are You Losing? | Vikku',
     description: 'See how much revenue your business loses to missed leads and how fast a website pays for itself. Free ROI calculator for any business type.',
     canonical: '/tools/roi-calculator',
   },
   timeline_calculator: {
     title: 'Software Project Timeline Calculator | Vikku',
-    description: 'Get a realistic, phase-by-phase timeline for building your software, app, or website — discovery to launch. Free AI estimate.',
+    description: 'Get a realistic, phase-by-phase timeline for building your software, app, or website - discovery to launch. Free AI estimate.',
     canonical: '/tools/timeline-calculator',
   },
   tech_recommender: {
-    title: 'Tech Stack Recommender — Which Stack Should You Use? | Vikku',
+    title: 'Tech Stack Recommender - Which Stack Should You Use? | Vikku',
     description: 'Describe your product and get an opinionated, modern tech stack recommendation (frontend, backend, database, hosting) with reasoning. Free.',
     canonical: '/tools/tech-recommender',
   },
@@ -57,11 +57,11 @@ export function faqJsonLd(toolKey) {
 export const TOOL_FAQ = {
   cost_estimator: {
     heading: 'How much does it cost to build an app or website?',
-    intro: 'Software costs depend on scope, complexity, integrations, and where your team is based. This AI estimator gives you a realistic, itemised range in your local currency in seconds — no sales call required.',
+    intro: 'Software costs depend on scope, complexity, integrations, and where your team is based. This AI estimator gives you a realistic, itemised range in your local currency in seconds - no sales call required.',
     faqs: [
       { q: 'How accurate is the estimate?', a: 'It uses current market rates and your described scope to produce a conservative min–max range. Treat it as a planning ballpark, not a fixed quote.' },
       { q: 'What affects the cost most?', a: 'Number of features, third-party integrations, custom design, and whether you need web, mobile, or both. The breakdown shows where the money goes.' },
-      { q: 'Is it really free?', a: 'Yes. Generate as many estimates as you like, email them to yourself, and share the report — completely free.' },
+      { q: 'Is it really free?', a: 'Yes. Generate as many estimates as you like, email them to yourself, and share the report - completely free.' },
     ],
   },
   roi_calculator: {
@@ -70,22 +70,22 @@ export const TOOL_FAQ = {
     faqs: [
       { q: 'How is ROI calculated?', a: 'We model your current lead volume and average deal value against the additional leads a professional website typically captures for your industry.' },
       { q: 'What payback period is realistic?', a: 'For most service businesses, a website pays for itself within a few months. Your specific payback period is in the report.' },
-      { q: 'Will this work for my industry?', a: 'Yes — the model adjusts to your business type, from restaurants to SaaS to local services.' },
+      { q: 'Will this work for my industry?', a: 'Yes - the model adjusts to your business type, from restaurants to SaaS to local services.' },
     ],
   },
   timeline_calculator: {
     heading: 'How long does it take to build software?',
-    intro: 'Get a realistic, phase-by-phase project timeline based on your scope — from discovery and design through development, testing, and launch.',
+    intro: 'Get a realistic, phase-by-phase project timeline based on your scope - from discovery and design through development, testing, and launch.',
     faqs: [
       { q: 'How is the timeline estimated?', a: 'The AI breaks your project into standard phases and assigns realistic durations based on scope and complexity.' },
-      { q: 'Can timelines be compressed?', a: 'Often yes — with a larger team or reduced scope. The phase breakdown shows where time is spent so you can prioritise.' },
+      { q: 'Can timelines be compressed?', a: 'Often yes - with a larger team or reduced scope. The phase breakdown shows where time is spent so you can prioritise.' },
     ],
   },
   tech_recommender: {
     heading: 'Which tech stack should I use?',
-    intro: 'Describe your product and constraints and get an opinionated, modern tech stack recommendation — frontend, backend, database, and hosting — with the reasoning behind each choice.',
+    intro: 'Describe your product and constraints and get an opinionated, modern tech stack recommendation - frontend, backend, database, and hosting - with the reasoning behind each choice.',
     faqs: [
-      { q: 'Why trust the recommendation?', a: 'It favours proven, well-supported technologies matched to your scale, team size, and budget — not hype.' },
+      { q: 'Why trust the recommendation?', a: 'It favours proven, well-supported technologies matched to your scale, team size, and budget - not hype.' },
       { q: 'Can I change it later?', a: 'Yes. The recommendation is a strong default; the reasoning helps you adapt it to your team’s strengths.' },
     ],
   },

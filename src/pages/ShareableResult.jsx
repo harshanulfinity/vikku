@@ -155,7 +155,7 @@ export default function ShareableResult() {
         {renderResult(row.tool, row.result || {})}
 
         <div className="glass-strong rounded-2xl p-8 text-center mt-8 print:hidden">
-          <h3 className="font-display font-semibold text-lg mb-3">Want this built — for a fixed price?</h3>
+          <h3 className="font-display font-semibold text-lg mb-3">Want this built - for a fixed price?</h3>
           <p className="text-white/60 text-sm mb-6 max-w-md mx-auto">Vikku designs and ships software, websites, and apps. Book a free 30-min scoping call and we'll turn this into a fixed-price plan.</p>
           <button onClick={() => { navigate('/'); setTimeout(() => document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' }), 300) }} className="bg-white text-black font-semibold px-8 py-3 rounded-xl hover:bg-white/90 transition-colors inline-flex items-center gap-2">
             Book a free scoping call <ArrowRight size={16} />

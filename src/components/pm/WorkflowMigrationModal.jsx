@@ -78,7 +78,7 @@ export default function WorkflowMigrationModal({ projectId, projectTasks, target
                     onChange={(e) => setMapping((prev) => ({ ...prev, [key]: e.target.value }))}
                     className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-white/20 transition-colors appearance-none"
                   >
-                    <option value="">— pick stage —</option>
+                    <option value="">- pick stage -</option>
                     {targetStages.map((s) => (
                       <option key={s.status_key} value={s.status_key}>{s.name}</option>
                     ))}

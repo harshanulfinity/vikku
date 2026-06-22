@@ -6,7 +6,7 @@
  *   can(plan, 'customWorkflows')  → true / false
  *   requiresPro('customWorkflows') → true
  *
- * Add new features here as the product grows — never scatter plan checks
+ * Add new features here as the product grows - never scatter plan checks
  * across components.
  */
 

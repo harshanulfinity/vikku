@@ -15,7 +15,7 @@ async function callEdge(type, body, useAuth = true) {
       body: JSON.stringify({ type, ...body }),
     })
   } catch {
-    // Notifications are best-effort — never block the UI
+    // Notifications are best-effort - never block the UI
   }
 }
 

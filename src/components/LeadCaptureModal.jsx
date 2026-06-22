@@ -28,7 +28,7 @@ export default function LeadCaptureModal({ open, onClose, source, shareId }) {
     setStatus('loading')
     try {
       // If we have a saved result, email it with the booking CTA (also records the
-      // email + adds them to subscribers server-side — the auto follow-up).
+      // email + adds them to subscribers server-side - the auto follow-up).
       if (shareId) {
         await emailToolResult({ shareId, email: email.trim().toLowerCase(), tool: source })
       } else {
@@ -71,7 +71,7 @@ export default function LeadCaptureModal({ open, onClose, source, shareId }) {
             </div>
             <h2 className="font-display font-bold text-xl text-white mb-2">You're in!</h2>
             <p className="text-white/50 text-sm mb-6 leading-relaxed">
-              We'll send you a follow-up with tips based on your results. Meanwhile—
+              We'll send you a follow-up with tips based on your results. Meanwhile-
             </p>
             <div className="space-y-3">
               <a
@@ -85,7 +85,7 @@ export default function LeadCaptureModal({ open, onClose, source, shareId }) {
                 href="/pm"
                 className="flex items-center justify-between glass rounded-xl px-4 py-3 text-sm text-white hover:border-white/20 transition-all group"
               >
-                <span>Try Vikku PM — free</span>
+                <span>Try Vikku PM - free</span>
                 <ArrowRight size={14} className="text-white/30 group-hover:text-white transition-colors" />
               </a>
             </div>
@@ -101,7 +101,7 @@ export default function LeadCaptureModal({ open, onClose, source, shareId }) {
             <h2 className="font-display font-bold text-xl text-white mb-1">Get your results by email</h2>
             <p className="text-white/50 text-sm mb-6 leading-relaxed">
               We'll send a breakdown of your {label} results + tips for your specific situation.
-              No spam — one useful email.
+              No spam - one useful email.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-3">

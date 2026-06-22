@@ -21,7 +21,7 @@ export default function AppHeader({ breadcrumbs = [], actions, badge }) {
 
         {/* Left: back arrow (mobile) + logo + breadcrumbs */}
         <div className="flex items-center gap-1.5 min-w-0">
-          {/* Mobile back button — navigates to the last breadcrumb that has an href */}
+          {/* Mobile back button - navigates to the last breadcrumb that has an href */}
           {(() => {
             const backCrumb = [...breadcrumbs].reverse().find((c) => c.href)
             return backCrumb ? (

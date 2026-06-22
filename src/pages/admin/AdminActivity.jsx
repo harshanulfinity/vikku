@@ -13,7 +13,7 @@ const TYPE_META = {
 }
 
 function timeAgo(dateStr) {
-  if (!dateStr) return '—'
+  if (!dateStr) return '-'
   const diff = Date.now() - new Date(dateStr).getTime()
   const m = Math.floor(diff / 60000)
   if (m < 1)  return 'just now'
@@ -79,7 +79,7 @@ export default function AdminActivity() {
                     <p className="text-xs text-white/70 truncate font-mono">{ev.email || 'Unknown'}</p>
                     <span className="text-[10px] text-white/25 flex-shrink-0">{timeAgo(ev.timestamp)}</span>
                   </div>
-                  <p className="text-[11px] text-white/40 mt-0.5">{meta.label}{ev.detail ? ` — ${ev.detail}` : ''}</p>
+                  <p className="text-[11px] text-white/40 mt-0.5">{meta.label}{ev.detail ? ` - ${ev.detail}` : ''}</p>
                 </div>
               </div>
             )

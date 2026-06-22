@@ -30,7 +30,7 @@ export default function AdminProfile() {
   }
 
   const initials = user?.email?.slice(0, 2).toUpperCase() || 'AD'
-  const joined   = user?.created_at ? new Date(user.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+  const joined   = user?.created_at ? new Date(user.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'
 
   return (
     <AdminLayout title="Admin Profile">
@@ -41,7 +41,7 @@ export default function AdminProfile() {
             <span className="font-display font-bold text-xl text-violet-300">{initials}</span>
           </div>
           <div>
-            <p className="font-semibold text-white text-sm">{user?.email || '—'}</p>
+            <p className="font-semibold text-white text-sm">{user?.email || '-'}</p>
             <p className="text-xs text-white/40 mt-0.5">Joined {joined}</p>
             <span className="mt-2 inline-block text-[10px] font-medium px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300">Admin</span>
           </div>

@@ -46,7 +46,7 @@ export async function saveToolResult({ tool, title, input, result, email = null 
 
 export async function getToolResultByShareId(shareId) {
   if (!supabase) return null
-  // Reads through a SECURITY DEFINER function — the table is no longer publicly
+  // Reads through a SECURITY DEFINER function - the table is no longer publicly
   // selectable, so emails/PII can't be dumped via the anon key.
   const { data, error } = await supabase
     .rpc('get_tool_result', { p_share_id: shareId })

@@ -127,7 +127,7 @@ export default function AdminLayout({ children, title }) {
           </div>
         </aside>
 
-        {/* Mobile tab row — scrollable */}
+        {/* Mobile tab row - scrollable */}
         <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 glass border-t border-white/[0.06] flex overflow-x-auto">
           {nav.map(({ label, path, icon: Icon }) => (
             <button

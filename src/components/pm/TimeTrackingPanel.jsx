@@ -286,7 +286,7 @@ export default function TimeTrackingPanel({ projectId, tasks }) {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-white/80 truncate">{taskMap[l.task_id] || 'Unknown task'}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-white/30">{l.user_email?.split('@')[0] || '—'}</span>
+                    <span className="text-[10px] text-white/30">{l.user_email?.split('@')[0] || '-'}</span>
                     {l.note && <span className="text-[10px] text-white/25 truncate max-w-[140px]">· {l.note}</span>}
                   </div>
                 </div>

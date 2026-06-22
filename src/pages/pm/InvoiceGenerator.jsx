@@ -202,7 +202,7 @@ export default function InvoiceGenerator() {
     <table>
       <tr><th>Description</th><th class="text-right">Qty</th><th class="text-right">Rate</th><th class="text-right">Amount</th></tr>
       ${lines.map((l) => `<tr>
-        <td>${escHtml(l.desc) || '—'}</td>
+        <td>${escHtml(l.desc) || '-'}</td>
         <td class="text-right">${escHtml(String(l.qty))}</td>
         <td class="text-right">${fmtAmount(parseFloat(l.rate) || 0)}</td>
         <td class="text-right">${fmtAmount(lineTotal(l))}</td>

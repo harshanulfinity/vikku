@@ -1,4 +1,4 @@
-// OpenAI calls are handled by Supabase edge functions — API keys never exposed to the frontend
+// OpenAI calls are handled by Supabase edge functions - API keys never exposed to the frontend
 
 import { supabase } from './supabaseClient'
 

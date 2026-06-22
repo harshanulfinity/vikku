@@ -11,7 +11,7 @@ const PLAN_STYLES = {
 }
 
 function timeAgo(dateStr) {
-  if (!dateStr) return '—'
+  if (!dateStr) return '-'
   const diff = Date.now() - new Date(dateStr).getTime()
   const d = Math.floor(diff / 86400000)
   if (d === 0) return 'Today'
@@ -23,7 +23,7 @@ function timeAgo(dateStr) {
 }
 
 function fmt(dateStr) {
-  if (!dateStr) return '—'
+  if (!dateStr) return '-'
   return new Date(dateStr).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 

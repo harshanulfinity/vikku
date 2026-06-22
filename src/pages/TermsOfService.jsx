@@ -69,7 +69,7 @@ If you delete your account, we will delete Your Content within 30 days.`,
   },
   {
     title: '7. Intellectual Property',
-    body: `All content on vikku.in — including the design, logos, software, text, graphics, and code — is the property of Vikku or its licensors and is protected under Indian and international intellectual property law.
+    body: `All content on vikku.in - including the design, logos, software, text, graphics, and code - is the property of Vikku or its licensors and is protected under Indian and international intellectual property law.
 
 You may not copy, reproduce, distribute, or create derivative works from our content without express written permission.`,
   },
@@ -125,7 +125,7 @@ Website: https://vikku.in`,
 export default function TermsOfService() {
   useEffect(() => {
     window.scrollTo(0, 0)
-    document.title = 'Terms of Service — Vikku'
+    document.title = 'Terms of Service - Vikku'
   }, [])
 
   return (

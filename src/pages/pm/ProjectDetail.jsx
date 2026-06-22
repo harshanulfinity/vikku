@@ -143,7 +143,7 @@ export default function ProjectDetail() {
   const shareUrl = project ? `${window.location.origin}/pm/share/${project.share_token}` : ''
 
   const handleSaveAndCopy = async () => {
-    // Copy FIRST — clipboard writes must happen inside the user gesture
+    // Copy FIRST - clipboard writes must happen inside the user gesture
     // (iOS Safari drops the gesture after an awaited network call).
     try {
       if (navigator.clipboard?.writeText) {
@@ -159,7 +159,7 @@ export default function ProjectDetail() {
         document.body.removeChild(ta)
       }
     } catch {
-      // Clipboard blocked — the link is still visible above for manual copy
+      // Clipboard blocked - the link is still visible above for manual copy
     }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -397,7 +397,7 @@ export default function ProjectDetail() {
           <div className="max-w-7xl mx-auto space-y-3">
             <div className="flex items-start gap-3">
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-white/50 mb-2">Client share link — anyone with this link can view the project (read-only, no login needed)</p>
+                <p className="text-xs text-white/50 mb-2">Client share link - anyone with this link can view the project (read-only, no login needed)</p>
                 <code className="block text-xs text-white/70 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 truncate">
                   {shareUrl}
                 </code>

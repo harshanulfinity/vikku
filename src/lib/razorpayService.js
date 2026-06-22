@@ -66,7 +66,7 @@ export async function openRazorpayCheckout({ plan, billingCycle = 'monthly', mod
   // ── Try an auto-renewing subscription first ──────────────────────────────
   // Needs Razorpay Plan IDs configured server-side. If not configured, the
   // endpoint returns { configured: false } and we fall back to a one-time order.
-  // Skipped entirely in 'once' mode — a one-time order gives a reliable UPI QR
+  // Skipped entirely in 'once' mode - a one-time order gives a reliable UPI QR
   // (recurring UPI-Autopay mandate QRs cannot be scanned by most UPI apps).
   let subscriptionId = null
   if (mode === 'subscription') {
@@ -81,7 +81,7 @@ export async function openRazorpayCheckout({ plan, billingCycle = 'monthly', mod
         if (data.configured && data.subscription_id) subscriptionId = data.subscription_id
       }
     } catch {
-      // ignore — fall back to one-time order
+      // ignore - fall back to one-time order
     }
   }
 
@@ -107,7 +107,7 @@ export async function openRazorpayCheckout({ plan, billingCycle = 'monthly', mod
     }
   }
 
-  // We must have a server-created order or subscription — otherwise the payment
+  // We must have a server-created order or subscription - otherwise the payment
   // can't be verified server-side, and we never grant a plan without verification.
   if (!subscriptionId && !orderId) {
     onFailure?.('Could not start a secure checkout. Please try again.')
@@ -169,16 +169,16 @@ export async function getSubscription(userId) {
 
     if (error || !data) return { plan: 'free' }
 
-    // Immediately cancelled — no access
+    // Immediately cancelled - no access
     if (data.status === 'cancelled') return { ...data, plan: 'free' }
 
-    // Period has ended — treat as free. (The DB row is reconciled server-side
+    // Period has ended - treat as free. (The DB row is reconciled server-side
     // by the Razorpay webhook; clients can't write this table.)
     if (data.current_period_end && new Date(data.current_period_end) < new Date()) {
       return { plan: 'free' }
     }
 
-    // Cancelling but still within paid period — keep access
+    // Cancelling but still within paid period - keep access
     return data
   } catch (err) {
     console.error('Failed to fetch subscription:', err)
@@ -186,7 +186,7 @@ export async function getSubscription(userId) {
   }
 }
 
-// Sets status to 'cancelling' — user keeps Pro access until current_period_end.
+// Sets status to 'cancelling' - user keeps Pro access until current_period_end.
 // The status flip + Razorpay cancellation happen server-side (clients cannot
 // write user_subscriptions).
 export async function cancelSubscription(userId) {

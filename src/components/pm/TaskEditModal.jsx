@@ -602,7 +602,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                     min="1"
                     value={form.estimated_minutes}
                     onChange={(e) => setForm({ ...form, estimated_minutes: e.target.value })}
-                    placeholder="—"
+                    placeholder="-"
                     className="w-20 bg-white/[0.05] border border-white/[0.08] rounded-lg px-2 py-1 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
                   />
                   {form.estimated_minutes && parseInt(form.estimated_minutes) > 0 && (
@@ -635,7 +635,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                 <button
                   type="button"
                   onClick={() => setLogBillable((b) => !b)}
-                  title={logBillable ? 'Billable — click to toggle' : 'Non-billable — click to toggle'}
+                  title={logBillable ? 'Billable - click to toggle' : 'Non-billable - click to toggle'}
                   className={`w-8 h-8 flex items-center justify-center rounded-xl border transition-all text-[9px] font-semibold flex-shrink-0 ${logBillable ? 'bg-green-500/15 border-green-500/25 text-green-400' : 'bg-white/[0.04] border-white/[0.08] text-white/25 hover:border-white/20'}`}
                 >
                   $

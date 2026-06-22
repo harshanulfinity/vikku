@@ -179,7 +179,7 @@ export default function PMDashboard() {
                   <p className="text-xs text-white">
                     {new Date(subscription.current_period_end).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
-                  <p className="text-[10px] text-white/40 mt-2">One-time plan — it won't auto-renew. Pay again before this date to keep access.</p>
+                  <p className="text-[10px] text-white/40 mt-2">One-time plan - it won't auto-renew. Pay again before this date to keep access.</p>
                 </div>
               )}
             </div>
@@ -190,7 +190,7 @@ export default function PMDashboard() {
                 className="w-full text-xs font-semibold text-white bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 rounded-xl py-2 mb-2 transition-colors flex items-center justify-center gap-1.5"
               >
                 <Sparkles size={12} className="text-violet-400" />
-                Upgrade to Team — ₹999/mo
+                Upgrade to Team - ₹999/mo
               </button>
             )}
 
@@ -325,7 +325,7 @@ export default function PMDashboard() {
           </div>
         )}
 
-        {/* My Projects — grouped by status */}
+        {/* My Projects - grouped by status */}
         {projects.length === 0 ? (
           <div className="glass rounded-2xl p-16 text-center">
             <div className="w-16 h-16 rounded-2xl glass flex items-center justify-center mx-auto mb-5">

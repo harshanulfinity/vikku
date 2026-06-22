@@ -18,7 +18,7 @@ const STATUS_STYLES = {
 
 function CopyBtn({ text }) {
   const [copied, setCopied] = useState(false)
-  if (!text) return <span className="text-white/20">—</span>
+  if (!text) return <span className="text-white/20">-</span>
   const copy = () => {
     navigator.clipboard.writeText(text)
     setCopied(true)
@@ -33,7 +33,7 @@ function CopyBtn({ text }) {
 }
 
 function fmt(dateStr) {
-  if (!dateStr) return '—'
+  if (!dateStr) return '-'
   return new Date(dateStr).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 

@@ -1,6 +1,6 @@
 import { Check, Gift, ArrowRight } from 'lucide-react'
 
-// Fixed-price productized offers. Edit prices / deliverables freely — just data.
+// Fixed-price productized offers. Edit prices / deliverables freely - just data.
 const PACKAGES = [
   {
     name: 'Business Website',
@@ -84,7 +84,7 @@ export default function Packages() {
           </h2>
           <p className="text-white/70 text-sm max-w-xl leading-relaxed">
             No vague quotes or surprise invoices. Pick a package, book a free scoping call,
-            and we'll get your project moving — fast.
+            and we'll get your project moving - fast.
           </p>
         </div>
 

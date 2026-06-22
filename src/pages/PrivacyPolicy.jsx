@@ -41,7 +41,7 @@ We retain your account data for as long as your account is active. If you delete
     title: '4. Data Sharing',
     body: `We do not sell, trade, or rent your personal information to third parties. We share data only with:
 
-• Service Providers: Supabase (database), Vercel (hosting), Razorpay (payments), OpenAI (AI features — only the content of your tool queries, never personal account data), Google Analytics, and Microsoft Clarity.
+• Service Providers: Supabase (database), Vercel (hosting), Razorpay (payments), OpenAI (AI features - only the content of your tool queries, never personal account data), Google Analytics, and Microsoft Clarity.
 • Legal Requirements: If required by law, court order, or government authority.
 • Business Transfers: In connection with a merger, acquisition, or sale of assets (you will be notified).
 
@@ -88,7 +88,7 @@ Website: https://vikku.in`,
 export default function PrivacyPolicy() {
   useEffect(() => {
     window.scrollTo(0, 0)
-    document.title = 'Privacy Policy — Vikku'
+    document.title = 'Privacy Policy - Vikku'
   }, [])
 
   return (

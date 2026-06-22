@@ -318,7 +318,7 @@ export default function ClientView() {
       const p = await getProjectByToken(token)
       if (!p) { setNotFound(true); setLoading(false); return }
       setProject(p)
-      // Don't fetch project contents until the PIN is verified — otherwise the
+      // Don't fetch project contents until the PIN is verified - otherwise the
       // data would be readable before the gate (PIN would be cosmetic).
       if (!p.has_share_pin) {
         await loadProjectData(p.id)
@@ -459,7 +459,7 @@ export default function ClientView() {
           {[
             { label: 'Progress', value: `${progress}%`, sub: `${doneTasks} of ${totalTasks} tasks done` },
             { label: 'In Progress', value: inProgress, sub: 'tasks active' },
-            { label: 'Next Due', value: nextMilestone?.due_date ? new Date(nextMilestone.due_date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—', sub: nextMilestone?.title || 'All milestones done' },
+            { label: 'Next Due', value: nextMilestone?.due_date ? new Date(nextMilestone.due_date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '-', sub: nextMilestone?.title || 'All milestones done' },
           ].map((stat) => (
             <div key={stat.label} className="glass rounded-2xl p-4 sm:p-5 text-center">
               <p className="text-xl sm:text-2xl font-bold text-white mb-1">{stat.value}</p>

@@ -105,7 +105,7 @@ export default function AdminDashboard() {
             <StatCard
               icon={Users}
               label="Active 7d"
-              value={data.activeUsers ?? '—'}
+              value={data.activeUsers ?? '-'}
               sub="signed in recently"
               color="text-cyan-400"
             />
@@ -125,7 +125,7 @@ export default function AdminDashboard() {
             <StatCard
               icon={Mail}
               label="Subscribers"
-              value={data.totalSubscribers ?? '—'}
+              value={data.totalSubscribers ?? '-'}
               sub="newsletter + leads"
               color="text-blue-400"
             />
@@ -145,7 +145,7 @@ export default function AdminDashboard() {
 
             {/* Signups chart */}
             <div className="glass rounded-2xl p-5">
-              <p className="text-xs text-white/40 uppercase tracking-widest mb-4">Signups — Last 30 Days</p>
+              <p className="text-xs text-white/40 uppercase tracking-widest mb-4">Signups - Last 30 Days</p>
               <div className="flex items-end gap-0.5 h-20">
                 {data.signupsByDay.map(({ date, count }) => (
                   <div

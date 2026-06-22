@@ -15,13 +15,13 @@ const FEATURES = [
     color: 'text-violet-400',
     bg: 'bg-violet-500/10',
     title: 'Kanban + Task Management',
-    desc: 'Drag-and-drop boards, priorities, labels, due dates, subtasks, and dependencies — without the Jira complexity.',
+    desc: 'Drag-and-drop boards, priorities, labels, due dates, subtasks, and dependencies - without the Jira complexity.',
   },
   {
     icon: Share2,
     color: 'text-blue-400',
     bg: 'bg-blue-500/10',
-    title: 'Client Portal — no login needed',
+    title: 'Client Portal - no login needed',
     desc: 'Share a live project view with your client via a PIN-protected link. They see tasks, milestones, and can approve or leave comments.',
     badge: 'Pro',
   },
@@ -46,7 +46,7 @@ const FEATURES = [
     color: 'text-orange-400',
     bg: 'bg-orange-500/10',
     title: 'Analytics & Reporting',
-    desc: 'Completion rates, velocity charts, milestone burndown, and team performance — all in one view.',
+    desc: 'Completion rates, velocity charts, milestone burndown, and team performance - all in one view.',
   },
   {
     icon: FileText,
@@ -60,7 +60,7 @@ const FEATURES = [
     color: 'text-cyan-400',
     bg: 'bg-cyan-500/10',
     title: 'Workflow Automation',
-    desc: 'Auto-move tasks between statuses, trigger reminders, and set recurring tasks — without touching a setting every time.',
+    desc: 'Auto-move tasks between statuses, trigger reminders, and set recurring tasks - without touching a setting every time.',
     badge: 'Pro',
   },
   {
@@ -151,7 +151,7 @@ export default function PMPricingSection() {
       navigate(`/signup?plan=${planKey}`)
       return
     }
-    // Logged-in user — open upgrade modal directly
+    // Logged-in user - open upgrade modal directly
     setShowUpgrade(true)
   }
 
@@ -181,7 +181,7 @@ export default function PMPricingSection() {
             <span className="text-violet-400">agencies with clients</span>
           </h2>
           <p className="text-white/50 text-sm max-w-xl mx-auto leading-relaxed">
-            Every other PM tool was built for internal teams. Vikku PM was built for agencies —
+            Every other PM tool was built for internal teams. Vikku PM was built for agencies -
             with a built-in client portal so your clients can see progress, approve tasks, and leave
             feedback without ever creating an account.
           </p>
@@ -295,7 +295,7 @@ export default function PMPricingSection() {
         <div className="glass rounded-2xl px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-8 flex-wrap justify-center sm:justify-start">
             {[
-              { value: 'Free', label: 'To start — no card needed' },
+              { value: 'Free', label: 'To start - no card needed' },
               { value: '< 2 min', label: 'To set up your first project' },
               { value: 'Cancel', label: 'Anytime, keeps access till period end' },
             ].map(({ value, label }) => (

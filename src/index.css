@@ -171,7 +171,7 @@ html.light [class*="bg-white\/\[0\.0"] {
   background-color: rgba(0, 0, 0, 0.03) !important;
 }
 
-/* Form field prefix icons (Mail, Lock, Search) — absolute-positioned lucide icons */
+/* Form field prefix icons (Mail, Lock, Search) - absolute-positioned lucide icons */
 html.light svg.lucide.absolute {
   color: rgba(15, 23, 42, 0.55) !important;
 }

@@ -220,7 +220,7 @@ export default function CostEstimator() {
 
             {/* CTA */}
             <div className="glass-strong rounded-2xl p-8 text-center">
-              <h3 className="font-display font-semibold text-lg text-white mb-3">Want this built — for a fixed price?</h3>
+              <h3 className="font-display font-semibold text-lg text-white mb-3">Want this built - for a fixed price?</h3>
               <p className="text-white/60 text-sm mb-6 max-w-md mx-auto">
                 Book a free 30-minute scoping call and we'll turn this estimate into a fixed-price proposal with scope, timeline, and deliverables.
               </p>
