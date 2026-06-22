@@ -26,7 +26,7 @@ export default function FounderCard({ founder, compact = false }) {
         {founder.role && (
           <p className="text-white/50 text-xs mb-3">{founder.role}</p>
         )}
-        <p className="text-white/90 text-sm leading-relaxed mb-4">{founder.bio}</p>
+        <p className="text-white/90 text-sm leading-relaxed mb-4 whitespace-pre-line">{founder.bio}</p>
 
         <div className="flex flex-wrap gap-1.5 mb-4">
           {founder.focus.map((f) => (

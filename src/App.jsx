@@ -7,6 +7,7 @@ import Navbar              from './components/Navbar'
 import Hero                from './components/Hero'
 import Clients             from './components/Clients'
 import Services            from './components/Services'
+import Packages            from './components/Packages'
 import Solution            from './components/Solution'
 import FounderTools        from './components/FounderTools'
 import PMPricingSection    from './components/PMPricingSection'
@@ -84,6 +85,7 @@ function Home() {
         <Hero />
         <Clients />
         <Services />
+        <Packages />
         <FounderTools />
         <PMPricingSection />
         <Solution />
