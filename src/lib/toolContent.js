@@ -15,6 +15,45 @@ export const STACK_PRESETS = [
   { label: 'Mobile-first MVP', text: 'A mobile-first consumer MVP for iOS and Android, solo founder, limited budget, needs to ship fast and iterate.' },
 ]
 
+// Per-tool SEO metadata (unique title + description + canonical path)
+export const TOOL_SEO = {
+  cost_estimator: {
+    title: 'Free App & Website Cost Estimator (India) | Vikku',
+    description: 'Get an instant, itemised cost estimate for your app, website, or software project in your local currency. Free AI estimator — no sales call.',
+    canonical: '/tools/cost-estimator',
+  },
+  roi_calculator: {
+    title: 'Website ROI Calculator — How Much Are You Losing? | Vikku',
+    description: 'See how much revenue your business loses to missed leads and how fast a website pays for itself. Free ROI calculator for any business type.',
+    canonical: '/tools/roi-calculator',
+  },
+  timeline_calculator: {
+    title: 'Software Project Timeline Calculator | Vikku',
+    description: 'Get a realistic, phase-by-phase timeline for building your software, app, or website — discovery to launch. Free AI estimate.',
+    canonical: '/tools/timeline-calculator',
+  },
+  tech_recommender: {
+    title: 'Tech Stack Recommender — Which Stack Should You Use? | Vikku',
+    description: 'Describe your product and get an opinionated, modern tech stack recommendation (frontend, backend, database, hosting) with reasoning. Free.',
+    canonical: '/tools/tech-recommender',
+  },
+}
+
+// Build FAQPage structured data from a tool's FAQ block (rich results in Google).
+export function faqJsonLd(toolKey) {
+  const c = TOOL_FAQ[toolKey]
+  if (!c) return null
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: c.faqs.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  }
+}
+
 export const TOOL_FAQ = {
   cost_estimator: {
     heading: 'How much does it cost to build an app or website?',

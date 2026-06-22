@@ -117,7 +117,7 @@ export default function UpgradeModal({ onClose, onUpgraded, reason, currentPlan 
           <button
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all"
-          >
+           aria-label="Close">
             <X size={16} />
           </button>
         </div>

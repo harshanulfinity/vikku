@@ -158,7 +158,7 @@ export default function PMDashboard() {
           >
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display font-bold text-white text-sm">My Subscription</h2>
-              <button onClick={() => { setShowManageSub(false) }} className="text-white/40 hover:text-white transition-colors">
+              <button onClick={() => { setShowManageSub(false) }} className="text-white/40 hover:text-white transition-colors" aria-label="Close">
                 <X size={15} />
               </button>
             </div>
