@@ -106,7 +106,7 @@ export default function TimelineCalculator() {
   return (
     <div className="min-h-screen bg-black text-white">
       <Seo {...TOOL_SEO.timeline_calculator} jsonLd={faqJsonLd('timeline_calculator')} />
-      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="timeline_calculator" />
+      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="timeline_calculator" shareId={shareId} />
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate(user ? '/dashboard' : '/')} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm">

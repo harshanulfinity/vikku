@@ -100,7 +100,7 @@ export default function ROICalculator() {
   return (
     <div className="min-h-screen bg-black text-white">
       <Seo {...TOOL_SEO.roi_calculator} jsonLd={faqJsonLd('roi_calculator')} />
-      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="roi_calculator" />
+      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="roi_calculator" shareId={shareId} />
       {/* Header */}
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">

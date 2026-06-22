@@ -223,12 +223,20 @@ export default function PMDashboard() {
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => setShowManageSub(true)}
-              className="flex items-center gap-1.5 text-[11px] text-white/40 hover:text-white/70 border border-white/[0.08] hover:border-white/20 px-2.5 py-1 rounded-lg transition-all capitalize"
-            >
-              <Settings size={10} /> {plan} · Manage
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate('/pm/refer')}
+                className="flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 transition-colors border border-white/[0.06] px-2.5 py-1 rounded-lg"
+              >
+                <Gift size={11} /> Refer &amp; Earn
+              </button>
+              <button
+                onClick={() => setShowManageSub(true)}
+                className="flex items-center gap-1.5 text-[11px] text-white/40 hover:text-white/70 border border-white/[0.08] hover:border-white/20 px-2.5 py-1 rounded-lg transition-all capitalize"
+              >
+                <Settings size={10} /> {plan} · Manage
+              </button>
+            </div>
           )
         }
       />

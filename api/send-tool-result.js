@@ -88,8 +88,13 @@ export default async function handler(req, res) {
         <h1 style="font-size:20px;margin:0 0 4px">Your ${esc(label)}</h1>
         <p style="color:#666;font-size:13px;margin:0 0 20px">From Vikku — here's the summary you generated.</p>
         <div style="border:1px solid #eee;border-radius:12px;padding:20px">${renderBody(tool, rowData.result || {})}</div>
-        <a href="${shareUrl}" style="display:inline-block;margin-top:20px;background:#111;color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:600;font-size:14px">View full report &amp; download PDF</a>
-        <p style="color:#999;font-size:12px;margin-top:24px">Want this built? Reply to this email or book a free consultation at vikku.in.</p>
+        <a href="${shareUrl}" style="display:inline-block;margin-top:20px;color:#111;text-decoration:none;padding:11px 20px;border:1px solid #ddd;border-radius:10px;font-weight:600;font-size:14px">View full report &amp; download PDF</a>
+        <div style="margin-top:28px;padding:20px;background:#faf8ff;border:1px solid #e7defb;border-radius:12px">
+          <p style="margin:0 0 4px;font-size:15px;font-weight:700;color:#111">Want this built — for a fixed price?</p>
+          <p style="margin:0 0 14px;font-size:13px;color:#555">Book a free 30-minute scoping call and we'll turn this into a fixed-price plan with scope, timeline, and deliverables.</p>
+          <a href="https://www.vikku.in/#contact" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:600;font-size:14px">Book a free scoping call</a>
+        </div>
+        <p style="color:#999;font-size:12px;margin-top:24px">Or just reply to this email — a real person reads it.</p>
       </div>`
 
     const resendRes = await fetch('https://api.resend.com/emails', {

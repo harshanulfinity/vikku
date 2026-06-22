@@ -53,7 +53,7 @@ export default function CostEstimator() {
   return (
     <div className="min-h-screen bg-black text-white">
       <Seo {...TOOL_SEO.cost_estimator} jsonLd={faqJsonLd('cost_estimator')} />
-      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="cost_estimator" />
+      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="cost_estimator" shareId={shareId} />
       {/* Header */}
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -220,15 +220,15 @@ export default function CostEstimator() {
 
             {/* CTA */}
             <div className="glass-strong rounded-2xl p-8 text-center">
-              <h3 className="font-display font-semibold text-lg text-white mb-3">Need a detailed quote?</h3>
+              <h3 className="font-display font-semibold text-lg text-white mb-3">Want this built — for a fixed price?</h3>
               <p className="text-white/60 text-sm mb-6 max-w-md mx-auto">
-                Get a comprehensive project proposal with detailed scope, timeline, and deliverables.
+                Book a free 30-minute scoping call and we'll turn this estimate into a fixed-price proposal with scope, timeline, and deliverables.
               </p>
               <button
-                onClick={() => navigate('/contact')}
+                onClick={() => { navigate('/'); setTimeout(() => document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' }), 300) }}
                 className="bg-white text-black font-semibold px-8 py-3 rounded-xl hover:bg-white/90 transition-colors"
               >
-                Request Detailed Quote
+                Book a free scoping call
               </button>
             </div>
 

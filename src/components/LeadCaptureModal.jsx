@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, Mail, ArrowRight, CheckCircle, Calendar } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
+import { emailToolResult } from '../lib/toolResultsService'
 
 const SOURCE_LABELS = {
   roi_calculator: 'ROI Calculator',
@@ -9,7 +10,7 @@ const SOURCE_LABELS = {
   tech_recommender: 'Tech Recommender',
 }
 
-export default function LeadCaptureModal({ open, onClose, source }) {
+export default function LeadCaptureModal({ open, onClose, source, shareId }) {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState('idle') // idle | loading | done | error
 
@@ -26,13 +27,28 @@ export default function LeadCaptureModal({ open, onClose, source }) {
     if (!email || !email.includes('@')) return
     setStatus('loading')
     try {
-      await supabase.from('subscribers').upsert(
-        { email: email.trim().toLowerCase(), source },
-        { onConflict: 'email', ignoreDuplicates: true }
-      )
+      // If we have a saved result, email it with the booking CTA (also records the
+      // email + adds them to subscribers server-side — the auto follow-up).
+      if (shareId) {
+        await emailToolResult({ shareId, email: email.trim().toLowerCase(), tool: source })
+      } else {
+        await supabase.from('subscribers').upsert(
+          { email: email.trim().toLowerCase(), source },
+          { onConflict: 'email', ignoreDuplicates: true }
+        )
+      }
       setStatus('done')
     } catch {
-      setStatus('error')
+      // Fall back to at least capturing the lead so we never lose them.
+      try {
+        await supabase.from('subscribers').upsert(
+          { email: email.trim().toLowerCase(), source },
+          { onConflict: 'email', ignoreDuplicates: true }
+        )
+        setStatus('done')
+      } catch {
+        setStatus('error')
+      }
     }
   }
 
