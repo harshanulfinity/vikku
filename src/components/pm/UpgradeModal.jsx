@@ -74,7 +74,6 @@ export default function UpgradeModal({ onClose, onUpgraded, reason, currentPlan 
   const [processing, setProcessing] = useState(null)
   const [error, setError] = useState('')
   const [billingCycle, setBillingCycle] = useState(initialBillingCycle === 'annual' ? 'annual' : 'monthly')
-  const [choosing, setChoosing] = useState(null) // plan key whose payment method is being chosen
 
   const isAnnual = billingCycle === 'annual'
   const fmt = (n) => `₹${n.toLocaleString('en-IN')}`
@@ -82,14 +81,13 @@ export default function UpgradeModal({ onClose, onUpgraded, reason, currentPlan 
   const priceFor = (planKey) => fmt(PLAN_PRICING[planKey][billingCycle])
   const totalFor = (planKey) => fmt2(priceBreakdown(planKey, billingCycle).total)
 
-  const handleUpgrade = (planKey, mode) => {
+  const handleUpgrade = (planKey) => {
     setError('')
-    setChoosing(null)
     setProcessing(planKey)
     openRazorpayCheckout({
       plan: planKey,
       billingCycle,
-      mode,
+      mode: 'once',
       user,
       onSuccess: () => {
         setProcessing(null)
@@ -177,7 +175,7 @@ export default function UpgradeModal({ onClose, onUpgraded, reason, currentPlan 
                   </div>
                 ) : (
                   <button
-                    onClick={() => setChoosing(choosing === 'pro' ? null : 'pro')}
+                    onClick={() => handleUpgrade('pro')}
                     disabled={!!processing || currentPlan === 'team'}
                     className="mt-2 w-full py-1 rounded-lg bg-black text-white font-semibold text-[9px] hover:bg-black/80 transition-all flex items-center justify-center gap-1 disabled:opacity-50"
                   >
@@ -197,7 +195,7 @@ export default function UpgradeModal({ onClose, onUpgraded, reason, currentPlan 
                   </div>
                 ) : (
                   <button
-                    onClick={() => setChoosing(choosing === 'team' ? null : 'team')}
+                    onClick={() => handleUpgrade('team')}
                     disabled={!!processing}
                     className="mt-2 w-full py-1 rounded-lg bg-white text-black font-semibold text-[9px] hover:bg-white/90 transition-all flex items-center justify-center gap-1 disabled:opacity-50"
                   >
@@ -206,33 +204,6 @@ export default function UpgradeModal({ onClose, onUpgraded, reason, currentPlan 
                 )}
               </div>
             </div>
-
-            {/* Payment method chooser */}
-            {choosing && (
-              <div className="mb-4 rounded-xl border border-white/[0.08] bg-white/[0.04] p-3">
-                <p className="text-[11px] font-semibold text-white text-center mb-2.5">
-                  How do you want to pay for <span className="capitalize">{choosing}</span>?
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => handleUpgrade(choosing, 'once')}
-                    disabled={!!processing}
-                    className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-left hover:border-white/25 transition-all disabled:opacity-50"
-                  >
-                    <p className="text-[11px] font-semibold text-white">Pay once</p>
-                    <p className="text-[9px] text-white/40 mt-0.5 leading-tight">UPI / card / netbanking. No auto-renew — pay again when it expires.</p>
-                  </button>
-                  <button
-                    onClick={() => handleUpgrade(choosing, 'subscription')}
-                    disabled={!!processing}
-                    className="rounded-xl border border-violet-500/30 bg-violet-500/[0.06] px-3 py-2.5 text-left hover:border-violet-500/50 transition-all disabled:opacity-50"
-                  >
-                    <p className="text-[11px] font-semibold text-violet-300">Auto-renew</p>
-                    <p className="text-[9px] text-white/40 mt-0.5 leading-tight">Renews automatically. Cancel anytime. UPI QR may not scan in some apps.</p>
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Feature groups */}
             {FEATURE_GROUPS.map((group) => (
@@ -267,7 +238,7 @@ export default function UpgradeModal({ onClose, onUpgraded, reason, currentPlan 
             )}
 
             <p className="text-center text-[10px] text-white/20">
-              Secured by Razorpay · Pay once or auto-renew · Cancel anytime · Incl. 18% GST
+              Secured by Razorpay · One-time payment · No auto-renew · Incl. 18% GST
             </p>
           </div>
         </div>
