@@ -10,7 +10,7 @@ const SOURCE_LABELS = {
   tech_recommender: 'Tech Recommender',
 }
 
-export default function LeadCaptureModal({ open, onClose, source, shareId }) {
+export default function LeadCaptureModal({ open, onClose, source, shareId, onUnlock }) {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState('idle') // idle | loading | done | error
 
@@ -38,6 +38,7 @@ export default function LeadCaptureModal({ open, onClose, source, shareId }) {
         )
       }
       setStatus('done')
+      onUnlock?.()
     } catch {
       // Fall back to at least capturing the lead so we never lose them.
       try {
@@ -46,6 +47,7 @@ export default function LeadCaptureModal({ open, onClose, source, shareId }) {
           { onConflict: 'email', ignoreDuplicates: true }
         )
         setStatus('done')
+        onUnlock?.()
       } catch {
         setStatus('error')
       }

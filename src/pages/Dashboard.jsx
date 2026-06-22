@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { DollarSign, Clock, LayoutDashboard, TrendingUp, Kanban, ArrowRight } from 'lucide-react'
+import { DollarSign, Clock, LayoutDashboard, TrendingUp, Kanban, ArrowRight, FileText } from 'lucide-react'
 import AppHeader from '../components/AppHeader'
 
 export default function Dashboard() {
@@ -67,11 +67,19 @@ export default function Dashboard() {
 
       {/* Content */}
       <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="mb-10">
-          <h2 className="font-display font-extrabold text-3xl text-white mb-3">AI Tools</h2>
-          <p className="text-white/60 text-sm max-w-xl">
-            Access powerful AI-powered tools to help you plan, estimate, and build your projects.
-          </p>
+        <div className="mb-10 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-display font-extrabold text-3xl text-white mb-3">AI Tools</h2>
+            <p className="text-white/60 text-sm max-w-xl">
+              Access powerful AI-powered tools to help you plan, estimate, and build your projects.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/dashboard/saved')}
+            className="flex-shrink-0 flex items-center gap-1.5 text-xs text-white/60 hover:text-white glass rounded-xl px-3 py-2 transition-colors"
+          >
+            <FileText size={13} /> My saved results
+          </button>
         </div>
 
         {/* PM Tool banner */}

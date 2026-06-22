@@ -5,6 +5,8 @@ import { recommendStack } from '../lib/openaiService'
 import LeadCaptureModal from '../components/LeadCaptureModal'
 import ToolResultActions from '../components/tools/ToolResultActions'
 import ToolFAQ from '../components/tools/ToolFAQ'
+import ToolSocialProof from '../components/tools/ToolSocialProof'
+import GatedDetails from '../components/tools/GatedDetails'
 import { saveToolResult } from '../lib/toolResultsService'
 import { TOOL_FAQ, TOOL_SEO, faqJsonLd } from '../lib/toolContent'
 import Seo from '../components/Seo'
@@ -64,6 +66,7 @@ export default function TechRecommender() {
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
   const [shareId, setShareId] = useState(null)
+  const [unlocked, setUnlocked] = useState(false)
   const [showLead, setShowLead] = useState(false)
 
   const toggleReq = (req) => {
@@ -86,7 +89,9 @@ export default function TechRecommender() {
     try {
       const res = await recommendStack(form)
       setResult(res)
-      setShowLead(true)
+      setUnlocked(false)
+      if (user) setUnlocked(true)
+      else setShowLead(true)
       saveToolResult({
         tool: 'tech_recommender',
         title: [res.recommendedStack?.frontend, res.recommendedStack?.backend, res.recommendedStack?.database].filter(Boolean).join(' · ') || 'Tech stack',
@@ -103,7 +108,7 @@ export default function TechRecommender() {
   return (
     <div className="min-h-screen bg-black text-white">
       <Seo {...TOOL_SEO.tech_recommender} jsonLd={faqJsonLd('tech_recommender')} />
-      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="tech_recommender" shareId={shareId} />
+      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="tech_recommender" shareId={shareId} onUnlock={() => setUnlocked(true)} />
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate(user ? '/dashboard' : '/')} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm">
@@ -119,9 +124,10 @@ export default function TechRecommender() {
           <>
             <div className="mb-10">
               <h2 className="font-display font-extrabold text-3xl text-white mb-3">What Tech Should You Build With?</h2>
-              <p className="text-white/60 text-sm max-w-xl">
+              <p className="text-white/60 text-sm max-w-xl mb-4">
                 Get an AI architect's recommendation for the best tech stack - with reasoning, costs, and tradeoffs.
               </p>
+              <ToolSocialProof tool="tech_recommender" />
             </div>
 
             <div className="glass rounded-2xl p-8">
@@ -248,6 +254,7 @@ export default function TechRecommender() {
               )}
             </div>
 
+            <GatedDetails unlocked={unlocked} onUnlock={() => setShowLead(true)}>
             {/* Technology breakdown */}
             {result.technologies?.length > 0 && (
               <div className="glass rounded-2xl p-8 mb-6">
@@ -300,6 +307,7 @@ export default function TechRecommender() {
                 </ul>
               </div>
             )}
+            </GatedDetails>
 
             {/* CTA */}
             <div className="glass-strong rounded-2xl p-8 text-center">

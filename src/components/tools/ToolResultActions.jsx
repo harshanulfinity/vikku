@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Mail, Link2, Download, Check, ArrowRight, Loader2 } from 'lucide-react'
-import { emailToolResult } from '../../lib/toolResultsService'
+import { Mail, Link2, Download, Check, ArrowRight, Loader2, MessageCircle } from 'lucide-react'
+import { emailToolResult, TOOL_LABELS } from '../../lib/toolResultsService'
 
 const CROSS_TOOL = {
   cost_estimator:      { to: '/tools/timeline-calculator', label: 'See the timeline for this' },
@@ -23,6 +23,8 @@ export default function ToolResultActions({ shareId, tool, navigate }) {
 
   const shareUrl = shareId ? `${window.location.origin}/r/${shareId}` : ''
   const cross = CROSS_TOOL[tool]
+  const waText = encodeURIComponent(`My ${TOOL_LABELS[tool] || 'result'} from Vikku: ${shareUrl}`)
+  const waUrl = `https://wa.me/?text=${waText}`
 
   const copyLink = async () => {
     if (!shareUrl) return
@@ -62,6 +64,15 @@ export default function ToolResultActions({ shareId, tool, navigate }) {
           {copied ? <Check size={14} className="text-green-400" /> : <Link2 size={14} />}
           {copied ? 'Link copied' : 'Copy share link'}
         </button>
+        <a
+          href={shareId ? waUrl : undefined}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-disabled={!shareId}
+          className={`flex items-center gap-2 text-sm glass rounded-xl px-4 py-2.5 text-white/80 hover:text-white transition-colors ${!shareId ? 'opacity-40 pointer-events-none' : ''}`}
+        >
+          <MessageCircle size={14} className="text-green-400" /> WhatsApp
+        </a>
         <button
           onClick={() => window.print()}
           className="flex items-center gap-2 text-sm glass rounded-xl px-4 py-2.5 text-white/80 hover:text-white transition-colors"

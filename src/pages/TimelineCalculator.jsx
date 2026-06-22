@@ -5,6 +5,8 @@ import { calculateTimeline } from '../lib/openaiService'
 import LeadCaptureModal from '../components/LeadCaptureModal'
 import ToolResultActions from '../components/tools/ToolResultActions'
 import ToolFAQ from '../components/tools/ToolFAQ'
+import ToolSocialProof from '../components/tools/ToolSocialProof'
+import GatedDetails from '../components/tools/GatedDetails'
 import { saveToolResult } from '../lib/toolResultsService'
 import { TOOL_FAQ, TOOL_SEO, faqJsonLd } from '../lib/toolContent'
 import Seo from '../components/Seo'
@@ -59,6 +61,7 @@ export default function TimelineCalculator() {
   const [result, setResult] = useState(null)
   const [shareId, setShareId] = useState(null)
   const [showLead, setShowLead] = useState(false)
+  const [unlocked, setUnlocked] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -69,7 +72,9 @@ export default function TimelineCalculator() {
     try {
       const res = await calculateTimeline(form)
       setResult(res)
-      setShowLead(true)
+      setUnlocked(false)
+      if (user) setUnlocked(true)
+      else setShowLead(true)
       saveToolResult({
         tool: 'timeline_calculator',
         title: `${res.totalWeeksMin}–${res.totalWeeksMax} week timeline`,
@@ -106,7 +111,7 @@ export default function TimelineCalculator() {
   return (
     <div className="min-h-screen bg-black text-white">
       <Seo {...TOOL_SEO.timeline_calculator} jsonLd={faqJsonLd('timeline_calculator')} />
-      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="timeline_calculator" shareId={shareId} />
+      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="timeline_calculator" shareId={shareId} onUnlock={() => setUnlocked(true)} />
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <button onClick={() => navigate(user ? '/dashboard' : '/')} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm">
@@ -122,9 +127,10 @@ export default function TimelineCalculator() {
           <>
             <div className="mb-10">
               <h2 className="font-display font-extrabold text-3xl text-white mb-3">How Long Will Your Project Take?</h2>
-              <p className="text-white/60 text-sm max-w-xl">
+              <p className="text-white/60 text-sm max-w-xl mb-4">
                 Get a realistic timeline with phase breakdown, milestones, and tips to keep your project on track.
               </p>
+              <ToolSocialProof tool="timeline_calculator" />
             </div>
 
             <div className="glass rounded-2xl p-8">
@@ -199,6 +205,7 @@ export default function TimelineCalculator() {
               </div>
             </div>
 
+            <GatedDetails unlocked={unlocked} onUnlock={() => setShowLead(true)}>
             {/* Phases */}
             <div className="glass rounded-2xl p-8 mb-6">
               <h3 className="font-display font-semibold text-lg text-white mb-6">Phase Breakdown</h3>
@@ -274,6 +281,7 @@ export default function TimelineCalculator() {
                 </div>
               )}
             </div>
+            </GatedDetails>
 
             {/* CTA */}
             <div className="glass-strong rounded-2xl p-8 text-center">

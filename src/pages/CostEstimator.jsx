@@ -5,6 +5,8 @@ import { estimateProjectCost } from '../lib/openaiService'
 import LeadCaptureModal from '../components/LeadCaptureModal'
 import ToolResultActions from '../components/tools/ToolResultActions'
 import ToolFAQ from '../components/tools/ToolFAQ'
+import ToolSocialProof from '../components/tools/ToolSocialProof'
+import GatedDetails from '../components/tools/GatedDetails'
 import { saveToolResult } from '../lib/toolResultsService'
 import { COST_PRESETS, TOOL_FAQ, TOOL_SEO, faqJsonLd } from '../lib/toolContent'
 import Seo from '../components/Seo'
@@ -23,12 +25,14 @@ export default function CostEstimator() {
   const [result, setResult] = useState(null)
   const [shareId, setShareId] = useState(null)
   const [showLead, setShowLead] = useState(false)
+  const [unlocked, setUnlocked] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setResult(null)
     setShareId(null)
+    setUnlocked(false)
 
     if (!requirements.trim()) return
 
@@ -36,7 +40,9 @@ export default function CostEstimator() {
     try {
       const estimate = await estimateProjectCost(requirements, null)
       setResult(estimate)
-      setShowLead(true)
+      // Logged-in users see everything; anonymous users unlock the detail with email.
+      if (user) setUnlocked(true)
+      else setShowLead(true)
       saveToolResult({
         tool: 'cost_estimator',
         title: `${estimate.currencySymbol || '₹'}${(estimate.totalCostMin || 0).toLocaleString('en-IN')}–${(estimate.totalCostMax || 0).toLocaleString('en-IN')} estimate`,
@@ -53,7 +59,7 @@ export default function CostEstimator() {
   return (
     <div className="min-h-screen bg-black text-white">
       <Seo {...TOOL_SEO.cost_estimator} jsonLd={faqJsonLd('cost_estimator')} />
-      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="cost_estimator" shareId={shareId} />
+      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="cost_estimator" shareId={shareId} onUnlock={() => setUnlocked(true)} />
       {/* Header */}
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -74,9 +80,10 @@ export default function CostEstimator() {
           <>
             <div className="mb-10">
               <h2 className="font-display font-extrabold text-3xl text-white mb-3">Estimate Your Project Cost</h2>
-              <p className="text-white/60 text-sm max-w-xl">
+              <p className="text-white/60 text-sm max-w-xl mb-4">
                 Describe your project requirements and get an AI-powered cost estimate with detailed breakdown.
               </p>
+              <ToolSocialProof tool="cost_estimator" />
             </div>
 
             <div className="glass rounded-2xl p-8">
@@ -170,6 +177,7 @@ export default function CostEstimator() {
               </div>
             </div>
 
+            <GatedDetails unlocked={unlocked} onUnlock={() => setShowLead(true)}>
             {/* Breakdown */}
             <div className="glass rounded-2xl p-8 mb-6">
               <h3 className="font-display font-semibold text-lg text-white mb-6">Cost Breakdown</h3>
@@ -217,6 +225,7 @@ export default function CostEstimator() {
                 ))}
               </ul>
             </div>
+            </GatedDetails>
 
             {/* CTA */}
             <div className="glass-strong rounded-2xl p-8 text-center">

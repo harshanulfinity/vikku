@@ -5,6 +5,8 @@ import { calculateROI } from '../lib/openaiService'
 import LeadCaptureModal from '../components/LeadCaptureModal'
 import ToolResultActions from '../components/tools/ToolResultActions'
 import ToolFAQ from '../components/tools/ToolFAQ'
+import ToolSocialProof from '../components/tools/ToolSocialProof'
+import GatedDetails from '../components/tools/GatedDetails'
 import { saveToolResult } from '../lib/toolResultsService'
 import { TOOL_FAQ, TOOL_SEO, faqJsonLd } from '../lib/toolContent'
 import Seo from '../components/Seo'
@@ -54,6 +56,7 @@ export default function ROICalculator() {
   const [result, setResult] = useState(null)
   const [shareId, setShareId] = useState(null)
   const [showLead, setShowLead] = useState(false)
+  const [unlocked, setUnlocked] = useState(false)
 
   const toggleSource = (src) => {
     setForm(f => ({
@@ -81,7 +84,9 @@ export default function ROICalculator() {
         howTheyGetClients: form.howTheyGetClients.join(', '),
       })
       setResult(res)
-      setShowLead(true)
+      setUnlocked(false)
+      if (user) setUnlocked(true)
+      else setShowLead(true)
       saveToolResult({
         tool: 'roi_calculator',
         title: `${res.currencySymbol || '₹'}${(res.annualRevenueLost || 0).toLocaleString('en-IN')}/yr opportunity`,
@@ -100,7 +105,7 @@ export default function ROICalculator() {
   return (
     <div className="min-h-screen bg-black text-white">
       <Seo {...TOOL_SEO.roi_calculator} jsonLd={faqJsonLd('roi_calculator')} />
-      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="roi_calculator" shareId={shareId} />
+      <LeadCaptureModal open={showLead} onClose={() => setShowLead(false)} source="roi_calculator" shareId={shareId} onUnlock={() => setUnlocked(true)} />
       {/* Header */}
       <div className="sticky top-0 z-50 glass border-b border-white/[0.05] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -122,9 +127,10 @@ export default function ROICalculator() {
               <h2 className="font-display font-extrabold text-3xl text-white mb-3">
                 How Much Are You Losing Without a Website?
               </h2>
-              <p className="text-white/60 text-sm max-w-xl">
+              <p className="text-white/60 text-sm max-w-xl mb-4">
                 Answer 4 quick questions and we'll show you exactly how much revenue you're missing out on - and how fast a website pays for itself.
               </p>
+              <ToolSocialProof tool="roi_calculator" />
             </div>
 
             <div className="glass rounded-2xl p-8">
@@ -242,6 +248,7 @@ export default function ROICalculator() {
               </div>
             </div>
 
+            <GatedDetails unlocked={unlocked} onUnlock={() => setShowLead(true)}>
             {/* Key numbers */}
             <div className="glass rounded-2xl p-8 mb-6">
               <h3 className="font-display font-semibold text-lg text-white mb-6 flex items-center gap-2">
@@ -308,6 +315,7 @@ export default function ROICalculator() {
                 </ul>
               </div>
             )}
+            </GatedDetails>
 
             {/* CTA */}
             <div className="glass-strong rounded-2xl p-8 text-center">

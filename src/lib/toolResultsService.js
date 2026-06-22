@@ -54,6 +54,13 @@ export async function getToolResultByShareId(shareId) {
   return Array.isArray(data) ? (data[0] || null) : data
 }
 
+export async function getToolResultCount(tool = null) {
+  if (!supabase) return 0
+  const { data, error } = await supabase.rpc('tool_result_count', { p_tool: tool })
+  if (error) { console.error('getToolResultCount failed:', error); return 0 }
+  return Number(data) || 0
+}
+
 export async function getMyToolResults(userId) {
   if (!supabase || !userId) return []
   const { data, error } = await supabase
