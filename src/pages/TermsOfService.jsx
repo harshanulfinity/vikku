@@ -9,7 +9,7 @@ const SECTIONS = [
     title: '1. Acceptance of Terms',
     body: `By accessing or using Vikku (vikku.in), you agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree to these terms, do not use our services.
 
-These Terms constitute a legally binding agreement between you and Nulfinity Solutions ("Vikku", "we", "us", or "our"), a company registered in India.`,
+These Terms constitute a legally binding agreement between you and Vikku ("we", "us", or "our"), a company registered in India.`,
   },
   {
     title: '2. Description of Services',
@@ -116,7 +116,7 @@ We encourage you to contact us first at connect@vikku.in to resolve any disputes
     title: '14. Contact',
     body: `If you have any questions about these Terms, please contact us:
 
-Vikku (Nulfinity Solutions)
+Vikku
 Email: connect@vikku.in
 Website: https://vikku.in`,
   },

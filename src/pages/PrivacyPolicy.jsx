@@ -79,7 +79,7 @@ To exercise any of these rights, email us at connect@vikku.in with the subject l
     title: '10. Contact Us',
     body: `If you have any questions about this Privacy Policy or our privacy practices, please contact us:
 
-Vikku (Nulfinity Solutions)
+Vikku
 Email: connect@vikku.in
 Website: https://vikku.in`,
   },
