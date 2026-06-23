@@ -476,7 +476,7 @@ export async function duplicateProject(projectId) {
       milestones.map((m) => ({ project_id: newProject.id, title: m.title, due_date: m.due_date, completed: false }))
     )
   }
-  return newProject
+  return { ...newProject, slug }
 }
 
 // ── Task Attachments ───────────────────────────────────────────

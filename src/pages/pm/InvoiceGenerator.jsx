@@ -55,12 +55,12 @@ export default function InvoiceGenerator() {
   useEffect(() => {
     if (!user || !id) return
     async function load() {
-      const [p, m, tl] = await Promise.all([
-        getProject(id),
-        getMilestones(id),
-        getProjectTimeLogs(id),
-      ])
+      const p = await getProject(id)
       if (!p) { navigate('/pm/dashboard'); return }
+      const [m, tl] = await Promise.all([
+        getMilestones(p.id),
+        getProjectTimeLogs(p.id),
+      ])
       setProject(p)
       setMilestones(m)
       setTimeLogs(tl)
