@@ -4,7 +4,7 @@ import {
   X, Trash2, Loader2, MessageCircle, Send, Trash,
   CheckSquare, Square, Plus, Clock, User, Timer, Link, ExternalLink,
   Paperclip, Download, FileText, Bell, BellOff, TrendingUp, TrendingDown,
-  GitMerge, RotateCcw, Eye, EyeOff,
+  GitMerge, RotateCcw, Eye, EyeOff, ThumbsUp, ThumbsDown,
 } from 'lucide-react'
 import {
   updateTask, deleteTask, getTaskComments, createTaskComment, deleteTaskComment,
