@@ -44,6 +44,15 @@ export function AuthProvider({ children }) {
     return { data, error }
   }
 
+  const signInWithGoogle = async () => {
+    if (!supabase) return { error: { message: 'Authentication not configured' } }
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/dashboard` },
+    })
+    return { data, error }
+  }
+
   const signOut = async () => {
     if (!supabase) return { error: null }
     const { error } = await supabase.auth.signOut()
@@ -74,7 +83,7 @@ export function AuthProvider({ children }) {
   const displayName = user?.user_metadata?.name || ''
 
   return (
-    <AuthContext.Provider value={{ user, loading, displayName, signUp, signIn, signOut, resetPassword, updatePassword, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, displayName, signUp, signIn, signInWithGoogle, signOut, resetPassword, updatePassword, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )

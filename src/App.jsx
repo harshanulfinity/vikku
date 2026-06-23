@@ -135,6 +135,7 @@ export default function App() {
               <Route path="/tools/maintenance-calculator"     element={<MaintenanceCalculator />} />
               <Route path="/tools"                        element={<Pricing />} />
               <Route path="/r/:shareId"                    element={<ShareableResult />} />
+              <Route path="/r-view/:shareId"               element={<ShareableResult />} />
               <Route path="/dashboard/saved"               element={<SavedResults />} />
               <Route path="/pm"                          element={<PMRedirect />} />
               <Route path="/pm/dashboard"               element={<PMDashboard />} />
