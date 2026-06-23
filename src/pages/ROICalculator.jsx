@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, TrendingUp, Loader2, AlertTriangle, DollarSign, Calendar, Zap } from 'lucide-react'
 import { calculateROI } from '../lib/openaiService'
@@ -42,6 +42,32 @@ const SOURCE_OPTIONS = [
   'Existing clients only',
 ]
 
+function Tip({ text }) {
+  const [show, setShow] = useState(false)
+  return (
+    <span className="relative inline-flex items-center ml-1 cursor-pointer" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+      <span className="text-white/30 text-[10px] border border-white/20 rounded-full w-3.5 h-3.5 flex items-center justify-center">?</span>
+      {show && <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 text-[10px] text-white/70 bg-[#1a1a1a] border border-white/10 rounded-xl px-3 py-2 z-10 shadow-xl pointer-events-none">{text}</span>}
+    </span>
+  )
+}
+
+function RoiGauge({ pct }) {
+  const capped = Math.min(pct || 0, 500)
+  const fill = capped / 500
+  const r = 54, cx = 64, cy = 64
+  const arcLen = Math.PI * r
+  return (
+    <svg viewBox="0 0 128 72" className="w-32">
+      <path d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`} fill="none" stroke="white" strokeOpacity=".1" strokeWidth="10" strokeLinecap="round" />
+      <path d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`} fill="none" stroke="white" strokeOpacity=".7" strokeWidth="10" strokeLinecap="round"
+        strokeDasharray={`${fill * arcLen} ${arcLen}`} />
+      <text x={cx} y={cy - 4} textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">{pct}%</text>
+      <text x={cx} y={cy + 10} textAnchor="middle" fill="white" fillOpacity=".4" fontSize="8">ROI</text>
+    </svg>
+  )
+}
+
 export default function ROICalculator() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -57,6 +83,21 @@ export default function ROICalculator() {
   const [shareId, setShareId] = useState(null)
   const [showLead, setShowLead] = useState(false)
   const [unlocked, setUnlocked] = useState(false)
+  const [tipIdx, setTipIdx] = useState(0)
+  const resultRef = useRef(null)
+
+  const TIPS = [
+    'Analyzing your business type...',
+    'Projecting lead growth...',
+    'Calculating revenue opportunity...',
+    'Building your ROI report...',
+  ]
+
+  useEffect(() => {
+    if (!loading) return
+    const t = setInterval(() => setTipIdx(i => (i + 1) % TIPS.length), 1800)
+    return () => clearInterval(t)
+  }, [loading])
 
   const toggleSource = (src) => {
     setForm(f => ({
@@ -84,6 +125,7 @@ export default function ROICalculator() {
         howTheyGetClients: form.howTheyGetClients.join(', '),
       })
       setResult(res)
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
       setUnlocked(false)
       if (user) setUnlocked(true)
       else setShowLead(true)
@@ -152,7 +194,7 @@ export default function ROICalculator() {
                 {/* Monthly leads */}
                 <div>
                   <label className="block text-xs text-white/60 mb-2 uppercase tracking-wider">2. How many leads / inquiries do you get per month right now?</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {LEAD_OPTIONS.map(opt => (
                       <button
                         key={opt.label}
@@ -205,7 +247,10 @@ export default function ROICalculator() {
                 {error && (
                   <div className="glass rounded-lg p-4 flex items-start gap-3 border border-red-500/20">
                     <AlertTriangle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-400">{error}</p>
+                    <div className="flex-1">
+                      <p className="text-sm text-red-400">{error}</p>
+                      <button onClick={() => handleSubmit({ preventDefault: () => {} })} className="text-xs text-white/60 hover:text-white mt-1 underline">Try again</button>
+                    </div>
                   </div>
                 )}
 
@@ -214,7 +259,7 @@ export default function ROICalculator() {
                   disabled={loading}
                   className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {loading ? <><Loader2 size={18} className="animate-spin" /> Calculating your ROI...</> : 'Calculate My ROI'}
+                  {loading ? <><Loader2 size={18} className="animate-spin" /> {TIPS[tipIdx]}</> : 'Calculate My ROI'}
                 </button>
               </form>
             </div>
@@ -223,7 +268,7 @@ export default function ROICalculator() {
           </>
         ) : (
           <>
-            <div className="mb-10">
+            <div className="mb-10" ref={resultRef}>
               <h2 className="font-display font-extrabold text-3xl text-white mb-3">Your ROI Report</h2>
             </div>
 
@@ -232,21 +277,22 @@ export default function ROICalculator() {
             {/* Revenue Lost Cards */}
             <div className="grid md:grid-cols-3 gap-4 mb-6">
               <div className="glass-strong rounded-2xl p-6 border border-red-500/20">
-                <p className="text-xs text-white/60 uppercase tracking-wider mb-1">Lost Per Month</p>
+                <p className="text-xs text-white/60 uppercase tracking-wider mb-1 flex items-center">Lost Per Month <Tip text="Estimated revenue you miss each month without a professional online presence, based on your lead volume and deal value." /></p>
                 <p className="text-3xl font-bold text-red-400">{sym}{result.monthlyRevenueLost?.toLocaleString()}</p>
                 <p className="text-xs text-white/40 mt-1">in missed revenue</p>
               </div>
               <div className="glass-strong rounded-2xl p-6 border border-red-500/10">
-                <p className="text-xs text-white/60 uppercase tracking-wider mb-1">Lost Per Year</p>
+                <p className="text-xs text-white/60 uppercase tracking-wider mb-1 flex items-center">Lost Per Year <Tip text="Monthly loss × 12. This is the annual revenue gap a website could help you close." /></p>
                 <p className="text-3xl font-bold text-orange-400">{sym}{result.annualRevenueLost?.toLocaleString()}</p>
                 <p className="text-xs text-white/40 mt-1">annual revenue gap</p>
               </div>
-              <div className="glass-strong rounded-2xl p-6 border border-green-500/20">
-                <p className="text-xs text-white/60 uppercase tracking-wider mb-1">Annual ROI</p>
-                <p className="text-3xl font-bold text-green-400">{result.roiPercent}%</p>
-                <p className="text-xs text-white/40 mt-1">return on website investment</p>
+              <div className="glass-strong rounded-2xl p-6 border border-green-500/20 flex flex-col items-center justify-center">
+                <RoiGauge pct={result.roiPercent} />
+                <p className="text-xs text-white/40 mt-1">return on investment</p>
               </div>
             </div>
+
+            <p className="text-xs text-white/30 text-center mt-2 mb-6">AI-generated projection, not a guarantee. Actual ROI depends on your market, execution, and website quality.</p>
 
             <GatedDetails unlocked={unlocked} onUnlock={() => setShowLead(true)}>
             {/* Key numbers */}

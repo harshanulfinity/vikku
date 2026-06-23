@@ -60,6 +60,14 @@ export async function recommendStack(inputs) {
   }
 }
 
+export async function estimateMaintenance(inputs) {
+  try {
+    return await callEdgeFunction('openai-maintenance', inputs)
+  } catch (error) {
+    throw new Error(`Failed to estimate maintenance: ${error.message}`)
+  }
+}
+
 export async function planProject(description) {
   try {
     // Sends user JWT so the edge function can verify Pro subscription

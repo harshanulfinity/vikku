@@ -9,10 +9,11 @@ function makeShareId() {
 }
 
 export const TOOL_LABELS = {
-  cost_estimator:      'Cost Estimate',
-  roi_calculator:      'ROI Report',
-  timeline_calculator: 'Project Timeline',
-  tech_recommender:    'Tech Stack',
+  cost_estimator:        'Cost Estimate',
+  roi_calculator:        'ROI Report',
+  timeline_calculator:   'Project Timeline',
+  tech_recommender:      'Tech Stack',
+  maintenance_calculator:'Maintenance Estimate',
 }
 
 /**

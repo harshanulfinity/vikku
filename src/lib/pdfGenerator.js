@@ -37,6 +37,12 @@ function lines(tool, r) {
     if (s.database) out.push({ label: 'Database', value: s.database })
     if (s.hosting)  out.push({ label: 'Hosting', value: s.hosting })
     if (r.warnings?.length) { out.push({ h: 'Watch out for' }); bullets(r.warnings) }
+  } else if (tool === 'maintenance_calculator') {
+    out.push({ label: 'Monthly cost', value: `${money(r.monthlyCostMin, sym)} – ${money(r.monthlyCostMax, sym)}` })
+    out.push({ label: 'Annual cost', value: `${money(r.annualCostMin, sym)} – ${money(r.annualCostMax, sym)}` })
+    if (r.breakdown?.length) { out.push({ h: 'Cost breakdown' }); r.breakdown.forEach(b => out.push({ label: b.category, value: `${money(b.costMin, sym)} – ${money(b.costMax, sym)}` })) }
+    if (r.recommendations?.length) { out.push({ h: 'Recommendations' }); bullets(r.recommendations) }
+    if (r.risksOfSkipping?.length) { out.push({ h: 'Risks of skipping maintenance' }); bullets(r.risksOfSkipping) }
   }
   return out
 }

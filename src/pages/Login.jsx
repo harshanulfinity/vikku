@@ -24,8 +24,12 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [lockoutSecsLeft, setLockoutSecsLeft] = useState(0)
-  const { signIn } = useAuth()
+  const { signIn, user } = useAuth()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (user) navigate('/dashboard', { replace: true })
+  }, [user, navigate])
   const timerRef = useRef(null)
 
   useEffect(() => {
@@ -123,7 +127,10 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-xs text-white/60 mb-2 uppercase tracking-wider">Password</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs text-white/60 uppercase tracking-wider">Password</label>
+                <Link to="/forgot-password" className="text-xs text-white/40 hover:text-white transition-colors">Forgot password?</Link>
+              </div>
               <div className="relative">
                 <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
                 <input

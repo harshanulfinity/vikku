@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { DollarSign, Clock, LayoutDashboard, TrendingUp, Kanban, ArrowRight, Sparkles } from 'lucide-react'
+import { DollarSign, Clock, LayoutDashboard, TrendingUp, Kanban, ArrowRight, Sparkles, Wrench } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 const TOOLS = [
@@ -53,6 +53,16 @@ const TOOLS = [
     desc: 'Describe your product and an AI architect picks the best tech stack - frontend, backend, database, hosting - with reasoning.',
     cta: 'Get a recommendation',
     path: '/dashboard/tech-recommender',
+  },
+  {
+    icon: Wrench,
+    color: 'text-cyan-400',
+    bg: 'bg-cyan-500/10',
+    name: 'Maintenance Calculator',
+    tagline: 'Know what it costs to keep your product alive',
+    desc: 'Get a monthly maintenance budget - hosting, monitoring, bug fixes, security patches, and support hours. No surprises.',
+    cta: 'Estimate maintenance cost',
+    path: '/dashboard/maintenance-calculator',
   },
 ]
 

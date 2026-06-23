@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Clock, AlertTriangle, Lightbulb, Loader2 } from 'lucide-react'
 import { estimateProjectCost } from '../lib/openaiService'
@@ -16,6 +16,16 @@ function formatCurrency(amount, symbol) {
   return (symbol || '₹') + new Intl.NumberFormat('en-IN').format(amount)
 }
 
+function Tip({ text }) {
+  const [show, setShow] = useState(false)
+  return (
+    <span className="relative inline-flex items-center ml-1 cursor-pointer" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+      <span className="text-white/30 text-[10px] border border-white/20 rounded-full w-3.5 h-3.5 flex items-center justify-center">?</span>
+      {show && <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 text-[10px] text-white/70 bg-[#1a1a1a] border border-white/10 rounded-xl px-3 py-2 z-10 shadow-xl pointer-events-none">{text}</span>}
+    </span>
+  )
+}
+
 export default function CostEstimator() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -26,6 +36,21 @@ export default function CostEstimator() {
   const [shareId, setShareId] = useState(null)
   const [showLead, setShowLead] = useState(false)
   const [unlocked, setUnlocked] = useState(false)
+  const [tipIdx, setTipIdx] = useState(0)
+  const resultRef = useRef(null)
+
+  const TIPS = [
+    'Analyzing your requirements...',
+    'Checking market rates...',
+    'Calculating team costs...',
+    'Building your estimate...',
+  ]
+
+  useEffect(() => {
+    if (!loading) return
+    const t = setInterval(() => setTipIdx(i => (i + 1) % TIPS.length), 1800)
+    return () => clearInterval(t)
+  }, [loading])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -40,6 +65,7 @@ export default function CostEstimator() {
     try {
       const estimate = await estimateProjectCost(requirements, null)
       setResult(estimate)
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
       // Logged-in users see everything; anonymous users unlock the detail with email.
       if (user) setUnlocked(true)
       else setShowLead(true)
@@ -114,7 +140,10 @@ export default function CostEstimator() {
                 {error && (
                   <div className="glass rounded-lg p-4 flex items-start gap-3 border border-red-500/20">
                     <AlertTriangle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-400">{error}</p>
+                    <div className="flex-1">
+                      <p className="text-sm text-red-400">{error}</p>
+                      <button onClick={() => handleSubmit({ preventDefault: () => {} })} className="text-xs text-white/60 hover:text-white mt-1 underline">Try again</button>
+                    </div>
                   </div>
                 )}
 
@@ -124,7 +153,7 @@ export default function CostEstimator() {
                   className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {loading ? (
-                    <><Loader2 size={18} className="animate-spin" /> Analyzing...</>
+                    <><Loader2 size={18} className="animate-spin" /> {TIPS[tipIdx]}</>
                   ) : (
                     'Generate Estimate'
                   )}
@@ -136,7 +165,7 @@ export default function CostEstimator() {
           </>
         ) : (
           <>
-            <div className="mb-10">
+            <div className="mb-10" ref={resultRef}>
               <h2 className="font-display font-extrabold text-3xl text-white mb-3">Cost Estimate</h2>
               <p className="text-white/60 text-sm max-w-xl">
                 Based on your requirements, here's a detailed cost breakdown for your project.
@@ -149,7 +178,7 @@ export default function CostEstimator() {
             <div className="glass-strong rounded-2xl p-8 mb-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <p className="text-xs text-white/60 uppercase tracking-wider">Estimated Cost</p>
+                  <p className="text-xs text-white/60 uppercase tracking-wider flex items-center">Estimated Cost <Tip text="Range based on your project description. Lower end = lean team/simpler execution. Upper end = senior developers, more polish." /></p>
                   <p className="text-3xl font-bold text-white">
                     {formatCurrency(result.totalCostMin, result.currencySymbol)} – {formatCurrency(result.totalCostMax, result.currencySymbol)}
                   </p>
@@ -177,22 +206,30 @@ export default function CostEstimator() {
               </div>
             </div>
 
+            <p className="text-xs text-white/30 text-center mt-2 mb-6">AI-generated estimate, not a quote. Actual costs depend on vendor, team location, and scope.</p>
+
             <GatedDetails unlocked={unlocked} onUnlock={() => setShowLead(true)}>
             {/* Breakdown */}
             <div className="glass rounded-2xl p-8 mb-6">
               <h3 className="font-display font-semibold text-lg text-white mb-6">Cost Breakdown</h3>
               <div className="space-y-4">
-                {result.breakdown.map((item, index) => (
-                  <div key={index} className="glass rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-white text-sm">{item.category}</h4>
-                      <p className="text-sm text-white font-medium">
-                        {formatCurrency(item.costMin, result.currencySymbol)} – {formatCurrency(item.costMax, result.currencySymbol)}
-                      </p>
+                {result.breakdown.map((item, index) => {
+                  const pct = Math.round((item.costMax / result.totalCostMax) * 100)
+                  return (
+                    <div key={index} className="glass rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-white text-sm">{item.category}</h4>
+                        <p className="text-sm text-white font-medium">
+                          {formatCurrency(item.costMin, result.currencySymbol)} – {formatCurrency(item.costMax, result.currencySymbol)}
+                        </p>
+                      </div>
+                      <p className="text-xs text-white/60">{item.description}</p>
+                      <div className="mt-2 h-1 rounded-full bg-white/[0.08] overflow-hidden">
+                        <div className="h-full rounded-full bg-white/40 transition-all" style={{ width: `${pct}%` }} />
+                      </div>
                     </div>
-                    <p className="text-xs text-white/60">{item.description}</p>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
 
@@ -233,12 +270,32 @@ export default function CostEstimator() {
               <p className="text-white/60 text-sm mb-6 max-w-md mx-auto">
                 Book a free 30-minute scoping call and we'll turn this estimate into a fixed-price proposal with scope, timeline, and deliverables.
               </p>
-              <button
-                onClick={() => { navigate('/'); setTimeout(() => document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' }), 300) }}
-                className="bg-white text-black font-semibold px-8 py-3 rounded-xl hover:bg-white/90 transition-colors"
-              >
-                Book a free scoping call
-              </button>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  onClick={() => { navigate('/'); setTimeout(() => document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' }), 300) }}
+                  className="bg-white text-black font-semibold px-8 py-3 rounded-xl hover:bg-white/90 transition-colors"
+                >
+                  Book a free scoping call
+                </button>
+                <button
+                  onClick={() => {
+                    if (!user) { navigate('/signup?from=cost-estimator'); return }
+                    navigate('/pm/new', {
+                      state: {
+                        fromEstimate: {
+                          name: requirements.slice(0, 60) || 'New Project',
+                          description: requirements,
+                          budget: `${result.currencySymbol || '₹'}${(result.totalCostMin || 0).toLocaleString('en-IN')}–${(result.totalCostMax || 0).toLocaleString('en-IN')}`,
+                          phases: result.breakdown?.map((b, i) => ({ title: b.category, daysFromNow: (i + 1) * 14 })) || [],
+                        }
+                      }
+                    })
+                  }}
+                  className="glass text-white font-semibold px-8 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm"
+                >
+                  Create PM Project from this estimate
+                </button>
+              </div>
             </div>
 
             <div className="mt-6 flex items-center justify-center gap-5">

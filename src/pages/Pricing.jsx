@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Check, Kanban, DollarSign, TrendingUp, Clock, LayoutDashboard } from 'lucide-react'
+import { ArrowLeft, Check, Kanban, DollarSign, TrendingUp, Clock, LayoutDashboard, Wrench } from 'lucide-react'
 import usePageMeta from '../hooks/usePageMeta'
 
 const TOOLS_COPY = [
@@ -92,6 +92,24 @@ const TOOLS_COPY = [
     proof: '40+ founders made confident tech decisions using this',
     cta: 'Get your free stack recommendation',
     path: '/dashboard/tech-recommender',
+  },
+  {
+    Icon: Wrench,
+    color: 'text-cyan-400',
+    bg: 'bg-cyan-500/10',
+    border: 'border-cyan-500/20',
+    name: 'Maintenance Calculator',
+    hook: "You shipped the product. Now what does it cost to keep it alive?",
+    outcome: 'What if you had a clear monthly maintenance budget - hosting, monitoring, bug fixes, security patches, and support - before you signed a retainer?',
+    intro: 'The Maintenance Calculator estimates the real ongoing cost of keeping your product running, secure, and growing - broken down by category so you know exactly where the money goes.',
+    steps: [
+      'Select your product type, complexity, and active user scale',
+      'AI calculates hosting, monitoring, bug fixes, security, and support costs',
+      'Get a monthly and annual budget with a category-by-category breakdown',
+    ],
+    proof: 'Helps teams budget maintenance before signing retainers',
+    cta: 'Calculate your maintenance cost',
+    path: '/dashboard/maintenance-calculator',
   },
 ]
 

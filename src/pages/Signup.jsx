@@ -2,19 +2,26 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabaseClient'
-import { ArrowLeft, Mail, Lock, AlertCircle, Inbox } from 'lucide-react'
+import { ArrowLeft, Mail, Lock, AlertCircle, Inbox, User } from 'lucide-react'
 
 export default function Signup() {
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
-  const { signUp } = useAuth()
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const [resendMsg, setResendMsg] = useState('')
+  const { signUp, user } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const refCode = searchParams.get('ref')
+
+  useEffect(() => {
+    if (user) navigate('/dashboard', { replace: true })
+  }, [user, navigate])
 
   useEffect(() => {
     if (refCode) sessionStorage.setItem('vikku_ref', refCode)
@@ -22,23 +29,22 @@ export default function Signup() {
     if (plan === 'pro' || plan === 'team') sessionStorage.setItem('vikku_pending_plan', plan)
   }, [refCode, searchParams])
 
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const t = setInterval(() => setResendCooldown(s => s - 1), 1000)
+    return () => clearInterval(t)
+  }, [resendCooldown])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters')
-      return
-    }
+    if (!name.trim()) { setError('Please enter your name'); return }
+    if (password !== confirmPassword) { setError('Passwords do not match'); return }
+    if (password.length < 8) { setError('Password must be at least 8 characters'); return }
 
     setLoading(true)
-
-    const { error, data } = await signUp(email, password)
+    const { error, data } = await signUp(email, password, name)
 
     if (error) {
       setError(error.message)
@@ -49,9 +55,21 @@ export default function Signup() {
         sessionStorage.removeItem('vikku_ref')
         try {
           await supabase.from('referrals').insert({ referrer_code: ref, referred_user_id: data.user.id })
-        } catch { /* referral is best-effort; never block signup */ }
+        } catch { /* referral is best-effort */ }
       }
       setSent(true)
+    }
+  }
+
+  const handleResend = async () => {
+    if (resendCooldown > 0) return
+    setResendMsg('')
+    const { error } = await supabase.auth.resend({ type: 'signup', email })
+    if (error) {
+      setResendMsg('Failed to resend. Try again shortly.')
+    } else {
+      setResendMsg('Email resent! Check your inbox.')
+      setResendCooldown(60)
     }
   }
 
@@ -64,19 +82,15 @@ export default function Signup() {
               <Inbox size={28} className="text-black" />
             </div>
 
-            <h1 className="font-display font-extrabold text-2xl text-white mb-3">
-              Check your inbox
-            </h1>
-            <p className="text-white/60 text-sm mb-2 leading-relaxed">
-              We sent a confirmation link to
-            </p>
+            <h1 className="font-display font-extrabold text-2xl text-white mb-3">Check your inbox</h1>
+            <p className="text-white/60 text-sm mb-2 leading-relaxed">We sent a confirmation link to</p>
             <p className="text-white font-semibold text-sm mb-6">{email}</p>
 
-            <div className="glass rounded-xl p-4 mb-8 text-left space-y-3">
+            <div className="glass rounded-xl p-4 mb-6 text-left space-y-3">
               {[
                 'Open the email from Vikku',
                 'Click the "Confirm your account" button',
-                'You\'ll be signed in automatically',
+                "You'll be signed in automatically",
               ].map((step, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
@@ -87,13 +101,23 @@ export default function Signup() {
               ))}
             </div>
 
-            <p className="text-xs text-white/30 mb-6">
-              Didn't get it? Check your spam folder or wait a minute and try again.
-            </p>
+            <p className="text-xs text-white/30 mb-4">Didn't get it? Check your spam folder first.</p>
+
+            {resendMsg && (
+              <p className={`text-xs mb-3 ${resendMsg.startsWith('Failed') ? 'text-red-400' : 'text-green-400'}`}>{resendMsg}</p>
+            )}
 
             <button
-              onClick={() => { setSent(false); setEmail(''); setPassword(''); setConfirmPassword('') }}
-              className="text-xs text-white/40 hover:text-white transition-colors"
+              onClick={handleResend}
+              disabled={resendCooldown > 0}
+              className="text-xs text-white/60 hover:text-white disabled:text-white/20 disabled:cursor-not-allowed transition-colors mb-4 block mx-auto"
+            >
+              {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend confirmation email'}
+            </button>
+
+            <button
+              onClick={() => { setSent(false); setEmail(''); setPassword(''); setConfirmPassword(''); setName('') }}
+              className="text-xs text-white/30 hover:text-white/60 transition-colors"
             >
               Use a different email
             </button>
@@ -124,6 +148,21 @@ export default function Signup() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs text-white/60 mb-2 uppercase tracking-wider">Your Name</label>
+              <div className="relative">
+                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full glass rounded-xl pl-12 pr-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/20 transition-colors"
+                  placeholder="Priya Sharma"
+                  required
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs text-white/60 mb-2 uppercase tracking-wider">Email</label>
               <div className="relative">
@@ -181,9 +220,7 @@ export default function Signup() {
           <div className="mt-6 text-center">
             <p className="text-white/60 text-sm">
               Already have an account?{' '}
-              <Link to="/login" className="text-white hover:text-white/80 transition-colors">
-                Sign in
-              </Link>
+              <Link to="/login" className="text-white hover:text-white/80 transition-colors">Sign in</Link>
             </p>
           </div>
         </div>

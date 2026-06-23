@@ -4,10 +4,11 @@ import { emailToolResult, TOOL_LABELS } from '../../lib/toolResultsService'
 import { downloadResultPdf } from '../../lib/pdfGenerator'
 
 const CROSS_TOOL = {
-  cost_estimator:      { to: '/tools/timeline-calculator', label: 'See the timeline for this' },
-  timeline_calculator: { to: '/tools/tech-recommender',    label: 'Get the recommended tech stack' },
-  tech_recommender:    { to: '/tools/roi-calculator',      label: 'Calculate the ROI' },
-  roi_calculator:      { to: '/tools/cost-estimator',      label: 'Estimate the build cost' },
+  cost_estimator:         { to: '/tools/timeline-calculator',     label: 'See the timeline for this' },
+  timeline_calculator:    { to: '/tools/tech-recommender',        label: 'Get tech stack recommendation' },
+  tech_recommender:       { to: '/tools/maintenance-calculator',  label: 'Estimate maintenance cost' },
+  maintenance_calculator: { to: '/tools/cost-estimator',          label: 'Estimate a rebuild cost' },
+  roi_calculator:         { to: '/tools/cost-estimator',          label: 'Estimate the build cost' },
 }
 
 /**
@@ -59,7 +60,7 @@ export default function ToolResultActions({ shareId, tool, navigate, result, tit
 
   return (
     <div className="glass rounded-2xl p-5 mb-6 print:hidden">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
         <button
           onClick={() => setEmailOpen((o) => !o)}
           className="flex items-center gap-2 text-sm glass rounded-xl px-4 py-2.5 text-white/80 hover:text-white transition-colors"
@@ -93,7 +94,7 @@ export default function ToolResultActions({ shareId, tool, navigate, result, tit
         {cross && (
           <button
             onClick={() => navigate(cross.to)}
-            className="flex items-center gap-2 text-sm bg-white/10 hover:bg-white/15 rounded-xl px-4 py-2.5 text-white transition-colors ml-auto"
+            className="col-span-2 sm:col-span-1 sm:ml-auto flex items-center gap-2 text-sm bg-white/10 hover:bg-white/15 rounded-xl px-4 py-2.5 text-white transition-colors justify-center sm:justify-start"
           >
             {cross.label} <ArrowRight size={14} />
           </button>

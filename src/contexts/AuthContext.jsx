@@ -13,13 +13,11 @@ export function AuthProvider({ children }) {
       return
     }
 
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       setLoading(false)
     })
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -30,32 +28,53 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signUp = async (email, password) => {
-    if (!supabase) {
-      return { data: null, error: { message: 'Authentication not configured' } }
-    }
-    const { data, error } = await supabase.auth.signUp({ email, password })
+  const signUp = async (email, password, name) => {
+    if (!supabase) return { data: null, error: { message: 'Authentication not configured' } }
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name: name?.trim() || '' } },
+    })
     return { data, error }
   }
 
   const signIn = async (email, password) => {
-    if (!supabase) {
-      return { data: null, error: { message: 'Authentication not configured' } }
-    }
+    if (!supabase) return { data: null, error: { message: 'Authentication not configured' } }
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     return { data, error }
   }
 
   const signOut = async () => {
-    if (!supabase) {
-      return { error: null }
-    }
+    if (!supabase) return { error: null }
     const { error } = await supabase.auth.signOut()
     return { error }
   }
 
+  const resetPassword = async (email) => {
+    if (!supabase) return { error: { message: 'Authentication not configured' } }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    return { error }
+  }
+
+  const updatePassword = async (newPassword) => {
+    if (!supabase) return { error: { message: 'Authentication not configured' } }
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    return { error }
+  }
+
+  const updateProfile = async (updates) => {
+    if (!supabase) return { error: { message: 'Authentication not configured' } }
+    const { data, error } = await supabase.auth.updateUser({ data: updates })
+    if (!error && data?.user) setUser(data.user)
+    return { error }
+  }
+
+  const displayName = user?.user_metadata?.name || ''
+
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, displayName, signUp, signIn, signOut, resetPassword, updatePassword, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )
@@ -63,8 +82,6 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider')
   return context
 }

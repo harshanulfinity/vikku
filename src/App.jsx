@@ -30,11 +30,15 @@ const CaseStudyRolexAds      = lazy(() => import('./pages/CaseStudyRolexAds'))
 const CaseStudyMediaManager  = lazy(() => import('./pages/CaseStudyMediaManager'))
 const Login                 = lazy(() => import('./pages/Login'))
 const Signup                = lazy(() => import('./pages/Signup'))
+const ForgotPassword        = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword         = lazy(() => import('./pages/ResetPassword'))
+const Account               = lazy(() => import('./pages/Account'))
 const Dashboard             = lazy(() => import('./pages/Dashboard'))
 const CostEstimator         = lazy(() => import('./pages/CostEstimator'))
 const ROICalculator         = lazy(() => import('./pages/ROICalculator'))
 const TimelineCalculator    = lazy(() => import('./pages/TimelineCalculator'))
 const TechRecommender       = lazy(() => import('./pages/TechRecommender'))
+const MaintenanceCalculator = lazy(() => import('./pages/MaintenanceCalculator'))
 const ShareableResult       = lazy(() => import('./pages/ShareableResult'))
 const SavedResults          = lazy(() => import('./pages/SavedResults'))
 const Pricing               = lazy(() => import('./pages/Pricing'))
@@ -115,15 +119,20 @@ export default function App() {
               <Route path="/"                        element={<Home />} />
               <Route path="/login"                   element={<Login />} />
               <Route path="/signup"                  element={<Signup />} />
+              <Route path="/forgot-password"         element={<ForgotPassword />} />
+              <Route path="/reset-password"          element={<ResetPassword />} />
+              <Route path="/account"                 element={<Account />} />
               <Route path="/dashboard"               element={<Dashboard />} />
               <Route path="/dashboard/cost-estimator"     element={<CostEstimator />} />
               <Route path="/dashboard/roi-calculator"      element={<ROICalculator />} />
               <Route path="/dashboard/timeline-calculator" element={<TimelineCalculator />} />
-              <Route path="/dashboard/tech-recommender"    element={<TechRecommender />} />
-              <Route path="/tools/cost-estimator"          element={<CostEstimator />} />
-              <Route path="/tools/roi-calculator"          element={<ROICalculator />} />
-              <Route path="/tools/timeline-calculator"     element={<TimelineCalculator />} />
-              <Route path="/tools/tech-recommender"        element={<TechRecommender />} />
+              <Route path="/dashboard/tech-recommender"         element={<TechRecommender />} />
+              <Route path="/dashboard/maintenance-calculator" element={<MaintenanceCalculator />} />
+              <Route path="/tools/cost-estimator"             element={<CostEstimator />} />
+              <Route path="/tools/roi-calculator"             element={<ROICalculator />} />
+              <Route path="/tools/timeline-calculator"        element={<TimelineCalculator />} />
+              <Route path="/tools/tech-recommender"           element={<TechRecommender />} />
+              <Route path="/tools/maintenance-calculator"     element={<MaintenanceCalculator />} />
               <Route path="/tools"                        element={<Pricing />} />
               <Route path="/r/:shareId"                    element={<ShareableResult />} />
               <Route path="/dashboard/saved"               element={<SavedResults />} />

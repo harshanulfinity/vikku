@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Square, Rocket, Globe, Megaphone, Map, BookOpen } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { createProject, bulkCreateTasks, bulkCreateMilestones } from '../../lib/pmService'
@@ -157,10 +157,12 @@ const TEMPLATES = [
 export default function NewProject() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const fromEstimate = location.state?.fromEstimate || null
   const [selectedTemplate, setSelectedTemplate] = useState('blank')
   const [form, setForm] = useState({
-    name: '',
-    description: '',
+    name: fromEstimate?.name || '',
+    description: fromEstimate?.description || '',
     client_name: '',
     client_email: '',
     color: '#ffffff',
@@ -168,6 +170,7 @@ export default function NewProject() {
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [bannerDismissed, setBannerDismissed] = useState(false)
 
   const template = TEMPLATES.find((t) => t.key === selectedTemplate)
 
@@ -188,7 +191,17 @@ export default function NewProject() {
       if (template && template.tasks.length > 0) {
         await bulkCreateTasks(template.tasks.map((t) => ({ ...t, project_id: project.id })))
       }
-      if (template && template.milestones.length > 0) {
+      const estimateMilestones = fromEstimate?.phases?.length && (!template || template.milestones.length === 0)
+        ? fromEstimate.phases
+        : null
+      if (estimateMilestones) {
+        await bulkCreateMilestones(estimateMilestones.map((m) => ({
+          project_id: project.id,
+          title: m.title,
+          due_date: daysFromNow(m.daysFromNow),
+          completed: false,
+        })))
+      } else if (template && template.milestones.length > 0) {
         await bulkCreateMilestones(template.milestones.map((m) => ({
           project_id: project.id,
           title: m.title,
@@ -210,6 +223,13 @@ export default function NewProject() {
       <AppHeader breadcrumbs={[{ label: 'PM', href: '/pm' }, { label: 'Projects', href: '/pm/dashboard' }, { label: 'New Project' }]} />
 
       <div className="max-w-2xl mx-auto px-6 py-10">
+
+        {fromEstimate && !bannerDismissed && (
+          <div className="mb-6 flex items-center gap-3 bg-white/[0.06] border border-white/[0.12] rounded-xl px-4 py-3">
+            <span className="text-xs text-white/80 flex-1">Pre-filled from your estimate. You can edit any field before creating.</span>
+            <button onClick={() => setBannerDismissed(true)} className="text-white/30 hover:text-white/60 transition-colors text-xs">Dismiss</button>
+          </div>
+        )}
 
         {/* Template picker */}
         <div className="mb-8">

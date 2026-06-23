@@ -1,18 +1,27 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { DollarSign, Clock, LayoutDashboard, TrendingUp, Kanban, ArrowRight, FileText } from 'lucide-react'
+import { DollarSign, Clock, LayoutDashboard, TrendingUp, Kanban, ArrowRight, FileText, Wrench } from 'lucide-react'
 import AppHeader from '../components/AppHeader'
+import { getMyToolResults } from '../lib/toolResultsService'
 
 export default function Dashboard() {
-  const { user, loading, signOut } = useAuth()
+  const { user, loading, displayName } = useAuth()
   const navigate = useNavigate()
+  const [stats, setStats] = useState({ total: 0, toolsUsed: 0 })
+  const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('vikku_onboarded'))
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login')
-    }
+    if (!loading && !user) navigate('/login')
   }, [user, loading, navigate])
+
+  useEffect(() => {
+    if (!user) return
+    getMyToolResults(user.id).then((rows) => {
+      const toolsUsed = new Set(rows.map((r) => r.tool)).size
+      setStats({ total: rows.length, toolsUsed })
+    })
+  }, [user])
 
   if (loading) {
     return (
@@ -59,6 +68,14 @@ export default function Dashboard() {
       comingSoon: false,
       path: '/dashboard/tech-recommender',
     },
+    {
+      icon: Wrench,
+      title: 'Maintenance Calculator',
+      description: 'Estimate the ongoing monthly cost to maintain and support your product',
+      status: 'Available',
+      comingSoon: false,
+      path: '/dashboard/maintenance-calculator',
+    },
   ]
 
   return (
@@ -81,6 +98,30 @@ export default function Dashboard() {
             <FileText size={13} /> My saved results
           </button>
         </div>
+
+        {/* First-time welcome banner */}
+        {showWelcome && (
+          <div className="mb-8 glass rounded-2xl p-5 border border-white/10 flex items-start justify-between gap-4">
+            <div>
+              <p className="font-semibold text-white mb-1">
+                Welcome{displayName ? `, ${displayName.split(' ')[0]}` : ''}! 👋
+              </p>
+              <p className="text-sm text-white/60 mb-3">Start with the <strong className="text-white">Cost Estimator</strong> — describe your project and get an AI-powered cost breakdown in seconds.</p>
+              <button
+                onClick={() => navigate('/dashboard/cost-estimator')}
+                className="text-xs bg-white text-black font-semibold px-4 py-2 rounded-lg hover:bg-white/90 transition-colors"
+              >
+                Try the Cost Estimator →
+              </button>
+            </div>
+            <button
+              onClick={() => { setShowWelcome(false); localStorage.setItem('vikku_onboarded', '1') }}
+              className="text-white/30 hover:text-white transition-colors text-xs flex-shrink-0 mt-0.5"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* PM Tool banner */}
         <div
@@ -146,11 +187,11 @@ export default function Dashboard() {
           <h3 className="font-display font-semibold text-lg text-white mb-4">Your Usage</h3>
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-white mb-1">0</p>
+              <p className="text-2xl font-bold text-white mb-1">{stats.toolsUsed}</p>
               <p className="text-xs text-white/60">Tools Used</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-white mb-1">0</p>
+              <p className="text-2xl font-bold text-white mb-1">{stats.total}</p>
               <p className="text-xs text-white/60">Estimates Generated</p>
             </div>
             <div className="text-center">

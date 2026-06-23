@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { LogOut, ChevronRight, ChevronLeft } from 'lucide-react'
+import { LogOut, ChevronRight, ChevronLeft, UserCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import NotificationBell from './pm/NotificationBell'
 
@@ -12,7 +12,7 @@ import NotificationBell from './pm/NotificationBell'
  *   badge: ReactNode                  - optional badge next to user email (e.g. plan pill)
  */
 export default function AppHeader({ breadcrumbs = [], actions, badge }) {
-  const { user, signOut } = useAuth()
+  const { user, displayName, signOut } = useAuth()
   const navigate = useNavigate()
 
   return (
@@ -68,9 +68,14 @@ export default function AppHeader({ breadcrumbs = [], actions, badge }) {
 
           <NotificationBell />
 
-          <span className="hidden sm:block text-xs text-white/30 truncate max-w-[160px]">
-            {user?.email}
-          </span>
+          <button
+            onClick={() => navigate('/account')}
+            className="hidden sm:flex items-center gap-1.5 text-xs text-white/40 hover:text-white transition-colors"
+            title={user?.email}
+          >
+            <UserCircle size={15} />
+            <span className="truncate max-w-[120px]">{displayName || user?.email?.split('@')[0]}</span>
+          </button>
 
           <button
             onClick={async () => { await signOut(); navigate('/') }}

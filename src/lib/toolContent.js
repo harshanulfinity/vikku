@@ -37,6 +37,11 @@ export const TOOL_SEO = {
     description: 'Describe your product and get an opinionated, modern tech stack recommendation (frontend, backend, database, hosting) with reasoning. Free.',
     canonical: '/tools/tech-recommender',
   },
+  maintenance_calculator: {
+    title: 'Software Maintenance Cost Calculator (India) | Vikku',
+    description: 'Find out how much it really costs to maintain your app or website every month - hosting, monitoring, bug fixes, security, and support. Free AI estimate.',
+    canonical: '/tools/maintenance-calculator',
+  },
 }
 
 // Build FAQPage structured data from a tool's FAQ block (rich results in Google).
@@ -86,7 +91,17 @@ export const TOOL_FAQ = {
     intro: 'Describe your product and constraints and get an opinionated, modern tech stack recommendation - frontend, backend, database, and hosting - with the reasoning behind each choice.',
     faqs: [
       { q: 'Why trust the recommendation?', a: 'It favours proven, well-supported technologies matched to your scale, team size, and budget - not hype.' },
-      { q: 'Can I change it later?', a: 'Yes. The recommendation is a strong default; the reasoning helps you adapt it to your team’s strengths.' },
+      { q: 'Can I change it later?', a: "Yes. The recommendation is a strong default; the reasoning helps you adapt it to your team's strengths." },
+    ],
+  },
+  maintenance_calculator: {
+    heading: 'How much does it cost to maintain software?',
+    intro: "Building is only the beginning. Ongoing hosting, monitoring, bug fixes, security patches, and support add up fast. This calculator breaks it down so you can budget accurately - whether you're planning a retainer or just want to know what you're in for.",
+    faqs: [
+      { q: "What's typically included in maintenance?", a: 'Hosting & infrastructure, uptime monitoring, security updates, bug fixes, minor feature tweaks, and support hours depending on your SLA.' },
+      { q: 'Why does scale affect maintenance cost?', a: 'More users means higher server costs, more support tickets, stricter uptime requirements, and greater risk from downtime - all of which raise the maintenance budget.' },
+      { q: 'Is this the same as a retainer?', a: 'A maintenance retainer covers most of this. The estimate shows what a realistic retainer should cost for your product type and scale.' },
+      { q: 'What happens if I skip maintenance?', a: 'Security vulnerabilities accumulate, performance degrades, third-party integrations break, and tech debt compounds - often costing far more to fix later.' },
     ],
   },
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, LayoutDashboard, Loader2, AlertTriangle, ExternalLink, AlertCircle } from 'lucide-react'
 import { recommendStack } from '../lib/openaiService'
@@ -68,6 +68,22 @@ export default function TechRecommender() {
   const [shareId, setShareId] = useState(null)
   const [unlocked, setUnlocked] = useState(false)
   const [showLead, setShowLead] = useState(false)
+  const [tipIdx, setTipIdx] = useState(0)
+  const resultRef = useRef(null)
+
+  const TIPS = [
+    'Evaluating your requirements...',
+    'Comparing tech stacks...',
+    'Checking team fit...',
+    'Finalizing recommendation...',
+  ]
+
+  useEffect(() => {
+    if (!loading) return
+    const t = setInterval(() => setTipIdx(i => (i + 1) % TIPS.length), 1800)
+    return () => clearInterval(t)
+  }, [loading])
+
 
   const toggleReq = (req) => {
     setForm(f => ({
@@ -89,6 +105,7 @@ export default function TechRecommender() {
     try {
       const res = await recommendStack(form)
       setResult(res)
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
       setUnlocked(false)
       if (user) setUnlocked(true)
       else setShowLead(true)
@@ -147,7 +164,7 @@ export default function TechRecommender() {
 
                 <div>
                   <label className="block text-xs text-white/60 mb-2 uppercase tracking-wider">Expected scale?</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {SCALE_OPTIONS.map(opt => (
                       <button key={opt.value} type="button"
                         onClick={() => setForm(f => ({ ...f, scale: opt.value }))}
@@ -159,7 +176,7 @@ export default function TechRecommender() {
 
                 <div>
                   <label className="block text-xs text-white/60 mb-2 uppercase tracking-wider">Budget range?</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {BUDGET_OPTIONS.map(opt => (
                       <button key={opt.value} type="button"
                         onClick={() => setForm(f => ({ ...f, budget: opt.value }))}
@@ -171,7 +188,7 @@ export default function TechRecommender() {
 
                 <div>
                   <label className="block text-xs text-white/60 mb-2 uppercase tracking-wider">Do you have an in-house development team?</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {[
                       { label: 'Yes - senior devs', value: 'Yes - experienced senior developers' },
                       { label: 'Partial - junior devs', value: 'Partial - junior developers who need guidance' },
@@ -199,14 +216,17 @@ export default function TechRecommender() {
                 {error && (
                   <div className="glass rounded-lg p-4 flex items-start gap-3 border border-red-500/20">
                     <AlertTriangle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-400">{error}</p>
+                    <div className="flex-1">
+                      <p className="text-sm text-red-400">{error}</p>
+                      <button onClick={() => handleSubmit({ preventDefault: () => {} })} className="text-xs text-white/60 hover:text-white mt-1 underline">Try again</button>
+                    </div>
                   </div>
                 )}
 
                 <button type="submit" disabled={loading}
                   className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {loading ? <><Loader2 size={18} className="animate-spin" /> Analyzing best stack...</> : 'Get My Recommendation'}
+                  {loading ? <><Loader2 size={18} className="animate-spin" /> {TIPS[tipIdx]}</> : 'Get My Recommendation'}
                 </button>
               </form>
             </div>
@@ -215,7 +235,7 @@ export default function TechRecommender() {
           </>
         ) : (
           <>
-            <div className="mb-10">
+            <div className="mb-10" ref={resultRef}>
               <h2 className="font-display font-extrabold text-3xl text-white mb-3">Your Tech Stack Recommendation</h2>
             </div>
 
@@ -253,6 +273,8 @@ export default function TechRecommender() {
                 </div>
               )}
             </div>
+
+            <p className="text-xs text-white/30 text-center mt-2 mb-6">AI-generated recommendation. Final choice should factor in your team's existing skills and infrastructure.</p>
 
             <GatedDetails unlocked={unlocked} onUnlock={() => setShowLead(true)}>
             {/* Technology breakdown */}

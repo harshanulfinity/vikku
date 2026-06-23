@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Clock, Loader2, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react'
 import { calculateTimeline } from '../lib/openaiService'
@@ -62,6 +62,21 @@ export default function TimelineCalculator() {
   const [shareId, setShareId] = useState(null)
   const [showLead, setShowLead] = useState(false)
   const [unlocked, setUnlocked] = useState(false)
+  const [tipIdx, setTipIdx] = useState(0)
+  const resultRef = useRef(null)
+
+  const TIPS = [
+    'Mapping your project phases...',
+    'Estimating complexity...',
+    'Checking revision cycles...',
+    'Adding realistic buffer time...',
+  ]
+
+  useEffect(() => {
+    if (!loading) return
+    const t = setInterval(() => setTipIdx(i => (i + 1) % TIPS.length), 1800)
+    return () => clearInterval(t)
+  }, [loading])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -72,6 +87,7 @@ export default function TimelineCalculator() {
     try {
       const res = await calculateTimeline(form)
       setResult(res)
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
       setUnlocked(false)
       if (user) setUnlocked(true)
       else setShowLead(true)
@@ -155,7 +171,7 @@ export default function TimelineCalculator() {
 
                 <div>
                   <label className="block text-xs text-white/60 mb-2 uppercase tracking-wider">Do you already have design assets / brand kit?</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {['Yes - logos, colors, fonts ready', 'Partial - have logo only', 'No - starting from scratch'].map(opt => (
                       <button key={opt} type="button"
                         onClick={() => setForm(f => ({ ...f, hasDesign: opt }))}
@@ -170,14 +186,17 @@ export default function TimelineCalculator() {
                 {error && (
                   <div className="glass rounded-lg p-4 flex items-start gap-3 border border-red-500/20">
                     <AlertTriangle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-400">{error}</p>
+                    <div className="flex-1">
+                      <p className="text-sm text-red-400">{error}</p>
+                      <button onClick={() => handleSubmit({ preventDefault: () => {} })} className="text-xs text-white/60 hover:text-white mt-1 underline">Try again</button>
+                    </div>
                   </div>
                 )}
 
                 <button type="submit" disabled={loading}
                   className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {loading ? <><Loader2 size={18} className="animate-spin" /> Generating timeline...</> : 'Generate My Timeline'}
+                  {loading ? <><Loader2 size={18} className="animate-spin" /> {TIPS[tipIdx]}</> : 'Generate My Timeline'}
                 </button>
               </form>
             </div>
@@ -186,7 +205,7 @@ export default function TimelineCalculator() {
           </>
         ) : (
           <>
-            <div className="mb-10">
+            <div className="mb-10" ref={resultRef}>
               <h2 className="font-display font-extrabold text-3xl text-white mb-3">Your Project Timeline</h2>
               <p className="text-white/60 text-sm">Estimated total: <span className="text-white font-semibold">{result.totalWeeksMin}–{result.totalWeeksMax} weeks</span></p>
             </div>
@@ -204,6 +223,8 @@ export default function TimelineCalculator() {
                 <p className="text-xs text-white/40 mt-1">≈ {Math.round(result.totalWeeksMin / 4)}–{Math.round(result.totalWeeksMax / 4)} months</p>
               </div>
             </div>
+
+            <p className="text-xs text-white/30 text-center mt-2 mb-6">AI-generated estimate. Actual timelines depend on team size, feedback speed, and scope changes.</p>
 
             <GatedDetails unlocked={unlocked} onUnlock={() => setShowLead(true)}>
             {/* Phases */}
@@ -295,6 +316,27 @@ export default function TimelineCalculator() {
                   className="bg-white text-black font-semibold px-6 py-3 rounded-xl hover:bg-white/90 transition-colors text-sm"
                 >
                   Get Cost Estimate
+                </button>
+                <button
+                  onClick={() => {
+                    if (!user) { navigate('/signup?from=timeline-calculator'); return }
+                    let cumDays = 0
+                    navigate('/pm/new', {
+                      state: {
+                        fromEstimate: {
+                          name: form.projectType ? form.projectType.slice(0, 60) : 'New Project',
+                          description: `${form.projectType} — ${form.featureCount}`,
+                          phases: result.phases?.map((p) => {
+                            cumDays += (p.weeksMax || p.weeksMin || 2) * 7
+                            return { title: p.name, daysFromNow: cumDays }
+                          }) || [],
+                        }
+                      }
+                    })
+                  }}
+                  className="glass text-white font-semibold px-6 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm"
+                >
+                  Create PM Project
                 </button>
                 <button
                   onClick={() => { navigate('/'); setTimeout(() => document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' }), 300) }}

@@ -112,6 +112,30 @@ function renderResult(tool, r) {
       </>
     )
   }
+  if (tool === 'maintenance_calculator') {
+    return (
+      <>
+        <Section title="Monthly maintenance cost">
+          <p className="text-3xl font-bold text-white">{money(r.monthlyCostMin, sym)} – {money(r.monthlyCostMax, sym)}</p>
+          <p className="text-sm text-white/50 mt-2">Annual: {money(r.annualCostMin, sym)} – {money(r.annualCostMax, sym)}</p>
+        </Section>
+        {r.breakdown?.length > 0 && (
+          <Section title="Cost breakdown">
+            <div className="space-y-3">
+              {r.breakdown.map((b, i) => (
+                <div key={i} className="flex justify-between text-sm gap-4">
+                  <span className="text-white/70">{b.category}</span>
+                  <span className="text-white flex-shrink-0">{money(b.costMin, sym)} – {money(b.costMax, sym)}</span>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+        {r.recommendations?.length > 0 && <Section title="Recommendations">{bullets(r.recommendations)}</Section>}
+        {r.risksOfSkipping?.length > 0 && <Section title="Risks of skipping maintenance">{bullets(r.risksOfSkipping)}</Section>}
+      </>
+    )
+  }
   return <Section title="Result"><pre className="text-xs text-white/60 whitespace-pre-wrap">{JSON.stringify(r, null, 2)}</pre></Section>
 }
 

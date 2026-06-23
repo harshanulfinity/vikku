@@ -42,6 +42,7 @@ export default function TaskCreateModal({ projectId, initialStatus, initialStatu
     assigned_to_email: '',
     label: '',
     task_link: '',
+    recurrence: '',
   })
   const [members, setMembers] = useState([])
   const [showAssigneeMenu, setShowAssigneeMenu] = useState(false)
@@ -61,6 +62,7 @@ export default function TaskCreateModal({ projectId, initialStatus, initialStatu
       assigned_to_email: form.assigned_to_email || null,
       label: form.label || null,
       task_link: form.task_link.trim() || null,
+      recurrence: form.recurrence || null,
     })
     onClose()
   }
@@ -224,6 +226,24 @@ export default function TaskCreateModal({ projectId, initialStatus, initialStatu
                     </button>
                   ))}
                 </div>
+              )}
+            </div>
+
+            {/* Recurrence */}
+            <div>
+              <label className="text-[10px] text-white/40 mb-1.5 block uppercase tracking-wider">Recurrence</label>
+              <select
+                value={form.recurrence}
+                onChange={(e) => setForm({ ...form, recurrence: e.target.value })}
+                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 outline-none focus:border-white/20 transition-colors [color-scheme:dark]"
+              >
+                <option value="">None</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+              {form.recurrence && (
+                <p className="text-[10px] text-white/30 mt-1">When completed, a new {form.recurrence} copy will be created.</p>
               )}
             </div>
 
