@@ -413,7 +413,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                       </button>
                       <button
                         onClick={() => handleDeleteLabel(lbl.name)}
-                        className="absolute right-0.5 top-1/2 -translate-y-1/2 opacity-0 group-hover/lbl:opacity-100 text-white/30 hover:text-red-400 transition-all text-[9px] w-4 h-4 flex items-center justify-center"
+                        className="absolute right-0.5 top-1/2 -translate-y-1/2 opacity-0 group-hover/lbl:opacity-100 pointer-events-none group-hover/lbl:pointer-events-auto text-white/30 hover:text-red-400 transition-all text-[9px] w-4 h-4 flex items-center justify-center"
                         title="Remove label"
                       >×</button>
                     </div>
