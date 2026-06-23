@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, LayoutDashboard, Lock, Users, Gift, CheckCircle, AlertTriangle, TrendingUp, Folder, CalendarClock, ChevronDown, ChevronUp, Zap, Mail, Settings, X, CreditCard, Sparkles } from 'lucide-react'
+import { Plus, LayoutDashboard, Lock, Users, Gift, CheckCircle, AlertTriangle, TrendingUp, Folder, CalendarClock, ChevronDown, ChevronUp, Zap, Mail, Settings, X, CreditCard, Sparkles, HardDrive } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getProjects, getTasks, getSharedProjects } from '../../lib/pmService'
+import { getProjects, getTasks, getSharedProjects, getStorageUsedMb } from '../../lib/pmService'
+import { STORAGE_LIMITS_MB } from '../../lib/entitlements'
 import { sendWeeklyDigest } from '../../lib/openaiService'
 
 import ProjectCard from '../../components/pm/ProjectCard'
@@ -29,6 +30,7 @@ export default function PMDashboard() {
   const [showAllTasks, setShowAllTasks] = useState(false)
   const [sendingDigest, setSendingDigest] = useState(false)
   const [digestSent, setDigestSent] = useState(false)
+  const [storageUsedMb, setStorageUsedMb] = useState(null)
   const { isPro, plan, subscription, setSubscription, loading: subLoading } = useSubscription()
 
   // Auto-show upgrade modal if user signed up via a plan CTA
@@ -80,7 +82,7 @@ export default function PMDashboard() {
             acc[t.status] = (acc[t.status] || 0) + 1
             return acc
           }, {})
-          tasks.forEach((t) => collected.push({ ...t, _projectName: p.name }))
+          tasks.forEach((t) => collected.push({ ...t, _projectName: p.name, _projectSlug: p.slug || p.id }))
         })
       )
       setTaskCounts(counts)
@@ -88,6 +90,7 @@ export default function PMDashboard() {
       setFetching(false)
     }
     load()
+    getStorageUsedMb(user.id).then(setStorageUsedMb)
   }, [user])
 
   const handleNewProject = () => {
@@ -310,6 +313,42 @@ export default function PMDashboard() {
           </div>
         )}
 
+        {/* Storage usage bar */}
+        {storageUsedMb !== null && (() => {
+          const limitMb = STORAGE_LIMITS_MB[plan] || STORAGE_LIMITS_MB.free
+          const pct = Math.min(Math.round((storageUsedMb / limitMb) * 100), 100)
+          const nearLimit = pct >= 80
+          return (
+            <div className={`mb-4 glass rounded-xl px-4 py-3 flex items-center gap-4 ${nearLimit ? 'border border-yellow-400/15' : ''}`}>
+              <div className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
+                <HardDrive size={14} className={nearLimit ? 'text-yellow-400' : 'text-white/40'} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-[10px] text-white/40 uppercase tracking-wider">Storage</p>
+                  <p className="text-[10px] text-white/50">
+                    {storageUsedMb} MB / {limitMb >= 1024 ? `${limitMb / 1024} GB` : `${limitMb} MB`}
+                  </p>
+                </div>
+                <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${nearLimit ? 'bg-yellow-400' : 'bg-white/40'}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+              {nearLimit && !isPro && (
+                <button
+                  onClick={() => setShowUpgrade(true)}
+                  className="text-[10px] font-semibold text-yellow-400 border border-yellow-400/30 hover:bg-yellow-400/10 px-2.5 py-1.5 rounded-lg transition-colors flex-shrink-0"
+                >
+                  Upgrade
+                </button>
+              )}
+            </div>
+          )
+        })()}
+
         {/* Limit banner */}
         {atLimit && (
           <div className="mb-6 flex items-center justify-between glass rounded-xl px-5 py-4 border border-yellow-400/10">
@@ -436,7 +475,7 @@ export default function PMDashboard() {
                       {visibleTasks.map((t) => (
                         <div
                           key={t.id}
-                          onClick={() => navigate(`/pm/projects/${t.project_id}`)}
+                          onClick={() => navigate(`/pm/projects/${t._projectSlug || t.project_id}`)}
                           className="glass rounded-xl px-4 py-2.5 flex items-center gap-3 cursor-pointer hover:border-white/20 transition-all group/task"
                         >
                           <div className="flex-1 min-w-0">

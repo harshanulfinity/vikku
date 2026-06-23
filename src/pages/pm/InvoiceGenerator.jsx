@@ -237,7 +237,7 @@ export default function InvoiceGenerator() {
         breadcrumbs={[
           { label: 'PM', href: '/pm' },
           { label: 'Projects', href: '/pm/dashboard' },
-          { label: project?.name, href: `/pm/projects/${id}` },
+          { label: project?.name, href: `/pm/projects/${project?.slug || id}` },
           { label: 'Invoice' },
         ]}
         actions={

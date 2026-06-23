@@ -4,7 +4,7 @@ import {
   X, Trash2, Loader2, MessageCircle, Send, Trash,
   CheckSquare, Square, Plus, Clock, User, Timer, Link, ExternalLink,
   Paperclip, Download, FileText, Bell, BellOff, TrendingUp, TrendingDown,
-  GitMerge, RotateCcw,
+  GitMerge, RotateCcw, Eye, EyeOff, ThumbsUp, ThumbsDown,
 } from 'lucide-react'
 import {
   updateTask, deleteTask, getTaskComments, createTaskComment, deleteTaskComment,
@@ -12,7 +12,9 @@ import {
   getTimeLogs, createTimeLog, deleteTimeLog, getProjectMembers,
   getTaskAttachments, uploadTaskAttachment, deleteTaskAttachment, getAttachmentUrl,
   getTasks, getTaskDependencies, addTaskDependency, removeTaskDependency,
+  getStorageUsedMb, toggleAttachmentVisibility,
 } from '../../lib/pmService'
+import { STORAGE_LIMITS_MB } from '../../lib/entitlements'
 import { TASK_LABELS, LABEL_STYLES } from '../../lib/pmConstants'
 import { useAuth } from '../../contexts/AuthContext'
 import useSubscription from '../../hooks/useSubscription'
@@ -262,6 +264,12 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     if (!file || !user) return
     setUploading(true)
     try {
+      const limitMb = STORAGE_LIMITS_MB[isPro ? 'pro' : 'free']
+      const usedMb = await getStorageUsedMb(user.id)
+      if (usedMb + file.size / (1024 * 1024) > limitMb) {
+        alert(`Storage limit reached (${limitMb >= 1024 ? `${limitMb / 1024} GB` : `${limitMb} MB`}). Upgrade your plan to upload more files.`)
+        return
+      }
       const att = await uploadTaskAttachment(task.id, user.id, file)
       setAttachments((prev) => [...prev, att])
     } catch (err) {
@@ -270,6 +278,12 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
       setUploading(false)
       e.target.value = ''
     }
+  }
+
+  const handleToggleAttachmentVisibility = async (att) => {
+    const next = !att.visible_to_client
+    setAttachments(prev => prev.map(a => a.id === att.id ? { ...a, visible_to_client: next } : a))
+    await toggleAttachmentVisibility(att.id, next)
   }
 
   const handleDeleteAttachment = async (att) => {
@@ -764,6 +778,13 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                             : `${Math.round(att.file_size / 1024)} KB`}
                         </span>
                       )}
+                      <button
+                        onClick={() => handleToggleAttachmentVisibility(att)}
+                        title={att.visible_to_client ? 'Client can see this file' : 'Hidden from client'}
+                        className={`flex-shrink-0 transition-all ${att.visible_to_client ? 'text-green-400' : 'opacity-0 group-hover:opacity-100 text-white/20 hover:text-white/50'}`}
+                      >
+                        {att.visible_to_client ? <Eye size={11} /> : <EyeOff size={11} />}
+                      </button>
                       <button onClick={() => handleDownloadAttachment(att)} className="opacity-0 group-hover:opacity-100 text-white/30 hover:text-white transition-all flex-shrink-0">
                         <Download size={11} />
                       </button>

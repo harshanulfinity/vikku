@@ -32,7 +32,7 @@ export default function ProjectCard({ project, taskCounts = {}, onDuplicated }) 
 
   return (
     <div
-      onClick={() => navigate(`/pm/projects/${project.id}`)}
+      onClick={() => navigate(`/pm/projects/${project.slug || project.id}`)}
       className="glass rounded-2xl p-5 cursor-pointer hover:border-white/20 transition-all group"
     >
       {/* Header */}

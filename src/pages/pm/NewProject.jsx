@@ -211,7 +211,7 @@ export default function NewProject() {
       }
 
       const isBlank = !template || template.tasks.length === 0
-      navigate(`/pm/projects/${project.id}${isBlank ? '?onboard=1' : ''}`)
+      navigate(`/pm/projects/${project.slug || project.id}${isBlank ? '?onboard=1' : ''}`)
     } catch (err) {
       setError(err.message)
       setSaving(false)

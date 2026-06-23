@@ -21,13 +21,25 @@ export async function getProjects(userId) {
   }
 }
 
-export async function getProject(id) {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export function generateProjectSlug(name, id) {
+  const base = (name || 'project')
+    .slice(0, 46)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'project'
+  return `${base}-${id.slice(0, 4)}`
+}
+
+export async function getProject(idOrSlug) {
   if (!supabase) return null
   try {
+    const field = UUID_RE.test(idOrSlug) ? 'id' : 'slug'
     const { data, error } = await supabase
       .from('pm_projects')
       .select('*')
-      .eq('id', id)
+      .eq(field, idOrSlug)
       .single()
     if (error) {
       console.error('Error fetching project:', error)
@@ -66,7 +78,9 @@ export async function createProject(fields) {
     .select()
     .single()
   if (error) throw error
-  return data
+  const slug = generateProjectSlug(data.name, data.id)
+  await supabase.from('pm_projects').update({ slug }).eq('id', data.id)
+  return { ...data, slug }
 }
 
 export async function updateProject(id, fields) {
@@ -444,6 +458,8 @@ export async function duplicateProject(projectId) {
     })
     .select().single()
   if (ne) throw ne
+  const slug = generateProjectSlug(`${orig.name} copy`, newProject.id)
+  await supabase.from('pm_projects').update({ slug }).eq('id', newProject.id)
   const { data: tasks } = await supabase.from('pm_tasks').select('*').eq('project_id', projectId)
   if (tasks && tasks.length > 0) {
     await supabase.from('pm_tasks').insert(
@@ -506,6 +522,56 @@ export async function getAttachmentUrl(filePath) {
   if (!supabase) return null
   const { data } = await supabase.storage.from('pm-attachments').createSignedUrl(filePath, 3600)
   return data?.signedUrl || null
+}
+
+export async function getProjectAttachments(projectId) {
+  if (!supabase) return []
+  try {
+    const { data: tasks } = await supabase.from('pm_tasks').select('id, title').eq('project_id', projectId)
+    if (!tasks?.length) return []
+    const taskMap = Object.fromEntries(tasks.map(t => [t.id, t.title]))
+    const { data, error } = await supabase
+      .from('pm_task_attachments')
+      .select('*')
+      .in('task_id', tasks.map(t => t.id))
+      .order('created_at', { ascending: false })
+    if (error) { console.error(error); return [] }
+    return (data || []).map(a => ({ ...a, task_title: taskMap[a.task_id] || '' }))
+  } catch { return [] }
+}
+
+export async function getStorageUsedMb(userId) {
+  if (!supabase || !userId) return 0
+  try {
+    const { data } = await supabase
+      .from('pm_task_attachments')
+      .select('file_size')
+      .eq('user_id', userId)
+    if (!data?.length) return 0
+    const totalBytes = data.reduce((s, r) => s + (r.file_size || 0), 0)
+    return Math.round((totalBytes / (1024 * 1024)) * 10) / 10
+  } catch { return 0 }
+}
+
+export async function toggleAttachmentVisibility(id, visible) {
+  if (!supabase) return
+  await supabase.from('pm_task_attachments').update({ visible_to_client: visible }).eq('id', id)
+}
+
+export async function getClientVisibleAttachments(projectId) {
+  if (!supabase) return []
+  try {
+    const { data: tasks } = await supabase.from('pm_tasks').select('id').eq('project_id', projectId)
+    if (!tasks?.length) return []
+    const { data, error } = await supabase
+      .from('pm_task_attachments')
+      .select('*')
+      .in('task_id', tasks.map(t => t.id))
+      .eq('visible_to_client', true)
+      .order('created_at', { ascending: false })
+    if (error) { console.error(error); return [] }
+    return data || []
+  } catch { return [] }
 }
 
 // ── Client Comments ────────────────────────────────────────────
