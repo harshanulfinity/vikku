@@ -1,8 +1,90 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { CheckCircle2, Circle, Clock, Flag, ThumbsUp, ThumbsDown, MessageSquare, Send, Loader2, Lock } from 'lucide-react'
+import { CheckCircle2, Circle, Clock, Flag, ThumbsUp, ThumbsDown, MessageSquare, Send, Loader2, Lock, Paperclip, Download, File, FileImage, FileText } from 'lucide-react'
 import { getProjectByToken, getTasks, getMilestones, updateMilestone, getClientComments, createClientComment, verifySharePin, approveTaskAsClient } from '../../lib/pmService'
 import { notifyClientComment, notifyClientApproval, notifyMilestoneApproval, insertPmNotification } from '../../lib/notificationService'
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+
+function ClientFileIcon({ mime }) {
+  if (mime?.startsWith('image/')) return <FileImage size={13} className="text-blue-400 flex-shrink-0" />
+  if (mime?.includes('pdf') || mime?.includes('word') || mime?.includes('text/')) return <FileText size={13} className="text-orange-400 flex-shrink-0" />
+  return <File size={13} className="text-white/40 flex-shrink-0" />
+}
+
+function ClientFiles({ shareToken, projectId }) {
+  const [files, setFiles] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [downloading, setDownloading] = useState(null)
+
+  useEffect(() => {
+    if (!projectId || !shareToken) { setLoading(false); return }
+    // Use the public pmService path — RLS won't allow this for unauthenticated users,
+    // so we only show the list via a count; actual download goes through the edge function.
+    // We fetch using the service-role edge function.
+    const load = async () => {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/get-client-file?share_token=${shareToken}&list=1`)
+        if (res.ok) {
+          const data = await res.json()
+          setFiles(data.files || [])
+        }
+      } catch { /* silent */ }
+      setLoading(false)
+    }
+    load()
+  }, [shareToken, projectId])
+
+  const handleDownload = async (fileId, fileName) => {
+    setDownloading(fileId)
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/get-client-file?share_token=${shareToken}&file_id=${fileId}`)
+      if (res.ok) {
+        const { url } = await res.json()
+        if (url) window.open(url, '_blank')
+      }
+    } catch { /* silent */ }
+    setDownloading(null)
+  }
+
+  if (loading || files.length === 0) return null
+
+  return (
+    <div className="glass rounded-2xl p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <Paperclip size={14} className="text-white/30" />
+        <h2 className="text-xs font-semibold text-white/80">Shared Files</h2>
+        <span className="text-[10px] text-white/30">({files.length})</span>
+      </div>
+      <div className="space-y-2">
+        {files.map((f) => (
+          <div key={f.id} className="flex items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2.5 group">
+            <ClientFileIcon mime={f.mime_type} />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-white/70 truncate">{f.file_name}</p>
+              {f.file_size > 0 && (
+                <p className="text-[10px] text-white/30">
+                  {f.file_size >= 1024 * 1024
+                    ? `${(f.file_size / 1024 / 1024).toFixed(1)} MB`
+                    : `${Math.round(f.file_size / 1024)} KB`}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => handleDownload(f.id, f.file_name)}
+              disabled={downloading === f.id}
+              className="text-white/30 hover:text-white transition-colors flex-shrink-0"
+            >
+              {downloading === f.id
+                ? <Loader2 size={13} className="animate-spin" />
+                : <Download size={13} />}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const STATUS_LABELS = {
   todo: 'To Do',
@@ -554,6 +636,9 @@ export default function ClientView() {
 
         {/* Task approvals */}
         {tasks.length > 0 && <TaskApprovals tasks={tasks} token={token} ownerUserId={project?.user_id} />}
+
+        {/* Shared files */}
+        <ClientFiles shareToken={token} projectId={project.id} />
 
         {/* Client comments */}
         <ClientComments projectId={project.id} shareToken={token} />

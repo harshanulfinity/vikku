@@ -66,3 +66,5 @@ export function can(plan, feature) {
 export function requiresPro(feature) {
   return !can('free', feature)
 }
+
+export const STORAGE_LIMITS_MB = { free: 200, pro: 2048, team: 10240 }

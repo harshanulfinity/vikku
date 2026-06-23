@@ -6,7 +6,7 @@ import UpgradeModal from './pm/UpgradeModal'
 import { priceBreakdown } from '../lib/razorpayService'
 import {
   Kanban, Users, Clock, BarChart2, FileText, Zap, Share2, CheckCircle,
-  ArrowRight, Star,
+  ArrowRight, Star, HardDrive,
 } from 'lucide-react'
 
 const FEATURES = [
@@ -70,6 +70,13 @@ const FEATURES = [
     title: 'AI Project Assistant',
     desc: 'Describe your project goal and the AI breaks it into a full task list with estimates. Start in minutes, not hours.',
   },
+  {
+    icon: HardDrive,
+    color: 'text-teal-400',
+    bg: 'bg-teal-500/10',
+    title: 'File Storage',
+    desc: 'Attach files, screenshots, and docs to any task. Share files with clients directly from the client portal.',
+  },
 ]
 
 const PLANS = [
@@ -90,6 +97,7 @@ const PLANS = [
       'Milestones & analytics',
       'PDF export & manual time logging',
       'AI planner (6 plans/month)',
+      '200 MB file storage',
     ],
   },
   {
@@ -111,6 +119,7 @@ const PLANS = [
       'Client portal (PIN-protected share link)',
       'Custom workflows',
       'Up to 10 members per project',
+      '2 GB file storage',
     ],
   },
   {
@@ -127,6 +136,7 @@ const PLANS = [
       'Unlimited members per project',
       'Unlimited member invite links',
       'Shared access across your whole team',
+      '10 GB file storage',
     ],
   },
 ]

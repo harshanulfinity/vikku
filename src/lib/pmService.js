@@ -508,6 +508,56 @@ export async function getAttachmentUrl(filePath) {
   return data?.signedUrl || null
 }
 
+export async function getProjectAttachments(projectId) {
+  if (!supabase) return []
+  try {
+    const { data: tasks } = await supabase.from('pm_tasks').select('id, title').eq('project_id', projectId)
+    if (!tasks?.length) return []
+    const taskMap = Object.fromEntries(tasks.map(t => [t.id, t.title]))
+    const { data, error } = await supabase
+      .from('pm_task_attachments')
+      .select('*')
+      .in('task_id', tasks.map(t => t.id))
+      .order('created_at', { ascending: false })
+    if (error) { console.error(error); return [] }
+    return (data || []).map(a => ({ ...a, task_title: taskMap[a.task_id] || '' }))
+  } catch { return [] }
+}
+
+export async function getStorageUsedMb(userId) {
+  if (!supabase || !userId) return 0
+  try {
+    const { data } = await supabase
+      .from('pm_task_attachments')
+      .select('file_size')
+      .eq('user_id', userId)
+    if (!data?.length) return 0
+    const totalBytes = data.reduce((s, r) => s + (r.file_size || 0), 0)
+    return Math.round((totalBytes / (1024 * 1024)) * 10) / 10
+  } catch { return 0 }
+}
+
+export async function toggleAttachmentVisibility(id, visible) {
+  if (!supabase) return
+  await supabase.from('pm_task_attachments').update({ visible_to_client: visible }).eq('id', id)
+}
+
+export async function getClientVisibleAttachments(projectId) {
+  if (!supabase) return []
+  try {
+    const { data: tasks } = await supabase.from('pm_tasks').select('id').eq('project_id', projectId)
+    if (!tasks?.length) return []
+    const { data, error } = await supabase
+      .from('pm_task_attachments')
+      .select('*')
+      .in('task_id', tasks.map(t => t.id))
+      .eq('visible_to_client', true)
+      .order('created_at', { ascending: false })
+    if (error) { console.error(error); return [] }
+    return data || []
+  } catch { return [] }
+}
+
 // ── Client Comments ────────────────────────────────────────────
 
 export async function getClientComments(shareToken) {

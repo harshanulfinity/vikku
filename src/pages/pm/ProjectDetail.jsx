@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt, Timer, Sparkles, MessageSquare, AlertCircle, Clock, Layers, MoreHorizontal } from 'lucide-react'
+import { Share2, Trash2, Copy, Check, LayoutDashboard, GitBranch, BarChart2, Calendar, Lock, UserPlus, FileDown, Search, X as XIcon, Receipt, Timer, Sparkles, MessageSquare, AlertCircle, Clock, Layers, MoreHorizontal, Paperclip } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getProject, getTasks, getMilestones, deleteProject, getWorkflow, getClientComments, updateProject, getProjectDependencies, getSubtaskCounts } from '../../lib/pmService'
 import { supabase } from '../../lib/supabaseClient'
@@ -15,6 +15,7 @@ import MembersPanel from '../../components/pm/MembersPanel'
 import ActivityFeed from '../../components/pm/ActivityFeed'
 import WorkflowEditor from '../../components/pm/WorkflowEditor'
 import TimeTrackingPanel from '../../components/pm/TimeTrackingPanel'
+import FilesPanel from '../../components/pm/FilesPanel'
 import useSubscription from '../../hooks/useSubscription'
 import UpgradeModal from '../../components/pm/UpgradeModal'
 import AppHeader from '../../components/AppHeader'
@@ -26,6 +27,7 @@ const TABS = [
   { key: 'analytics', label: 'Analytics', icon: BarChart2 },
   { key: 'calendar',  label: 'Calendar',  icon: Calendar },
   { key: 'time',      label: 'Time',      icon: Clock, pro: true },
+  { key: 'files',     label: 'Files',     icon: Paperclip },
 ]
 
 const UPGRADE_REASONS = {
@@ -627,6 +629,7 @@ export default function ProjectDetail() {
                   {activeTab === 'analytics' && <AnalyticsPanel tasks={filtered} milestones={milestones} stages={workflowStages} />}
                   {activeTab === 'calendar' && <CalendarView tasks={filtered} milestones={milestones} />}
                   {activeTab === 'time' && <TimeTrackingPanel projectId={id} tasks={tasks} />}
+                  {activeTab === 'files' && <FilesPanel projectId={id} isOwner />}
                 </>
               )
             })()}
