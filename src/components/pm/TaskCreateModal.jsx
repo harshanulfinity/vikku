@@ -175,21 +175,24 @@ export default function TaskCreateModal({ projectId, initialStatus, initialStatu
                 {projectLabels.map((lbl) => {
                   const active = form.label === lbl.name
                   return (
-                    <div key={lbl.name} className="relative group/lbl flex items-center">
+                    <div key={lbl.name} className="flex items-stretch rounded-lg overflow-hidden border" style={{ borderColor: active ? `${lbl.color}60` : 'rgba(255,255,255,0.1)' }}>
                       <button
+                        type="button"
                         onClick={() => setForm({ ...form, label: active ? '' : lbl.name })}
-                        className="text-[10px] px-2 py-1 rounded-lg border font-medium transition-all pr-5"
+                        className="text-[10px] px-2 py-1 font-medium transition-all"
                         style={active
-                          ? { background: `${lbl.color}25`, color: lbl.color, borderColor: `${lbl.color}50` }
-                          : { borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)' }
+                          ? { backgroundColor: `${lbl.color}22`, color: lbl.color }
+                          : { backgroundColor: 'transparent', color: 'rgba(255,255,255,0.55)' }
                         }
                       >
                         {lbl.name}
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDeleteLabel(lbl.name)}
-                        className="absolute right-0.5 top-1/2 -translate-y-1/2 opacity-0 group-hover/lbl:opacity-100 pointer-events-none group-hover/lbl:pointer-events-auto text-white/30 hover:text-red-400 transition-all text-[9px] w-4 h-4 flex items-center justify-center"
-                        title="Remove label"
+                        className="text-[9px] px-1.5 border-l transition-all text-white/20 hover:text-red-400 hover:bg-red-500/10"
+                        style={{ borderColor: 'rgba(255,255,255,0.08)' }}
+                        title={`Remove ${lbl.name}`}
                       >×</button>
                     </div>
                   )
