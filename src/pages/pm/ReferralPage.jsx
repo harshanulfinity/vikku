@@ -6,9 +6,9 @@ import AppHeader from '../../components/AppHeader'
 import { supabase } from '../../lib/supabaseClient'
 
 const REWARDS = [
-  { count: 1, reward: '1 month Pro free', icon: '🎁', color: 'text-yellow-400', bg: 'bg-yellow-400/10 border-yellow-400/20' },
-  { count: 3, reward: '3 months Pro free', icon: '🚀', color: 'text-blue-400', bg: 'bg-blue-400/10 border-blue-400/20' },
-  { count: 5, reward: '6 months Pro free', icon: '⭐', color: 'text-purple-400', bg: 'bg-purple-400/10 border-purple-400/20' },
+  { count: 1, reward: '1 month Pro free', color: 'text-yellow-400', bg: 'bg-yellow-400/10 border-yellow-400/20' },
+  { count: 3, reward: '3 months Pro free', color: 'text-blue-400', bg: 'bg-blue-400/10 border-blue-400/20' },
+  { count: 5, reward: '6 months Pro free', color: 'text-purple-400', bg: 'bg-purple-400/10 border-purple-400/20' },
 ]
 
 export default function ReferralPage() {
@@ -35,8 +35,8 @@ export default function ReferralPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const waText = encodeURIComponent(`Hey! I use Vikku PM to manage my projects — it's really good. Sign up free here: ${referralLink}`)
-  const emailSubject = encodeURIComponent('Try Vikku PM — free project management tool')
+  const waText = encodeURIComponent(`Hey! I use Vikku PM to manage my projects. Sign up free here: ${referralLink}`)
+  const emailSubject = encodeURIComponent('Try Vikku PM - free project management tool')
   const emailBody = encodeURIComponent(`Hey,\n\nI've been using Vikku PM to manage my projects and it's been great. Thought you'd find it useful too.\n\nSign up free here: ${referralLink}\n\n- ${user?.email || 'A friend'}`)
 
   // Next reward milestone
@@ -68,7 +68,7 @@ export default function ReferralPage() {
               <Users size={16} className="text-white/40" />
             </div>
             <p className="text-3xl font-bold text-white">
-              {referralCount == null ? '—' : referralCount}
+              {referralCount == null ? '0' : referralCount}
             </p>
             <p className="text-xs text-white/40 mt-1">Friends joined</p>
           </div>
@@ -89,7 +89,6 @@ export default function ReferralPage() {
               const achieved = (referralCount ?? 0) >= r.count
               return (
                 <div key={r.count} className={`flex items-center gap-4 rounded-xl px-4 py-3 border ${achieved ? r.bg : 'bg-white/[0.02] border-white/[0.06]'}`}>
-                  <span className="text-xl">{r.icon}</span>
                   <div className="flex-1">
                     <p className={`text-sm font-semibold ${achieved ? r.color : 'text-white/40'}`}>{r.reward}</p>
                     <p className="text-[10px] text-white/30">{r.count} referral{r.count > 1 ? 's' : ''} needed</p>
@@ -159,7 +158,7 @@ export default function ReferralPage() {
           <div className="space-y-4">
             {[
               { icon: <Copy size={14} />, title: 'Share your link', desc: 'Copy your unique link and share it with anyone who manages projects.' },
-              { icon: <Users size={14} />, title: 'They sign up free', desc: 'Your friend creates an account — no credit card, no pressure.' },
+              { icon: <Users size={14} />, title: 'They sign up free', desc: 'Your friend creates an account. No credit card, no pressure.' },
               { icon: <Zap size={14} />, title: 'They upgrade → both win', desc: 'When they subscribe to Pro, you both get free months automatically.' },
             ].map((step, i) => (
               <div key={i} className="flex items-start gap-4">
@@ -180,7 +179,7 @@ export default function ReferralPage() {
           <div className="glass rounded-xl px-4 py-3 mb-8 flex items-center gap-3 border border-yellow-400/15">
             <Clock size={14} className="text-yellow-400 flex-shrink-0" />
             <p className="text-xs text-white/60">
-              Rewards are applied manually — our team will add free months to your account within 24 hours of a referral upgrading.
+              Rewards are applied manually. Our team will add free months to your account within 24 hours of a referral upgrading.
             </p>
           </div>
         )}
