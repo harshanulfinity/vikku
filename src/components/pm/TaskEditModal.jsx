@@ -119,6 +119,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const handleAddLabel = async () => {
     const name = newLabelName.trim()
     if (!name) return
+    if (projectLabels.some((l) => l.name === name)) { setAddingLabel(false); setNewLabelName(''); return }
     const updated = [...projectLabels, { name, color: newLabelColor }]
     setProjectLabels(updated)
     setNewLabelName('')
@@ -130,7 +131,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const handleDeleteLabel = async (labelName) => {
     const updated = projectLabels.filter((l) => l.name !== labelName)
     setProjectLabels(updated)
-    if (form.label === labelName) setForm({ ...form, label: '' })
+    setForm((prev) => prev.label === labelName ? { ...prev, label: '' } : prev)
     await saveProjectLabels(task.project_id, updated)
   }
 

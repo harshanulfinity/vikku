@@ -38,6 +38,8 @@ const UPGRADE_REASONS = {
   branding: 'Client portal branding is a Pro feature. Add your logo and accent color to the client share page.',
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export default function ProjectDetail() {
   const { id } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -71,8 +73,6 @@ export default function ProjectDetail() {
   useEffect(() => {
     if (!loading && !user) navigate('/login')
   }, [user, loading, navigate])
-
-  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
   useEffect(() => {
     if (!user || !id) return

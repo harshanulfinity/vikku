@@ -61,6 +61,7 @@ export default function TaskCreateModal({ projectId, initialStatus, initialStatu
   const handleAddLabel = async () => {
     const name = newLabelName.trim()
     if (!name) return
+    if (projectLabels.some((l) => l.name === name)) { setAddingLabel(false); setNewLabelName(''); return }
     const updated = [...projectLabels, { name, color: newLabelColor }]
     setProjectLabels(updated)
     setNewLabelName('')
@@ -72,7 +73,7 @@ export default function TaskCreateModal({ projectId, initialStatus, initialStatu
   const handleDeleteLabel = async (labelName) => {
     const updated = projectLabels.filter((l) => l.name !== labelName)
     setProjectLabels(updated)
-    if (form.label === labelName) setForm({ ...form, label: '' })
+    setForm((prev) => prev.label === labelName ? { ...prev, label: '' } : prev)
     await saveProjectLabels(projectId, updated)
   }
 
