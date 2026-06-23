@@ -13,9 +13,10 @@ import {
   getTaskAttachments, uploadTaskAttachment, deleteTaskAttachment, getAttachmentUrl,
   getTasks, getTaskDependencies, addTaskDependency, removeTaskDependency,
   getStorageUsedMb, toggleAttachmentVisibility,
+  getProjectLabels, saveProjectLabels,
 } from '../../lib/pmService'
 import { STORAGE_LIMITS_MB } from '../../lib/entitlements'
-import { TASK_LABELS, LABEL_STYLES } from '../../lib/pmConstants'
+import { DEFAULT_LABELS, LABEL_COLORS, getLabelStyle } from '../../lib/pmConstants'
 import { useAuth } from '../../contexts/AuthContext'
 import useSubscription from '../../hooks/useSubscription'
 import TaskTimer from './TaskTimer'
@@ -97,6 +98,11 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const [depSearch, setDepSearch] = useState('')
   const [showDepPicker, setShowDepPicker] = useState(false)
 
+  const [projectLabels, setProjectLabels] = useState([])
+  const [addingLabel, setAddingLabel] = useState(false)
+  const [newLabelName, setNewLabelName] = useState('')
+  const [newLabelColor, setNewLabelColor] = useState(LABEL_COLORS[0])
+
   useEffect(() => {
     getTaskComments(task.id).then(setComments)
     getSubtasks(task.id).then(setSubtasks)
@@ -106,8 +112,27 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
       getProjectMembers(task.project_id).then(setMembers)
       getTasks(task.project_id).then(setProjectTasks)
       getTaskDependencies(task.id).then(setDependencies)
+      getProjectLabels(task.project_id).then((lbls) => setProjectLabels(lbls.length > 0 ? lbls : DEFAULT_LABELS))
     }
   }, [task.id, task.project_id])
+
+  const handleAddLabel = async () => {
+    const name = newLabelName.trim()
+    if (!name) return
+    const updated = [...projectLabels, { name, color: newLabelColor }]
+    setProjectLabels(updated)
+    setNewLabelName('')
+    setNewLabelColor(LABEL_COLORS[updated.length % LABEL_COLORS.length])
+    setAddingLabel(false)
+    await saveProjectLabels(task.project_id, updated)
+  }
+
+  const handleDeleteLabel = async (labelName) => {
+    const updated = projectLabels.filter((l) => l.name !== labelName)
+    setProjectLabels(updated)
+    if (form.label === labelName) setForm({ ...form, label: '' })
+    await saveProjectLabels(task.project_id, updated)
+  }
 
   const totalLogged = timeLogs.reduce((s, l) => s + (l.minutes || 0), 0)
   const subtasksDone = subtasks.filter((s) => s.completed).length
@@ -297,7 +322,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   }
 
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done'
-  const labelStyle = form.label ? LABEL_STYLES[form.label] : null
+  const labelStyle = form.label ? getLabelStyle(form.label, projectLabels) : null
 
   const modal = (
     <>
@@ -322,7 +347,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
               </span>
             )}
             {form.label && labelStyle && (
-              <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${labelStyle.bg} ${labelStyle.text} ${labelStyle.border}`}>
+              <span className="text-[9px] px-1.5 py-0.5 rounded border font-medium" style={{ background: labelStyle.bg, color: labelStyle.color, borderColor: labelStyle.border }}>
                 {form.label}
               </span>
             )}
@@ -372,20 +397,59 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                 >
                   None
                 </button>
-                {TASK_LABELS.map((lbl) => {
-                  const s = LABEL_STYLES[lbl]
+                {projectLabels.map((lbl) => {
+                  const active = form.label === lbl.name
                   return (
-                    <button
-                      key={lbl}
-                      onClick={() => setForm({ ...form, label: form.label === lbl ? '' : lbl })}
-                      className={`text-[10px] px-2 py-1 rounded-lg border font-medium transition-all ${
-                        form.label === lbl ? `${s.bg} ${s.text} ${s.border}` : 'border-white/[0.08] text-white/30 hover:border-white/20'
-                      }`}
-                    >
-                      {lbl}
-                    </button>
+                    <div key={lbl.name} className="relative group/lbl flex items-center">
+                      <button
+                        onClick={() => setForm({ ...form, label: active ? '' : lbl.name })}
+                        className="text-[10px] px-2 py-1 rounded-lg border font-medium transition-all pr-5"
+                        style={active
+                          ? { background: `${lbl.color}25`, color: lbl.color, borderColor: `${lbl.color}50` }
+                          : { borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)' }
+                        }
+                      >
+                        {lbl.name}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteLabel(lbl.name)}
+                        className="absolute right-0.5 top-1/2 -translate-y-1/2 opacity-0 group-hover/lbl:opacity-100 text-white/30 hover:text-red-400 transition-all text-[9px] w-4 h-4 flex items-center justify-center"
+                        title="Remove label"
+                      >×</button>
+                    </div>
                   )
                 })}
+                {addingLabel ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      autoFocus
+                      value={newLabelName}
+                      onChange={(e) => setNewLabelName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleAddLabel(); if (e.key === 'Escape') setAddingLabel(false) }}
+                      placeholder="Label name"
+                      className="text-[10px] bg-white/[0.06] border border-white/20 rounded-lg px-2 py-1 text-white/80 w-24 outline-none"
+                    />
+                    <div className="flex gap-1">
+                      {LABEL_COLORS.map((c) => (
+                        <button
+                          key={c}
+                          onClick={() => setNewLabelColor(c)}
+                          className="w-3.5 h-3.5 rounded-full transition-transform hover:scale-125"
+                          style={{ background: c, outline: newLabelColor === c ? `2px solid ${c}` : 'none', outlineOffset: '1px' }}
+                        />
+                      ))}
+                    </div>
+                    <button onClick={handleAddLabel} className="text-[10px] text-white/60 hover:text-white px-1.5 py-0.5 rounded border border-white/20 hover:border-white/40 transition-all">Add</button>
+                    <button onClick={() => setAddingLabel(false)} className="text-[10px] text-white/30 hover:text-white/60">✕</button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setAddingLabel(true)}
+                    className="text-[10px] px-2 py-1 rounded-lg border border-dashed border-white/20 text-white/30 hover:text-white/60 hover:border-white/40 transition-all flex items-center gap-1"
+                  >
+                    <Plus size={9} /> Label
+                  </button>
+                )}
               </div>
             </div>
 

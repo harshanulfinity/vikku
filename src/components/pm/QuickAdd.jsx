@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { Zap, X } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getProjects, createTask } from '../../lib/pmService'
-import { TASK_LABELS, LABEL_STYLES } from '../../lib/pmConstants'
+import { DEFAULT_LABELS, getLabelStyle } from '../../lib/pmConstants'
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent']
 const PRIORITY_STYLES = {
@@ -156,15 +156,20 @@ export default function QuickAdd() {
             >
               No label
             </button>
-            {TASK_LABELS.map((lbl) => {
-              const s = LABEL_STYLES[lbl]
+            {DEFAULT_LABELS.map((lbl) => {
+              const active = label === lbl.name
+              const s = getLabelStyle(lbl.name, DEFAULT_LABELS)
               return (
                 <button
-                  key={lbl}
-                  onClick={() => setLabel(label === lbl ? '' : lbl)}
-                  className={`text-[10px] px-2 py-1 rounded-lg border font-medium transition-all ${label === lbl ? `${s.bg} ${s.text} ${s.border}` : 'border-white/[0.08] text-white/30 hover:border-white/20'}`}
+                  key={lbl.name}
+                  onClick={() => setLabel(active ? '' : lbl.name)}
+                  className="text-[10px] px-2 py-1 rounded-lg border font-medium transition-all"
+                  style={active && s
+                    ? { background: s.bg, color: s.color, borderColor: s.border }
+                    : { borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)' }
+                  }
                 >
-                  {lbl}
+                  {lbl.name}
                 </button>
               )
             })}

@@ -12,7 +12,7 @@ function getNextDueDate(dueDate, recurrence) {
   else if (recurrence === 'monthly') d.setMonth(d.getMonth() + 1)
   return d.toISOString().split('T')[0]
 }
-import { LABEL_STYLES, DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
+import { getLabelStyle, DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
 
 const DEFAULT_EMPTY = {
   todo:        { Icon: ClipboardList, hint: 'Add tasks to get started' },
@@ -26,7 +26,7 @@ function stageColor(hexColor) {
   return hexColor || '#6b7280'
 }
 
-export default function KanbanBoard({ projectId, tasks, onTasksChange, user, workflow }) {
+export default function KanbanBoard({ projectId, tasks, onTasksChange, user, workflow, projectLabels }) {
   // workflow = array of stage objects [{status_key, name, color, is_done, position}, ...]
   // or null/undefined → use DEFAULT_WORKFLOW_STAGES
   const stages = (workflow && workflow.length > 0) ? workflow : DEFAULT_WORKFLOW_STAGES
@@ -207,14 +207,17 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
               All
             </button>
             {usedLabels.map((lbl) => {
-              const s = LABEL_STYLES[lbl] || {}
+              const s = getLabelStyle(lbl, projectLabels)
+              const active = labelFilter === lbl
               return (
                 <button
                   key={lbl}
-                  onClick={() => setLabelFilter(labelFilter === lbl ? '' : lbl)}
-                  className={`text-[10px] px-2.5 py-1 rounded-lg border font-medium transition-all ${
-                    labelFilter === lbl ? `${s.bg} ${s.text} ${s.border}` : 'border-white/[0.08] text-white/30 hover:border-white/20'
-                  }`}
+                  onClick={() => setLabelFilter(active ? '' : lbl)}
+                  className="text-[10px] px-2.5 py-1 rounded-lg border font-medium transition-all"
+                  style={active && s
+                    ? { background: s.bg, color: s.color, borderColor: s.border }
+                    : { borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)' }
+                  }
                 >
                   {lbl}
                 </button>
@@ -299,6 +302,7 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
                       selectMode={selectMode}
                       selected={selected.has(task.id)}
                       onToggleSelect={() => toggleSelect(task.id)}
+                      projectLabels={projectLabels}
                     />
                   ))}
                 </div>
@@ -391,6 +395,7 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
                         selectMode={selectMode}
                         selected={selected.has(task.id)}
                         onToggleSelect={() => toggleSelect(task.id)}
+                        projectLabels={projectLabels}
                       />
                       {dragOverTaskId === task.id && !dragInsertBefore && (
                         <div className="h-0.5 bg-blue-400/60 rounded-full mx-1 mt-1" />
