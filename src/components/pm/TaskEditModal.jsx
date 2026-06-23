@@ -18,7 +18,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import useSubscription from '../../hooks/useSubscription'
 import TaskTimer from './TaskTimer'
 import UpgradeModal from './UpgradeModal'
-import { notifyTaskAssigned } from '../../lib/notificationService'
+import { notifyTaskAssigned, insertPmNotification, getMemberUserId } from '../../lib/notificationService'
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent']
 
@@ -137,6 +137,17 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
         projectName: task._projectName || '',
         assigneeEmail: form.assigned_to_email,
         dueDate: form.due_date || undefined,
+      })
+      // In-app realtime notification for the assignee
+      getMemberUserId(task.project_id, form.assigned_to_email).then(assigneeId => {
+        if (assigneeId) insertPmNotification({
+          userId: assigneeId,
+          type: 'task_assigned',
+          message: `You were assigned "${form.title.trim()}"`,
+          subText: task._projectName || '',
+          projectId: task.project_id,
+          entityId: task.id,
+        })
       })
     }
   }

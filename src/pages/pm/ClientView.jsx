@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { CheckCircle2, Circle, Clock, Flag, ThumbsUp, ThumbsDown, MessageSquare, Send, Loader2, Lock } from 'lucide-react'
 import { getProjectByToken, getTasks, getMilestones, updateMilestone, getClientComments, createClientComment, verifySharePin, approveTaskAsClient } from '../../lib/pmService'
-import { notifyClientComment, notifyClientApproval, notifyMilestoneApproval } from '../../lib/notificationService'
+import { notifyClientComment, notifyClientApproval, notifyMilestoneApproval, insertPmNotification } from '../../lib/notificationService'
 
 const STATUS_LABELS = {
   todo: 'To Do',
@@ -18,7 +18,7 @@ const STATUS_COLORS = {
   done: 'text-green-400',
 }
 
-function MilestoneApproval({ milestones, onUpdate, token }) {
+function MilestoneApproval({ milestones, onUpdate, token, ownerUserId }) {
   const [approving, setApproving] = useState({})
   const [notes, setNotes] = useState({})
   const [showNote, setShowNote] = useState({})
@@ -33,6 +33,15 @@ function MilestoneApproval({ milestones, onUpdate, token }) {
     setApproving((prev) => ({ ...prev, [m.id]: false }))
     setShowNote((prev) => ({ ...prev, [m.id]: false }))
     if (token) notifyMilestoneApproval({ shareToken: token, milestoneTitle: m.title, status, note: notes[m.id] })
+    if (ownerUserId) insertPmNotification({
+      userId: ownerUserId,
+      type: status === 'approved' ? 'client_approved' : 'client_rejected',
+      message: status === 'approved'
+        ? `Client approved milestone "${m.title}"`
+        : `Client requested revision on "${m.title}"`,
+      subText: notes[m.id] || undefined,
+      entityId: m.id,
+    })
   }
 
   return (
@@ -204,7 +213,7 @@ function ClientComments({ projectId, shareToken }) {
   )
 }
 
-function TaskApprovals({ tasks, token }) {
+function TaskApprovals({ tasks, token, ownerUserId }) {
   const [approvalMap, setApprovalMap] = useState(() =>
     Object.fromEntries(tasks.map((t) => [t.id, { status: t.client_approval_status || null, note: t.client_approval_note || null }]))
   )
@@ -221,6 +230,15 @@ function TaskApprovals({ tasks, token }) {
       setApprovalMap((prev) => ({ ...prev, [task.id]: { status, note: notes[task.id] || null } }))
       setShowNote((prev) => ({ ...prev, [task.id]: false }))
       notifyClientApproval({ shareToken: token, taskTitle: task.title, status, note: notes[task.id] })
+      if (ownerUserId) insertPmNotification({
+        userId: ownerUserId,
+        type: status === 'approved' ? 'client_approved' : 'client_rejected',
+        message: status === 'approved'
+          ? `Client approved "${task.title}"`
+          : `Client requested revision on "${task.title}"`,
+        subText: notes[task.id] || undefined,
+        entityId: task.id,
+      })
     } catch (err) {
       setErrors((prev) => ({ ...prev, [task.id]: err?.message || 'Failed' }))
     }
@@ -529,13 +547,13 @@ export default function ClientView() {
 
         {/* Milestones */}
         {milestones.length > 0 && (
-          <MilestoneApproval milestones={milestones} token={token} onUpdate={(updated) =>
+          <MilestoneApproval milestones={milestones} token={token} ownerUserId={project?.user_id} onUpdate={(updated) =>
             setMilestones((prev) => prev.map((m) => m.id === updated.id ? updated : m))
           } />
         )}
 
         {/* Task approvals */}
-        {tasks.length > 0 && <TaskApprovals tasks={tasks} token={token} />}
+        {tasks.length > 0 && <TaskApprovals tasks={tasks} token={token} ownerUserId={project?.user_id} />}
 
         {/* Client comments */}
         <ClientComments projectId={project.id} shareToken={token} />
