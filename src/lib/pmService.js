@@ -21,13 +21,25 @@ export async function getProjects(userId) {
   }
 }
 
-export async function getProject(id) {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export function generateProjectSlug(name, id) {
+  const base = (name || 'project')
+    .slice(0, 46)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'project'
+  return `${base}-${id.slice(0, 4)}`
+}
+
+export async function getProject(idOrSlug) {
   if (!supabase) return null
   try {
+    const field = UUID_RE.test(idOrSlug) ? 'id' : 'slug'
     const { data, error } = await supabase
       .from('pm_projects')
       .select('*')
-      .eq('id', id)
+      .eq(field, idOrSlug)
       .single()
     if (error) {
       console.error('Error fetching project:', error)
@@ -66,7 +78,9 @@ export async function createProject(fields) {
     .select()
     .single()
   if (error) throw error
-  return data
+  const slug = generateProjectSlug(data.name, data.id)
+  await supabase.from('pm_projects').update({ slug }).eq('id', data.id)
+  return { ...data, slug }
 }
 
 export async function updateProject(id, fields) {
@@ -444,6 +458,8 @@ export async function duplicateProject(projectId) {
     })
     .select().single()
   if (ne) throw ne
+  const slug = generateProjectSlug(`${orig.name} copy`, newProject.id)
+  await supabase.from('pm_projects').update({ slug }).eq('id', newProject.id)
   const { data: tasks } = await supabase.from('pm_tasks').select('*').eq('project_id', projectId)
   if (tasks && tasks.length > 0) {
     await supabase.from('pm_tasks').insert(

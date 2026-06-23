@@ -72,12 +72,20 @@ export default function ProjectDetail() {
     if (!loading && !user) navigate('/login')
   }, [user, loading, navigate])
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
   useEffect(() => {
     if (!user || !id) return
     async function load() {
       setFetching(true)
-      const [p, t, m] = await Promise.all([getProject(id), getTasks(id), getMilestones(id)])
+      const p = await getProject(id)
       if (!p) { navigate('/pm/dashboard'); return }
+      // Redirect UUID URLs to clean slug URL
+      if (UUID_RE.test(id) && p.slug) {
+        navigate(`/pm/projects/${p.slug}`, { replace: true })
+        return
+      }
+      const [t, m] = await Promise.all([getTasks(p.id), getMilestones(p.id)])
       setProject(p)
       setMilestones(m)
       // Annotate tasks with subtask counts so TaskCard badges are accurate
@@ -93,10 +101,10 @@ export default function ProjectDetail() {
       }
       setFetching(false)
       if (p.workflow_id) getWorkflow(p.workflow_id).then(setWorkflow)
-      getProjectDependencies(id).then(setDependencies)
+      getProjectDependencies(p.id).then(setDependencies)
       if (p.share_token) getClientComments(p.share_token).then((comments) => {
         setClientComments(comments)
-        setSeenCommentCount(Number(localStorage.getItem(`seen_comments_${id}`) || 0))
+        setSeenCommentCount(Number(localStorage.getItem(`seen_comments_${p.id}`) || 0))
       })
       if (searchParams.get('onboard') === '1') {
         setShowOnboard(true)
@@ -106,11 +114,12 @@ export default function ProjectDetail() {
     load()
   }, [user, id, navigate])
 
+  const projectUuid = project?.id
   useEffect(() => {
-    if (!id || !supabase) return
+    if (!projectUuid || !supabase) return
     const channel = supabase
-      .channel(`tasks_${id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pm_tasks', filter: `project_id=eq.${id}` }, (payload) => {
+      .channel(`tasks_${projectUuid}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pm_tasks', filter: `project_id=eq.${projectUuid}` }, (payload) => {
         if (payload.eventType === 'INSERT') {
           setTasks((prev) => prev.some((t) => t.id === payload.new.id) ? prev : [...prev, payload.new])
         } else if (payload.eventType === 'UPDATE') {
@@ -121,7 +130,7 @@ export default function ProjectDetail() {
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [id])
+  }, [projectUuid])
 
   const triggerUpgrade = (reason) => {
     setUpgradeReason(UPGRADE_REASONS[reason] || '')
@@ -220,7 +229,7 @@ export default function ProjectDetail() {
   const handleDelete = async () => {
     if (!window.confirm(`Delete "${project.name}"? This will delete all tasks and milestones too. This cannot be undone.`)) return
     setDeleting(true)
-    await deleteProject(id)
+    await deleteProject(project.id)
     navigate('/pm/dashboard')
   }
 
@@ -258,7 +267,7 @@ export default function ProjectDetail() {
 
       {showInviteModal && (
         <InviteMemberModal
-          projectId={id}
+          projectId={project.id}
           projectName={project.name}
           ownerUserId={project.user_id}
           onClose={() => setShowInviteModal(false)}
@@ -267,7 +276,7 @@ export default function ProjectDetail() {
 
       {showWorkflow && (
         <WorkflowEditor
-          projectId={id}
+          projectId={project.id}
           currentWorkflowId={project.workflow_id || null}
           projectTasks={tasks}
           onClose={() => setShowWorkflow(false)}
@@ -304,12 +313,12 @@ export default function ProjectDetail() {
               <span className="hidden sm:inline">Invite</span>
             </button>
             <AIAssistant
-              projectId={id}
+              projectId={project.id}
               projectName={project.name}
               workflow={workflowStages}
               isPro={isPro}
               onDone={async () => {
-                const [t, m] = await Promise.all([getTasks(id), getMilestones(id)])
+                const [t, m] = await Promise.all([getTasks(project.id), getMilestones(project.id)])
                 setTasks(t)
                 setMilestones(m)
               }}
@@ -333,7 +342,7 @@ export default function ProjectDetail() {
               </button>
             )}
             <button
-              onClick={() => navigate(`/pm/projects/${id}/invoice`)}
+              onClick={() => navigate(`/pm/projects/${project?.slug || id}/invoice`)}
               className="hidden sm:flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
             >
               <Receipt size={14} />
@@ -380,7 +389,7 @@ export default function ProjectDetail() {
                       </button>
                     )}
                     <button
-                      onClick={() => { navigate(`/pm/projects/${id}/invoice`); setShowMobileMenu(false) }}
+                      onClick={() => { navigate(`/pm/projects/${project?.slug || id}/invoice`); setShowMobileMenu(false) }}
                       className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors"
                     >
                       <Receipt size={13} /> Invoice
@@ -624,12 +633,12 @@ export default function ProjectDetail() {
               if (overdueOnly) filtered = filtered.filter((t) => t.due_date && new Date(t.due_date) < new Date() && !doneKeys.has(t.status))
               return (
                 <>
-                  {activeTab === 'kanban' && <KanbanBoard projectId={id} tasks={filtered} onTasksChange={setTasks} user={user} workflow={workflowStages} />}
+                  {activeTab === 'kanban' && <KanbanBoard projectId={project.id} tasks={filtered} onTasksChange={setTasks} user={user} workflow={workflowStages} />}
                   {activeTab === 'timeline' && <TimelineView milestones={milestones} onMilestonesChange={setMilestones} tasks={tasks} />}
                   {activeTab === 'analytics' && <AnalyticsPanel tasks={filtered} milestones={milestones} stages={workflowStages} />}
                   {activeTab === 'calendar' && <CalendarView tasks={filtered} milestones={milestones} />}
-                  {activeTab === 'time' && <TimeTrackingPanel projectId={id} tasks={tasks} />}
-                  {activeTab === 'files' && <FilesPanel projectId={id} isOwner />}
+                  {activeTab === 'time' && <TimeTrackingPanel projectId={project.id} tasks={tasks} />}
+                  {activeTab === 'files' && <FilesPanel projectId={project.id} isOwner />}
                 </>
               )
             })()}
@@ -638,12 +647,12 @@ export default function ProjectDetail() {
           {/* Sidebar */}
           <div className="w-full xl:w-64 xl:flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
             <div className="glass rounded-2xl p-5">
-              <MilestoneList projectId={id} milestones={milestones} onMilestonesChange={setMilestones} />
+              <MilestoneList projectId={project.id} milestones={milestones} onMilestonesChange={setMilestones} />
             </div>
 
             <div className="glass rounded-2xl p-5">
               <MembersPanel
-                projectId={id}
+                projectId={project.id}
                 ownerUserId={project.user_id}
                 currentUserId={user?.id}
               />
@@ -656,13 +665,13 @@ export default function ProjectDetail() {
               </div>
             )}
 
-            <ActivityFeed projectId={id} />
+            <ActivityFeed projectId={project.id} />
 
             {clientComments.length > 0 && (
               <div
                 className="glass rounded-2xl p-5 cursor-pointer"
                 onClick={() => {
-                  localStorage.setItem(`seen_comments_${id}`, String(clientComments.length))
+                  localStorage.setItem(`seen_comments_${project.id}`, String(clientComments.length))
                   setSeenCommentCount(clientComments.length)
                 }}
               >

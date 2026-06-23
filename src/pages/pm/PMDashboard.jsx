@@ -82,7 +82,7 @@ export default function PMDashboard() {
             acc[t.status] = (acc[t.status] || 0) + 1
             return acc
           }, {})
-          tasks.forEach((t) => collected.push({ ...t, _projectName: p.name }))
+          tasks.forEach((t) => collected.push({ ...t, _projectName: p.name, _projectSlug: p.slug || p.id }))
         })
       )
       setTaskCounts(counts)
@@ -475,7 +475,7 @@ export default function PMDashboard() {
                       {visibleTasks.map((t) => (
                         <div
                           key={t.id}
-                          onClick={() => navigate(`/pm/projects/${t.project_id}`)}
+                          onClick={() => navigate(`/pm/projects/${t._projectSlug || t.project_id}`)}
                           className="glass rounded-xl px-4 py-2.5 flex items-center gap-3 cursor-pointer hover:border-white/20 transition-all group/task"
                         >
                           <div className="flex-1 min-w-0">
