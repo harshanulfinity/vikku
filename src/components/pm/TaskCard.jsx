@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Calendar, CheckSquare, ExternalLink, GitMerge, RotateCcw, ThumbsUp, ThumbsDown, AlertCircle } from 'lucide-react'
 import TaskEditModal from './TaskEditModal'
-import { LABEL_STYLES } from '../../lib/pmConstants'
+import { getLabelStyle } from '../../lib/pmConstants'
 
 const PRIORITY_COLOR = {
   urgent: '#ef4444',
@@ -17,13 +17,13 @@ const PRIORITY_DOT = {
   low:    'bg-white/20',
 }
 
-export default function TaskCard({ task, onDelete, onUpdate, draggable, onDragStart, selectMode, selected, onToggleSelect }) {
+export default function TaskCard({ task, onDelete, onUpdate, draggable, onDragStart, selectMode, selected, onToggleSelect, projectLabels }) {
   const [editing, setEditing] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
 
   const assigneeInitial = task.assigned_to_email ? task.assigned_to_email[0].toUpperCase() : null
   const hasSubtasks = task._subtasksTotal > 0
-  const labelStyle = task.label ? LABEL_STYLES[task.label] : null
+  const labelStyle = task.label ? getLabelStyle(task.label, projectLabels) : null
   const isBlocked = task._isBlocked
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done'
   const needsAlert = isOverdue || isBlocked
@@ -74,7 +74,7 @@ export default function TaskCard({ task, onDelete, onUpdate, draggable, onDragSt
           <div className="flex items-start justify-between gap-2 mb-1.5">
             <div className="flex items-center gap-1.5 min-w-0">
               {labelStyle && (
-                <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold tracking-wide shrink-0 ${labelStyle.bg} ${labelStyle.text}`}>
+                <span className="text-[9px] px-1.5 py-0.5 rounded font-semibold tracking-wide shrink-0" style={{ background: labelStyle.bg, color: labelStyle.color }}>
                   {task.label}
                 </span>
               )}

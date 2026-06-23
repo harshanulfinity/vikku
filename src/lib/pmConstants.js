@@ -1,5 +1,28 @@
 export const TASK_LABELS = ['Design', 'Dev', 'Bug', 'Review', 'Content', 'Meeting', 'Research']
 
+export const DEFAULT_LABELS = [
+  { name: 'Design',   color: '#8b5cf6' },
+  { name: 'Dev',      color: '#3b82f6' },
+  { name: 'Bug',      color: '#ef4444' },
+  { name: 'Review',   color: '#eab308' },
+  { name: 'Content',  color: '#22c55e' },
+  { name: 'Meeting',  color: '#f97316' },
+  { name: 'Research', color: '#06b6d4' },
+]
+
+export const LABEL_COLORS = [
+  '#8b5cf6', '#3b82f6', '#ef4444', '#eab308', '#22c55e',
+  '#f97316', '#06b6d4', '#ec4899', '#f59e0b', '#10b981',
+]
+
+/** Returns inline style object for a label, checking project labels then defaults. */
+export function getLabelStyle(name, projectLabels = []) {
+  const pool = projectLabels && projectLabels.length > 0 ? projectLabels : DEFAULT_LABELS
+  const found = pool.find((l) => l.name === name)
+  if (!found) return null
+  return { bg: `${found.color}25`, color: found.color, border: `${found.color}50` }
+}
+
 export const LABEL_STYLES = {
   Design:   { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/20', dot: 'bg-purple-400' },
   Dev:      { bg: 'bg-blue-500/20',   text: 'text-blue-400',   border: 'border-blue-500/20',   dot: 'bg-blue-400' },

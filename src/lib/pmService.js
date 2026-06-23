@@ -824,3 +824,14 @@ export async function getInvoices(projectId) {
   if (error) return []
   return data || []
 }
+
+export async function getProjectLabels(projectId) {
+  if (!supabase) return []
+  const { data } = await supabase.from('pm_projects').select('labels').eq('id', projectId).single()
+  return data?.labels ?? []
+}
+
+export async function saveProjectLabels(projectId, labels) {
+  if (!supabase) return
+  await supabase.from('pm_projects').update({ labels }).eq('id', projectId)
+}

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, User, Link, ExternalLink, Layers } from 'lucide-react'
-import { getProjectMembers } from '../../lib/pmService'
-import { TASK_LABELS, LABEL_STYLES, DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
+import { X, User, Link, ExternalLink, Layers, Plus } from 'lucide-react'
+import { getProjectMembers, getProjectLabels, saveProjectLabels } from '../../lib/pmService'
+import { DEFAULT_LABELS, LABEL_COLORS, getLabelStyle, DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent']
 
@@ -46,10 +46,35 @@ export default function TaskCreateModal({ projectId, initialStatus, initialStatu
   })
   const [members, setMembers] = useState([])
   const [showAssigneeMenu, setShowAssigneeMenu] = useState(false)
+  const [projectLabels, setProjectLabels] = useState([])
+  const [addingLabel, setAddingLabel] = useState(false)
+  const [newLabelName, setNewLabelName] = useState('')
+  const [newLabelColor, setNewLabelColor] = useState(LABEL_COLORS[0])
 
   useEffect(() => {
-    if (projectId) getProjectMembers(projectId).then(setMembers)
+    if (projectId) {
+      getProjectMembers(projectId).then(setMembers)
+      getProjectLabels(projectId).then((lbls) => setProjectLabels(lbls.length > 0 ? lbls : DEFAULT_LABELS))
+    }
   }, [projectId])
+
+  const handleAddLabel = async () => {
+    const name = newLabelName.trim()
+    if (!name) return
+    const updated = [...projectLabels, { name, color: newLabelColor }]
+    setProjectLabels(updated)
+    setNewLabelName('')
+    setNewLabelColor(LABEL_COLORS[updated.length % LABEL_COLORS.length])
+    setAddingLabel(false)
+    await saveProjectLabels(projectId, updated)
+  }
+
+  const handleDeleteLabel = async (labelName) => {
+    const updated = projectLabels.filter((l) => l.name !== labelName)
+    setProjectLabels(updated)
+    if (form.label === labelName) setForm({ ...form, label: '' })
+    await saveProjectLabels(projectId, updated)
+  }
 
   const handleCreate = () => {
     if (!form.title.trim()) return
@@ -147,20 +172,59 @@ export default function TaskCreateModal({ projectId, initialStatus, initialStatu
                 >
                   None
                 </button>
-                {TASK_LABELS.map((lbl) => {
-                  const s = LABEL_STYLES[lbl]
+                {projectLabels.map((lbl) => {
+                  const active = form.label === lbl.name
                   return (
-                    <button
-                      key={lbl}
-                      onClick={() => setForm({ ...form, label: form.label === lbl ? '' : lbl })}
-                      className={`text-[10px] px-2 py-1 rounded-lg border font-medium transition-all ${
-                        form.label === lbl ? `${s.bg} ${s.text} ${s.border}` : 'border-white/[0.08] text-white/30 hover:border-white/20'
-                      }`}
-                    >
-                      {lbl}
-                    </button>
+                    <div key={lbl.name} className="relative group/lbl flex items-center">
+                      <button
+                        onClick={() => setForm({ ...form, label: active ? '' : lbl.name })}
+                        className="text-[10px] px-2 py-1 rounded-lg border font-medium transition-all pr-5"
+                        style={active
+                          ? { background: `${lbl.color}25`, color: lbl.color, borderColor: `${lbl.color}50` }
+                          : { borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)' }
+                        }
+                      >
+                        {lbl.name}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteLabel(lbl.name)}
+                        className="absolute right-0.5 top-1/2 -translate-y-1/2 opacity-0 group-hover/lbl:opacity-100 text-white/30 hover:text-red-400 transition-all text-[9px] w-4 h-4 flex items-center justify-center"
+                        title="Remove label"
+                      >×</button>
+                    </div>
                   )
                 })}
+                {addingLabel ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      autoFocus
+                      value={newLabelName}
+                      onChange={(e) => setNewLabelName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleAddLabel(); if (e.key === 'Escape') setAddingLabel(false) }}
+                      placeholder="Label name"
+                      className="text-[10px] bg-white/[0.06] border border-white/20 rounded-lg px-2 py-1 text-white/80 w-24 outline-none"
+                    />
+                    <div className="flex gap-1">
+                      {LABEL_COLORS.map((c) => (
+                        <button
+                          key={c}
+                          onClick={() => setNewLabelColor(c)}
+                          className="w-3.5 h-3.5 rounded-full transition-transform hover:scale-125"
+                          style={{ background: c, outline: newLabelColor === c ? `2px solid ${c}` : 'none', outlineOffset: '1px' }}
+                        />
+                      ))}
+                    </div>
+                    <button onClick={handleAddLabel} className="text-[10px] text-white/60 hover:text-white px-1.5 py-0.5 rounded border border-white/20 hover:border-white/40 transition-all">Add</button>
+                    <button onClick={() => setAddingLabel(false)} className="text-[10px] text-white/30 hover:text-white/60">✕</button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setAddingLabel(true)}
+                    className="text-[10px] px-2 py-1 rounded-lg border border-dashed border-white/20 text-white/30 hover:text-white/60 hover:border-white/40 transition-all flex items-center gap-1"
+                  >
+                    <Plus size={9} /> Label
+                  </button>
+                )}
               </div>
             </div>
 
