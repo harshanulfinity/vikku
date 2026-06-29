@@ -342,7 +342,7 @@ export default function ProjectDetail() {
               </button>
             )}
             <button
-              onClick={() => navigate(`/pm/projects/${project?.slug || id}/invoice`)}
+              onClick={() => navigate(`/pm/projects/${project?.slug || project?.id}/invoice`)}
               className="hidden sm:flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
             >
               <Receipt size={14} />

@@ -30,7 +30,7 @@ export default function JoinProject() {
 
       // Owner doesn't need to join their own project
       if (p.user_id === user.id) {
-        navigate(`/pm/projects/${projectId}`)
+        navigate(`/pm/projects/${p.slug || p.id}`)
         return
       }
 
@@ -39,7 +39,7 @@ export default function JoinProject() {
       const alreadyMember = members.some((m) => m.user_id === user.id)
       if (alreadyMember) {
         setStatus('already')
-        setTimeout(() => navigate(`/pm/projects/${projectId}`), 1500)
+        setTimeout(() => navigate(`/pm/projects/${p.slug || p.id}`), 1500)
         return
       }
 
@@ -55,7 +55,7 @@ export default function JoinProject() {
       setStatus('joining')
       await joinProject(projectId, user.id, user.email)
       setStatus('done')
-      setTimeout(() => navigate(`/pm/projects/${projectId}`), 1500)
+      setTimeout(() => navigate(`/pm/projects/${p.slug || p.id}`), 1500)
     } catch (err) {
       setErrorMsg(err.message || 'Something went wrong')
       setStatus('error')
