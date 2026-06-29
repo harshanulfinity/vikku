@@ -72,15 +72,15 @@ export async function getProjectByToken(token) {
 
 export async function createProject(fields) {
   if (!supabase) throw new Error('Database not configured')
+  const id = crypto.randomUUID()
+  const slug = generateProjectSlug(fields.name, id)
   const { data, error } = await supabase
     .from('pm_projects')
-    .insert(fields)
+    .insert({ ...fields, id, slug })
     .select()
     .single()
   if (error) throw error
-  const slug = generateProjectSlug(data.name, data.id)
-  await supabase.from('pm_projects').update({ slug }).eq('id', data.id)
-  return { ...data, slug }
+  return data
 }
 
 export async function updateProject(id, fields) {
@@ -450,16 +450,17 @@ export async function duplicateProject(projectId) {
   if (!supabase) throw new Error('Database not configured')
   const { data: orig, error: pe } = await supabase.from('pm_projects').select('*').eq('id', projectId).single()
   if (pe || !orig) throw new Error('Project not found')
+  const newId = crypto.randomUUID()
+  const slug = generateProjectSlug(`${orig.name} copy`, newId)
   const { data: newProject, error: ne } = await supabase
     .from('pm_projects')
     .insert({
+      id: newId, slug,
       user_id: orig.user_id, name: `${orig.name} (copy)`, description: orig.description,
       status: 'active', client_name: orig.client_name, client_email: orig.client_email, color: orig.color,
     })
     .select().single()
   if (ne) throw ne
-  const slug = generateProjectSlug(`${orig.name} copy`, newProject.id)
-  await supabase.from('pm_projects').update({ slug }).eq('id', newProject.id)
   const { data: tasks } = await supabase.from('pm_tasks').select('*').eq('project_id', projectId)
   if (tasks && tasks.length > 0) {
     await supabase.from('pm_tasks').insert(
