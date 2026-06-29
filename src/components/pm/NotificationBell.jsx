@@ -88,29 +88,34 @@ export default function NotificationBell() {
   // Realtime subscription on pm_notifications for this user
   useEffect(() => {
     if (!user || !supabase) return
-    const channel = supabase
-      .channel(`pm_notifications_${user.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'pm_notifications',
-        filter: `user_id=eq.${user.id}`,
-      }, (payload) => {
-        const n = payload.new
-        setNotifications(prev => {
-          if (prev.some(x => x.id === n.id)) return prev
-          return [{
-            id: n.id,
-            dbId: n.id,
-            type: n.type,
-            message: n.message,
-            sub: n.sub_text || '',
-            fromDb: true,
-          }, ...prev]
+    let channel
+    try {
+      channel = supabase
+        .channel(`pm_notifications_${user.id}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'pm_notifications',
+          filter: `user_id=eq.${user.id}`,
+        }, (payload) => {
+          const n = payload.new
+          setNotifications(prev => {
+            if (prev.some(x => x.id === n.id)) return prev
+            return [{
+              id: n.id,
+              dbId: n.id,
+              type: n.type,
+              message: n.message,
+              sub: n.sub_text || '',
+              fromDb: true,
+            }, ...prev]
+          })
         })
-      })
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
+        .subscribe()
+    } catch {
+      // WebSocket unavailable (e.g. iOS Safari security restriction) — live updates disabled
+    }
+    return () => { if (channel) supabase.removeChannel(channel) }
   }, [user])
 
   // Close on outside click

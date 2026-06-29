@@ -117,19 +117,24 @@ export default function ProjectDetail() {
   const projectUuid = project?.id
   useEffect(() => {
     if (!projectUuid || !supabase) return
-    const channel = supabase
-      .channel(`tasks_${projectUuid}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pm_tasks', filter: `project_id=eq.${projectUuid}` }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          setTasks((prev) => prev.some((t) => t.id === payload.new.id) ? prev : [...prev, payload.new])
-        } else if (payload.eventType === 'UPDATE') {
-          setTasks((prev) => prev.map((t) => t.id === payload.new.id ? { ...t, ...payload.new } : t))
-        } else if (payload.eventType === 'DELETE') {
-          setTasks((prev) => prev.filter((t) => t.id !== payload.old.id))
-        }
-      })
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
+    let channel
+    try {
+      channel = supabase
+        .channel(`tasks_${projectUuid}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'pm_tasks', filter: `project_id=eq.${projectUuid}` }, (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setTasks((prev) => prev.some((t) => t.id === payload.new.id) ? prev : [...prev, payload.new])
+          } else if (payload.eventType === 'UPDATE') {
+            setTasks((prev) => prev.map((t) => t.id === payload.new.id ? { ...t, ...payload.new } : t))
+          } else if (payload.eventType === 'DELETE') {
+            setTasks((prev) => prev.filter((t) => t.id !== payload.old.id))
+          }
+        })
+        .subscribe()
+    } catch {
+      // WebSocket unavailable (e.g. iOS Safari security restriction) — live updates disabled
+    }
+    return () => { if (channel) supabase.removeChannel(channel) }
   }, [projectUuid])
 
   const triggerUpgrade = (reason) => {
