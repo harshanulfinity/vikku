@@ -155,7 +155,7 @@ export default function ShareableResult() {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center text-center px-6">
         <p className="text-white/60 mb-4">This result could not be found.</p>
-        <button onClick={() => navigate('/tools')} className="text-sm bg-white text-black px-5 py-2.5 rounded-xl font-semibold">Try the tools</button>
+        <button onClick={() => navigate('/')} className="text-sm bg-white text-black px-5 py-2.5 rounded-xl font-semibold">Back to vikku.in</button>
       </div>
     )
   }

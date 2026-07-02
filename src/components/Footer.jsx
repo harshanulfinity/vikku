@@ -15,7 +15,6 @@ const tools = [
   { label: 'ROI Calculator',    href: '/dashboard/roi-calculator' },
   { label: 'Timeline Calculator', href: '/dashboard/timeline-calculator' },
   { label: 'Tech Recommender',  href: '/dashboard/tech-recommender' },
-  { label: 'Tools',             href: '/tools' },
 ]
 
 const legal = [

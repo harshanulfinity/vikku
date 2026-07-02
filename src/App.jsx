@@ -41,7 +41,6 @@ const TechRecommender       = lazy(() => import('./pages/TechRecommender'))
 const MaintenanceCalculator = lazy(() => import('./pages/MaintenanceCalculator'))
 const ShareableResult       = lazy(() => import('./pages/ShareableResult'))
 const SavedResults          = lazy(() => import('./pages/SavedResults'))
-const Pricing               = lazy(() => import('./pages/Pricing'))
 const PMDashboard           = lazy(() => import('./pages/pm/PMDashboard'))
 const NewProject            = lazy(() => import('./pages/pm/NewProject'))
 const ProjectDetail         = lazy(() => import('./pages/pm/ProjectDetail'))
@@ -133,7 +132,6 @@ export default function App() {
               <Route path="/tools/timeline-calculator"        element={<TimelineCalculator />} />
               <Route path="/tools/tech-recommender"           element={<TechRecommender />} />
               <Route path="/tools/maintenance-calculator"     element={<MaintenanceCalculator />} />
-              <Route path="/tools"                        element={<Pricing />} />
               <Route path="/r/:shareId"                    element={<ShareableResult />} />
               <Route path="/r-view/:shareId"               element={<ShareableResult />} />
               <Route path="/dashboard/saved"               element={<SavedResults />} />

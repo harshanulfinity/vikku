@@ -49,7 +49,7 @@ export default function SavedResults() {
           <div className="glass rounded-2xl p-10 text-center">
             <FileText size={28} className="text-white/30 mx-auto mb-4" />
             <p className="text-white/60 text-sm mb-6">You haven't generated any tool results yet.</p>
-            <button onClick={() => navigate('/tools')} className="bg-white text-black font-semibold px-6 py-2.5 rounded-xl hover:bg-white/90 transition-colors text-sm">
+            <button onClick={() => navigate('/dashboard')} className="bg-white text-black font-semibold px-6 py-2.5 rounded-xl hover:bg-white/90 transition-colors text-sm">
               Try the free tools
             </button>
           </div>
