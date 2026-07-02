@@ -60,7 +60,13 @@ export async function getProjectByToken(token) {
       .select('*')
       .eq('share_token', token)
       .single()
-    if (error) { console.error('Error fetching project by token:', error); return null }
+    if (error) {
+      // PGRST116 = no matching row, 22P02 = token isn't a valid uuid; both just mean "bad link"
+      if (error.code !== 'PGRST116' && error.code !== '22P02') {
+        console.error('Error fetching project by token:', error.message)
+      }
+      return null
+    }
     // Strip PIN from client response; expose only whether one is set
     const { share_pin, ...rest } = data
     return { ...rest, has_share_pin: !!share_pin }
