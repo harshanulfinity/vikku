@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { Gift, Copy, Check, Users, Zap, Star, MessageCircle, Mail, ChevronRight, Clock } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import AppHeader from '../../components/AppHeader'
@@ -12,7 +12,7 @@ const REWARDS = [
 ]
 
 export default function ReferralPage() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
   const [referralCount, setReferralCount] = useState(null)
@@ -28,6 +28,15 @@ export default function ReferralPage() {
       .eq('referrer_code', refCode)
       .then(({ count }) => setReferralCount(count ?? 0))
   }, [refCode])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+      </div>
+    )
+  }
+  if (!user) return <Navigate to="/login" replace />
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(referralLink)

@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { User, Lock, CheckCircle, AlertCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import AppHeader from '../components/AppHeader'
 
 export default function Account() {
-  const { user, displayName, updateProfile, updatePassword, signOut } = useAuth()
+  const { user, loading, displayName, updateProfile, updatePassword, signOut } = useAuth()
   const navigate = useNavigate()
 
   const [name, setName] = useState(displayName || '')
@@ -17,7 +17,14 @@ export default function Account() {
   const [pwMsg, setPwMsg] = useState('')
   const [pwSaving, setPwSaving] = useState(false)
 
-  if (!user) { navigate('/login'); return null }
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+      </div>
+    )
+  }
+  if (!user) return <Navigate to="/login" replace />
 
   const saveName = async (e) => {
     e.preventDefault()
