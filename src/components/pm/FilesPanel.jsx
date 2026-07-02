@@ -31,7 +31,7 @@ function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export default function FilesPanel({ projectId, isOwner = true }) {
+export default function FilesPanel({ projectId, isOwner = false }) {
   const [files, setFiles] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('All')
