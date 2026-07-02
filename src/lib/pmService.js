@@ -174,8 +174,11 @@ export async function updateTask(id, fields) {
 
 export async function deleteTask(id) {
   if (!supabase) throw new Error('Database not configured')
-  const { error } = await supabase.from('pm_tasks').delete().eq('id', id)
+  const { data, error } = await supabase.from('pm_tasks').delete().eq('id', id).select('id')
   if (error) throw error
+  // RLS can filter a delete silently (0 rows affected, no error); surface it
+  // so the UI doesn't remove a task that still exists on the server
+  if (!data?.length) throw new Error("Task couldn't be deleted - you may not have permission")
 }
 
 export async function bulkCreateTasks(tasks) {

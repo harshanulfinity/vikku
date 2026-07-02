@@ -82,8 +82,12 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
   }
 
   const handleDelete = async (taskId) => {
-    await deleteTask(taskId)
-    onTasksChange(tasks.filter((t) => t.id !== taskId))
+    try {
+      await deleteTask(taskId)
+      onTasksChange(tasks.filter((t) => t.id !== taskId))
+    } catch (err) {
+      alert(err?.message || 'Failed to delete task')
+    }
   }
 
   const handleUpdate = (updated) => {
@@ -249,7 +253,13 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
     setBulkWorking(true)
     const ids = [...selected]
     onTasksChange(tasks.filter((t) => !selected.has(t.id)))
-    await Promise.all(ids.map((id) => deleteTask(id)))
+    const results = await Promise.allSettled(ids.map((id) => deleteTask(id)))
+    const failedIds = new Set(ids.filter((_, i) => results[i].status === 'rejected'))
+    if (failedIds.size) {
+      const failedTasks = tasks.filter((t) => failedIds.has(t.id))
+      onTasksChange((prev) => [...prev, ...failedTasks])
+      alert(`${failedIds.size} task${failedIds.size !== 1 ? 's' : ''} couldn't be deleted - you may not have permission`)
+    }
     exitSelectMode()
     setBulkWorking(false)
   }
