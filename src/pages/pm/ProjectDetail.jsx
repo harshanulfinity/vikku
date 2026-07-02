@@ -137,6 +137,50 @@ export default function ProjectDetail() {
     return () => { if (channel) supabase.removeChannel(channel) }
   }, [projectUuid])
 
+  // Keep the workflow in sync for every viewer: the owner can assign a
+  // different workflow (or edit stages) while members have the project open
+  const workflowIdRef = useRef(null)
+  useEffect(() => { workflowIdRef.current = project?.workflow_id || null }, [project?.workflow_id])
+
+  const syncWorkflow = async (wfId) => {
+    if (!wfId) { setWorkflow(null); return }
+    const wf = await getWorkflow(wfId)
+    if (wf) setWorkflow(wf)
+  }
+
+  useEffect(() => {
+    if (!projectUuid || !supabase) return
+    let channel
+    try {
+      channel = supabase
+        .channel(`project_${projectUuid}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pm_projects', filter: `id=eq.${projectUuid}` }, (payload) => {
+          const next = payload.new
+          if ((next.workflow_id || null) !== workflowIdRef.current) syncWorkflow(next.workflow_id)
+          setProject((prev) => (prev ? { ...prev, ...next } : prev))
+        })
+        .subscribe()
+    } catch {
+      // WebSocket unavailable - the visibility refetch below still applies
+    }
+    return () => { if (channel) supabase.removeChannel(channel) }
+  }, [projectUuid])
+
+  // Returning to the tab refetches project + workflow: catches stage edits
+  // (which don't touch pm_projects) and anything realtime missed
+  useEffect(() => {
+    if (!projectUuid) return
+    const onVisible = async () => {
+      if (document.visibilityState !== 'visible') return
+      const p = await getProject(projectUuid)
+      if (!p) return
+      setProject((prev) => (prev ? { ...prev, ...p } : p))
+      syncWorkflow(p.workflow_id)
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [projectUuid])
+
   const triggerUpgrade = (reason) => {
     setUpgradeReason(UPGRADE_REASONS[reason] || '')
     setShowUpgrade(true)
@@ -155,6 +199,10 @@ export default function ProjectDetail() {
   useEffect(() => {
     if (project?.id) setPinValue(project.share_pin || '')
   }, [project?.id])
+
+  // Owner-only controls must mirror RLS: invites, sharing, project settings,
+  // and deletion are all restricted to pm_projects.user_id on the backend
+  const isOwner = !!user && project?.user_id === user.id
 
   const shareUrl = project ? `${window.location.origin}/pm/share/${project.share_token}` : ''
 
@@ -234,8 +282,13 @@ export default function ProjectDetail() {
   const handleDelete = async () => {
     if (!window.confirm(`Delete "${project.name}"? This will delete all tasks and milestones too. This cannot be undone.`)) return
     setDeleting(true)
-    await deleteProject(project.id)
-    navigate('/pm/dashboard')
+    try {
+      await deleteProject(project.id)
+      navigate('/pm/dashboard')
+    } catch (err) {
+      setDeleting(false)
+      alert(err?.message || 'Failed to delete project')
+    }
   }
 
   const workflowStages = workflow?.stages || DEFAULT_WORKFLOW_STAGES
@@ -310,13 +363,15 @@ export default function ProjectDetail() {
         actions={
           <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Desktop-only actions */}
-            <button
-              onClick={() => setShowInviteModal(true)}
-              className="hidden sm:flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
-            >
-              <UserPlus size={14} />
-              <span className="hidden sm:inline">Invite</span>
-            </button>
+            {isOwner && (
+              <button
+                onClick={() => setShowInviteModal(true)}
+                className="hidden sm:flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
+              >
+                <UserPlus size={14} />
+                <span className="hidden sm:inline">Invite</span>
+              </button>
+            )}
             <AIAssistant
               projectId={project.id}
               projectName={project.name}
@@ -353,14 +408,16 @@ export default function ProjectDetail() {
               <Receipt size={14} />
               <span className="hidden sm:inline">Invoice</span>
             </button>
-            <button
-              onClick={() => isPro ? setShareTab(!shareTab) : triggerUpgrade('share')}
-              className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
-            >
-              <Share2 size={14} />
-              <span className="hidden sm:inline">Share</span>
-              {!isPro && <span className="hidden sm:inline text-[10px] text-yellow-400/60">Pro</span>}
-            </button>
+            {isOwner && (
+              <button
+                onClick={() => isPro ? setShareTab(!shareTab) : triggerUpgrade('share')}
+                className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors"
+              >
+                <Share2 size={14} />
+                <span className="hidden sm:inline">Share</span>
+                {!isPro && <span className="hidden sm:inline text-[10px] text-yellow-400/60">Pro</span>}
+              </button>
+            )}
             {/* Mobile-only overflow menu */}
             <div className="relative sm:hidden">
               <button
@@ -373,12 +430,14 @@ export default function ProjectDetail() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowMobileMenu(false)} />
                   <div className="absolute right-0 top-8 z-50 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl py-1 min-w-[140px]">
-                    <button
-                      onClick={() => { setShowInviteModal(true); setShowMobileMenu(false) }}
-                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors"
-                    >
-                      <UserPlus size={13} /> Invite
-                    </button>
+                    {isOwner && (
+                      <button
+                        onClick={() => { setShowInviteModal(true); setShowMobileMenu(false) }}
+                        className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors"
+                      >
+                        <UserPlus size={13} /> Invite
+                      </button>
+                    )}
                     <button
                       onClick={() => { handleExportPDF(); setShowMobileMenu(false) }}
                       className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors"
@@ -643,7 +702,7 @@ export default function ProjectDetail() {
                   {activeTab === 'analytics' && <AnalyticsPanel tasks={filtered} milestones={milestones} stages={workflowStages} />}
                   {activeTab === 'calendar' && <CalendarView tasks={filtered} milestones={milestones} />}
                   {activeTab === 'time' && <TimeTrackingPanel projectId={project.id} tasks={tasks} />}
-                  {activeTab === 'files' && <FilesPanel projectId={project.id} isOwner />}
+                  {activeTab === 'files' && <FilesPanel projectId={project.id} isOwner={isOwner} />}
                 </>
               )
             })()}
@@ -707,16 +766,18 @@ export default function ProjectDetail() {
               </div>
             )}
 
-            <div className="glass rounded-2xl p-5">
-              <p className="text-xs text-white/40 mb-3">Danger zone</p>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex items-center gap-2 text-xs text-red-400/70 hover:text-red-400 transition-colors disabled:opacity-40"
-              >
-                <Trash2 size={12} /> {deleting ? 'Deleting...' : 'Delete project'}
-              </button>
-            </div>
+            {isOwner && (
+              <div className="glass rounded-2xl p-5">
+                <p className="text-xs text-white/40 mb-3">Danger zone</p>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="flex items-center gap-2 text-xs text-red-400/70 hover:text-red-400 transition-colors disabled:opacity-40"
+                >
+                  <Trash2 size={12} /> {deleting ? 'Deleting...' : 'Delete project'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

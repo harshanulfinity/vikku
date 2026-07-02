@@ -123,8 +123,10 @@ export async function updateProject(id, fields) {
 
 export async function deleteProject(id) {
   if (!supabase) throw new Error('Database not configured')
-  const { error } = await supabase.from('pm_projects').delete().eq('id', id)
+  const { data, error } = await supabase.from('pm_projects').delete().eq('id', id).select('id')
   if (error) throw error
+  // RLS filters deletes silently for non-owners (0 rows, no error)
+  if (!data?.length) throw new Error("Project couldn't be deleted - only the owner can delete it")
 }
 
 // ── Tasks ──────────────────────────────────────────────────
@@ -279,8 +281,10 @@ export async function joinProject(projectId, userId, email, role = 'member') {
 
 export async function removeProjectMember(memberId) {
   if (!supabase) throw new Error('Database not configured')
-  const { error } = await supabase.from('pm_project_members').delete().eq('id', memberId)
+  const { data, error } = await supabase.from('pm_project_members').delete().eq('id', memberId).select('id')
   if (error) throw error
+  // RLS filters deletes silently for non-owners (0 rows, no error)
+  if (!data?.length) throw new Error("Member couldn't be removed - only the owner can manage members")
 }
 
 // Calls a SECURITY DEFINER RPC so any authenticated user can read the owner's plan.

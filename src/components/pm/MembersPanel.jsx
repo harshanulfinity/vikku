@@ -45,8 +45,12 @@ export default function MembersPanel({ projectId, ownerUserId, currentUserId }) 
 
   const handleRemove = async (member) => {
     if (!window.confirm(`Remove ${member.email || 'this member'} from the project?`)) return
-    await removeProjectMember(member.id)
-    setMembers((prev) => prev.filter((m) => m.id !== member.id))
+    try {
+      await removeProjectMember(member.id)
+      setMembers((prev) => prev.filter((m) => m.id !== member.id))
+    } catch (err) {
+      alert(err?.message || 'Failed to remove member')
+    }
   }
 
   return (
@@ -66,7 +70,7 @@ export default function MembersPanel({ projectId, ownerUserId, currentUserId }) 
         <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] text-white/60 font-medium flex-shrink-0">
           O
         </div>
-        <span className="text-xs text-white/60 truncate flex-1">You (owner)</span>
+        <span className="text-xs text-white/60 truncate flex-1">{isOwner ? 'You (owner)' : 'Project owner'}</span>
         <span className="text-[9px] text-yellow-400/60">owner</span>
       </div>
 
@@ -76,7 +80,10 @@ export default function MembersPanel({ projectId, ownerUserId, currentUserId }) 
           <div className="w-6 h-6 rounded-full bg-white/[0.06] flex items-center justify-center text-[10px] text-white/40 font-medium flex-shrink-0">
             {(m.email?.[0] || 'M').toUpperCase()}
           </div>
-          <span className="text-xs text-white/50 truncate flex-1">{m.email || 'Member'}</span>
+          <span className="text-xs text-white/50 truncate flex-1">
+            {m.email || 'Member'}
+            {m.user_id === currentUserId && <span className="text-white/30"> (you)</span>}
+          </span>
           <span className={`text-[9px] ${ROLE_STYLES[m.role] || ROLE_STYLES.member}`}>{m.role || 'member'}</span>
           {isOwner && (
             <button
@@ -96,6 +103,20 @@ export default function MembersPanel({ projectId, ownerUserId, currentUserId }) 
           <span>Member limit reached - upgrade to add more</span>
         </div>
       )}
+
+      {/* Viewer's own role + permissions */}
+      {!isOwner && !loading && (() => {
+        const me = members.find((m) => m.user_id === currentUserId)
+        if (!me) return null
+        const can = me.role === 'admin'
+          ? 'You can manage tasks, milestones and delete tasks.'
+          : 'You can create and edit tasks and milestones.'
+        return (
+          <p className="mt-2 text-[10px] text-white/25 leading-relaxed">
+            Your role: <span className="text-white/50">{me.role || 'member'}</span>. {can} Only the owner can invite, share, or delete the project.
+          </p>
+        )
+      })()}
 
       {/* Invite link */}
       {isOwner && !atLimit && (
