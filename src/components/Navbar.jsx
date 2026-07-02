@@ -19,7 +19,7 @@ const navLinks = [
   { label: 'Process',  href: '#process' },
   { label: 'About',    href: '#about' },
   { label: 'PM Tool',  href: '/pm', isRoute: true },
-  { label: 'Tools',    href: '/tools', isRoute: true },
+  { label: 'Tools',    href: '/dashboard', isRoute: true },
   { label: 'Contact',  href: '#contact' },
 ]
 
