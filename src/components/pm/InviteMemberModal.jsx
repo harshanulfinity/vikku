@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react'
 import { X, Users, Copy, Check, Link, Lock, Loader2 } from 'lucide-react'
-import { getProjectMembers } from '../../lib/pmService'
-import { getSubscription } from '../../lib/razorpayService'
+import { getProjectMembers, getProjectMemberLimit } from '../../lib/pmService'
 import useLockBodyScroll from '../../hooks/useLockBodyScroll'
 
-const MEMBER_LIMITS = { free: 3, pro: 10, team: Infinity }
+const FREE_LIMIT = 3
+// The RPC encodes "unlimited" as int4 max since JSON has no Infinity
+const normalizeLimit = (n) => (n >= 2147483647 ? Infinity : n)
 
-export default function InviteMemberModal({ projectId, projectName, ownerUserId, onClose }) {
+export default function InviteMemberModal({ projectId, projectName, onClose }) {
   useLockBodyScroll()
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(true)
   const [memberCount, setMemberCount] = useState(0)
-  const [limit, setLimit] = useState(MEMBER_LIMITS.free)
+  const [limit, setLimit] = useState(FREE_LIMIT)
 
   const joinUrl = `${window.location.origin}/pm/join/${projectId}`
   const total = memberCount + 1 // +1 for owner
@@ -21,14 +22,15 @@ export default function InviteMemberModal({ projectId, projectName, ownerUserId,
   useEffect(() => {
     Promise.all([
       getProjectMembers(projectId),
-      ownerUserId ? getSubscription(ownerUserId) : Promise.resolve({ plan: 'free' }),
+      // SECURITY DEFINER RPC works for any viewer, not just the owner
+      getProjectMemberLimit(projectId),
     ])
-      .then(([mems, sub]) => {
+      .then(([mems, lim]) => {
         setMemberCount(mems.length)
-        setLimit(MEMBER_LIMITS[sub?.plan] ?? MEMBER_LIMITS.free)
+        setLimit(normalizeLimit(lim?.limit ?? FREE_LIMIT))
       })
       .finally(() => setLoading(false))
-  }, [projectId, ownerUserId])
+  }, [projectId])
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(joinUrl)
