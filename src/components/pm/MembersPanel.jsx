@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Users, Copy, Check, X, Link, Lock } from 'lucide-react'
-import { getProjectMembers, removeProjectMember } from '../../lib/pmService'
-import { getSubscription } from '../../lib/razorpayService'
+import { getProjectMembers, removeProjectMember, getProjectMemberLimit } from '../../lib/pmService'
 
-const MEMBER_LIMITS = { free: 3, pro: 10, team: Infinity }
+const FREE_LIMIT = 3
+// The RPC encodes "unlimited" as int4 max since JSON has no Infinity
+const normalizeLimit = (n) => (n >= 2147483647 ? Infinity : n)
 
 const ROLE_STYLES = {
   admin:  'text-yellow-400/80',
@@ -16,7 +17,7 @@ export default function MembersPanel({ projectId, ownerUserId, currentUserId }) 
   const [members, setMembers] = useState([])
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [limit, setLimit] = useState(MEMBER_LIMITS.free)
+  const [limit, setLimit] = useState(FREE_LIMIT)
 
   const isOwner = currentUserId === ownerUserId
   const joinUrl = `${window.location.origin}/pm/join/${projectId}`
@@ -27,15 +28,17 @@ export default function MembersPanel({ projectId, ownerUserId, currentUserId }) 
     if (!projectId) return
     Promise.all([
       getProjectMembers(projectId),
-      ownerUserId ? getSubscription(ownerUserId) : Promise.resolve({ plan: 'free' }),
+      // SECURITY DEFINER RPC: members can't read the owner's subscription
+      // directly (RLS limits user_subscriptions to your own row)
+      getProjectMemberLimit(projectId),
     ])
-      .then(([mems, sub]) => {
+      .then(([mems, lim]) => {
         setMembers(mems)
-        setLimit(MEMBER_LIMITS[sub?.plan] ?? MEMBER_LIMITS.free)
+        setLimit(normalizeLimit(lim?.limit ?? FREE_LIMIT))
       })
       .catch(() => setMembers([]))
       .finally(() => setLoading(false))
-  }, [projectId, ownerUserId])
+  }, [projectId])
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(joinUrl)
