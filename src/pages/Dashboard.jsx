@@ -35,46 +35,69 @@ export default function Dashboard() {
     return null
   }
 
-  const tools = [
+  // Tools grouped by where the visitor is in their project journey, so a
+  // first-time user can find "their" tool by the question they came with.
+  const toolGroups = [
     {
-      icon: DollarSign,
-      title: 'AI Cost Estimator',
-      description: 'Get accurate project cost estimates in your local currency',
-      status: 'Available',
-      comingSoon: false,
-      path: '/dashboard/cost-estimator',
+      step: '01',
+      title: 'Decide & budget',
+      question: 'Is this project worth it — and what will it cost?',
+      tools: [
+        {
+          icon: TrendingUp,
+          title: 'ROI Calculator',
+          description: 'See how much revenue you\'re losing without a website - and how fast it pays back',
+          useWhen: 'You\'re not sure a website or app is worth the money',
+          gives: 'Payback period + the monthly revenue you\'re leaving on the table',
+          path: '/dashboard/roi-calculator',
+        },
+        {
+          icon: DollarSign,
+          title: 'AI Cost Estimator',
+          description: 'Describe your project in plain words and get a cost estimate in your local currency',
+          useWhen: 'You have an idea but no budget number to plan around',
+          gives: 'A realistic cost range with a feature-by-feature breakdown',
+          path: '/dashboard/cost-estimator',
+        },
+      ],
     },
     {
-      icon: TrendingUp,
-      title: 'ROI Calculator',
-      description: 'See how much revenue you\'re losing without a website - and how fast it pays back',
-      status: 'Available',
-      comingSoon: false,
-      path: '/dashboard/roi-calculator',
+      step: '02',
+      title: 'Plan the build',
+      question: 'How long will it take, and what should it be built with?',
+      tools: [
+        {
+          icon: Clock,
+          title: 'Project Timeline Calculator',
+          description: 'Get a realistic timeline with phase breakdown and milestones',
+          useWhen: 'You need a delivery date you can commit to',
+          gives: 'Week-by-week phases with clear milestones',
+          path: '/dashboard/timeline-calculator',
+        },
+        {
+          icon: LayoutDashboard,
+          title: 'Tech Stack Recommender',
+          description: 'Get an AI architect\'s pick for the best tech stack for your project',
+          useWhen: 'You don\'t know which technologies to build on',
+          gives: 'A recommended stack with the reasoning behind each choice',
+          path: '/dashboard/tech-recommender',
+        },
+      ],
     },
     {
-      icon: Clock,
-      title: 'Project Timeline Calculator',
-      description: 'Get a realistic timeline with phase breakdown and milestones',
-      status: 'Available',
-      comingSoon: false,
-      path: '/dashboard/timeline-calculator',
-    },
-    {
-      icon: LayoutDashboard,
-      title: 'Tech Stack Recommender',
-      description: 'Get an AI architect\'s pick for the best tech stack for your project',
-      status: 'Available',
-      comingSoon: false,
-      path: '/dashboard/tech-recommender',
-    },
-    {
-      icon: Wrench,
-      title: 'Maintenance Calculator',
-      description: 'Estimate the ongoing monthly cost to maintain and support your product',
-      status: 'Available',
-      comingSoon: false,
-      path: '/dashboard/maintenance-calculator',
+      step: '03',
+      title: 'Run & maintain',
+      question: 'What does it cost to keep it alive after launch?',
+      tools: [
+        {
+          icon: Wrench,
+          title: 'Maintenance Calculator',
+          description: 'Estimate the ongoing monthly cost to maintain and support your product',
+          useWhen: 'You want to budget beyond launch day',
+          gives: 'A monthly figure covering hosting, support and updates',
+          path: '/dashboard/maintenance-calculator',
+        },
+      ],
     },
   ]
 
@@ -88,7 +111,8 @@ export default function Dashboard() {
           <div>
             <h2 className="font-display font-extrabold text-3xl text-white mb-3">AI Tools</h2>
             <p className="text-white/60 text-sm max-w-xl">
-              Access powerful AI-powered tools to help you plan, estimate, and build your projects.
+              Five free tools that take you from rough idea to a costed, planned project —
+              organised by the question you're trying to answer.
             </p>
           </div>
           <button
@@ -101,24 +125,41 @@ export default function Dashboard() {
 
         {/* First-time welcome banner */}
         {showWelcome && (
-          <div className="mb-8 glass rounded-2xl p-5 border border-white/10 flex items-start justify-between gap-4">
-            <div>
-              <p className="font-semibold text-white mb-1">
-                Welcome{displayName ? `, ${displayName.split(' ')[0]}` : ''}! 👋
-              </p>
-              <p className="text-sm text-white/60 mb-3">Start with the <strong className="text-white">Cost Estimator</strong> — describe your project and get an AI-powered cost breakdown in seconds.</p>
+          <div className="mb-8 glass rounded-2xl p-5 border border-white/10">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <p className="font-semibold text-white mb-1">
+                  Welcome{displayName ? `, ${displayName.split(' ')[0]}` : ''}! 👋
+                </p>
+                <p className="text-sm text-white/60">Every tool here works the same way — no forms, no jargon:</p>
+              </div>
               <button
-                onClick={() => navigate('/dashboard/cost-estimator')}
-                className="text-xs bg-white text-black font-semibold px-4 py-2 rounded-lg hover:bg-white/90 transition-colors"
+                onClick={() => { setShowWelcome(false); localStorage.setItem('vikku_onboarded', '1') }}
+                className="text-white/30 hover:text-white transition-colors text-xs flex-shrink-0 mt-0.5"
               >
-                Try the Cost Estimator →
+                Dismiss
               </button>
             </div>
+            <div className="grid sm:grid-cols-3 gap-3 mb-4">
+              {[
+                ['1', 'Describe your project', 'A few plain sentences is enough'],
+                ['2', 'AI crunches the numbers', 'Costs, timelines or stack — in seconds'],
+                ['3', 'Save & share the result', 'Keep it in "My saved results" or send a link'],
+              ].map(([n, title, sub]) => (
+                <div key={n} className="flex items-start gap-3 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2.5">
+                  <span className="w-5 h-5 rounded-full bg-white text-black text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{n}</span>
+                  <div>
+                    <p className="text-xs font-medium text-white/80">{title}</p>
+                    <p className="text-[11px] text-white/40 mt-0.5">{sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
             <button
-              onClick={() => { setShowWelcome(false); localStorage.setItem('vikku_onboarded', '1') }}
-              className="text-white/30 hover:text-white transition-colors text-xs flex-shrink-0 mt-0.5"
+              onClick={() => navigate('/dashboard/cost-estimator')}
+              className="text-xs bg-white text-black font-semibold px-4 py-2 rounded-lg hover:bg-white/90 transition-colors"
             >
-              Dismiss
+              Not sure where to start? Try the Cost Estimator →
             </button>
           </div>
         )}
@@ -143,44 +184,51 @@ export default function Dashboard() {
           <ArrowRight size={18} className="text-white/30 group-hover:text-white transition-colors flex-shrink-0 ml-4" />
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          {tools.map((tool) => {
-            const Icon = tool.icon
-            return (
-              <div
-                key={tool.title}
-                className={`glass rounded-2xl p-6 group transition-all ${
-                  tool.comingSoon ? 'opacity-60' : 'hover:border-white/20 cursor-pointer'
-                }`}
-              >
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-xl glass flex items-center justify-center flex-shrink-0">
-                    <Icon size={24} className="text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-display font-semibold text-lg text-white">{tool.title}</h3>
-                      {tool.comingSoon && (
-                        <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full text-white/60">
-                          Coming Soon
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-white/60">{tool.description}</p>
-                  </div>
-                </div>
-                {!tool.comingSoon && (
-                  <button
+        {toolGroups.map((group) => (
+          <div key={group.step} className="mb-10">
+            <div className="flex items-baseline gap-3 mb-1">
+              <span className="text-xs font-mono text-white/25">{group.step}</span>
+              <h3 className="font-display font-bold text-xl text-white">{group.title}</h3>
+            </div>
+            <p className="text-sm text-white/40 italic mb-4">"{group.question}"</p>
+            <div className="grid md:grid-cols-2 gap-4">
+              {group.tools.map((tool) => {
+                const Icon = tool.icon
+                return (
+                  <div
+                    key={tool.title}
                     onClick={() => navigate(tool.path)}
-                    className="w-full bg-white text-black font-semibold py-2.5 rounded-xl hover:bg-white/90 transition-colors text-sm"
+                    className="glass rounded-2xl p-6 group transition-all hover:border-white/20 cursor-pointer flex flex-col"
                   >
-                    Open Tool
-                  </button>
-                )}
-              </div>
-            )
-          })}
-        </div>
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="w-12 h-12 rounded-xl glass flex items-center justify-center flex-shrink-0">
+                        <Icon size={24} className="text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-display font-semibold text-lg text-white mb-1">{tool.title}</h3>
+                        <p className="text-sm text-white/60">{tool.description}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5 mb-4 text-xs flex-1">
+                      <p className="text-white/40">
+                        <span className="text-white/70 font-medium">Best when:</span> {tool.useWhen}
+                      </p>
+                      <p className="text-white/40">
+                        <span className="text-white/70 font-medium">You get:</span> {tool.gives}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigate(tool.path) }}
+                      className="w-full bg-white text-black font-semibold py-2.5 rounded-xl hover:bg-white/90 transition-colors text-sm"
+                    >
+                      Open Tool
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ))}
 
         {/* Stats section */}
         <div className="mt-12 glass rounded-2xl p-6">
