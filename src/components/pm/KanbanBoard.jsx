@@ -3,6 +3,7 @@ import { Plus, X, ClipboardList, Zap, Eye, CheckCircle, Trash2, MousePointer, Li
 import TaskCard from './TaskCard'
 import TaskCreateModal from './TaskCreateModal'
 import { createTask, updateTask, deleteTask, logActivity } from '../../lib/pmService'
+import { notifyTaskAssigned, insertPmNotification, getMemberUserId } from '../../lib/notificationService'
 
 function getNextDueDate(dueDate, recurrence) {
   if (!dueDate) return null
@@ -26,7 +27,7 @@ function stageColor(hexColor) {
   return hexColor || '#6b7280'
 }
 
-export default function KanbanBoard({ projectId, tasks, onTasksChange, user, workflow, projectLabels }) {
+export default function KanbanBoard({ projectId, projectName, tasks, onTasksChange, user, workflow, projectLabels }) {
   // workflow = array of stage objects [{status_key, name, color, is_done, position}, ...]
   // or null/undefined → use DEFAULT_WORKFLOW_STAGES
   const stages = (workflow && workflow.length > 0) ? workflow : DEFAULT_WORKFLOW_STAGES
@@ -76,6 +77,25 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
       if (!task) throw new Error('no task returned')
       onTasksChange((prev) => prev.map((t) => t.id === tempId ? task : t))
       if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_created', entity_type: 'task', entity_title: title })
+      // Notify assignee when a task is created already assigned to someone else
+      if (assigned_to_email && assigned_to_email !== user?.email) {
+        notifyTaskAssigned({
+          taskTitle: title,
+          projectName: projectName || '',
+          assigneeEmail: assigned_to_email,
+          dueDate: due_date || undefined,
+        })
+        getMemberUserId(projectId, assigned_to_email).then(assigneeId => {
+          if (assigneeId) insertPmNotification({
+            userId: assigneeId,
+            type: 'task_assigned',
+            message: `You were assigned "${title}"`,
+            subText: projectName || '',
+            projectId,
+            entityId: task.id,
+          })
+        })
+      }
     } catch {
       onTasksChange((prev) => prev.filter((t) => t.id !== tempId))
     }

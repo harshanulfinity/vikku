@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { X, User, Link, ExternalLink, Layers, Plus } from 'lucide-react'
 import { getProjectMembers, getProjectLabels, saveProjectLabels } from '../../lib/pmService'
 import { DEFAULT_LABELS, LABEL_COLORS, getLabelStyle, DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
+import useLockBodyScroll from '../../hooks/useLockBodyScroll'
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent']
 
@@ -27,6 +28,7 @@ const PRIORITY_STYLES = {
 }
 
 export default function TaskCreateModal({ projectId, initialStatus, initialStatusName, stages, user, onSubmit, onClose }) {
+  useLockBodyScroll()
   const activeStages = stages && stages.length > 0 ? stages : DEFAULT_WORKFLOW_STAGES
 
   // Resolve the display name for initialStatus
@@ -256,7 +258,7 @@ export default function TaskCreateModal({ projectId, initialStatus, initialStatu
                   type="date"
                   value={form.due_date}
                   onChange={(e) => setForm({ ...form, due_date: e.target.value })}
-                  className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 outline-none focus:border-white/20 transition-colors [color-scheme:dark]"
+                  className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 outline-none focus:border-white/20 transition-colors"
                 />
                 {form.due_date && (
                   <button onClick={() => setForm({ ...form, due_date: '' })} className="text-[10px] text-white/30 hover:text-white/60 mt-1 transition-colors">
@@ -303,7 +305,7 @@ export default function TaskCreateModal({ projectId, initialStatus, initialStatu
               <select
                 value={form.recurrence}
                 onChange={(e) => setForm({ ...form, recurrence: e.target.value })}
-                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 outline-none focus:border-white/20 transition-colors [color-scheme:dark]"
+                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 outline-none focus:border-white/20 transition-colors"
               >
                 <option value="">None</option>
                 <option value="daily">Daily</option>

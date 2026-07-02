@@ -4,6 +4,18 @@
 
 :root {
   --page-bg: #000000;
+  color-scheme: dark; /* native widgets (select popups, date pickers, scrollbars) follow the theme */
+}
+
+/* Options don't inherit the styled select's background; without explicit
+   colors several platforms render the dropdown list white-on-white in dark mode */
+select option {
+  background-color: #111111;
+  color: rgba(255, 255, 255, 0.9);
+}
+html.light select option {
+  background-color: #ffffff;
+  color: #0f172a;
 }
 
 @layer base {
@@ -89,6 +101,7 @@
 /* ── Light theme overrides ─────────────────────────────────────── */
 html.light {
   --page-bg: #f1f5f9;
+  color-scheme: light;
 }
 
 html.light body {

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Users, CreditCard, BarChart2, Megaphone, User, Mail, Activity, Search, X } from 'lucide-react'
 import AppHeader from '../../components/AppHeader'
 import { getAdminUsers } from '../../lib/adminService'
+import useLockBodyScroll from '../../hooks/useLockBodyScroll'
 
 const nav = [
   { label: 'Overview',   path: '/admin',                icon: LayoutDashboard },
@@ -16,6 +17,7 @@ const nav = [
 ]
 
 function GlobalSearch({ onClose }) {
+  useLockBodyScroll()
   const [query, setQuery]   = useState('')
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Menu, X, ChevronDown, LogOut, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import useLockBodyScroll from '../hooks/useLockBodyScroll'
 
 const navLinks = [
   { label: 'Services', href: '#services' },
@@ -25,6 +26,7 @@ const navLinks = [
 export default function Navbar() {
   const [scrolled,    setScrolled]    = useState(false)
   const [menuOpen,    setMenuOpen]    = useState(false)
+  useLockBodyScroll(menuOpen)
   const [activeId,    setActiveId]    = useState('')
   const [dropOpen,    setDropOpen]    = useState(false)
   const dropRef = useRef(null)

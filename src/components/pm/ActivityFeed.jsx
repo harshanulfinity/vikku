@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Activity, Plus, ArrowRight, CheckCircle, Flag, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Activity, Plus, ArrowRight, CheckCircle, Flag, Loader2, ChevronDown, ChevronUp, UserPlus, UserMinus } from 'lucide-react'
 import { getProjectActivity } from '../../lib/pmService'
 
 const VISIBLE_COUNT = 7
@@ -9,6 +9,8 @@ const ACTION_ICON = {
   task_updated: ArrowRight,
   task_done: CheckCircle,
   milestone_done: Flag,
+  task_assigned: UserPlus,
+  task_unassigned: UserMinus,
 }
 
 const ACTION_COLOR = {
@@ -16,6 +18,8 @@ const ACTION_COLOR = {
   task_updated: 'text-white/40',
   task_done: 'text-green-400',
   milestone_done: 'text-yellow-400',
+  task_assigned: 'text-violet-400',
+  task_unassigned: 'text-white/40',
 }
 
 function timeAgo(dateStr) {
@@ -72,6 +76,8 @@ export default function ActivityFeed({ projectId }) {
                     {item.action === 'task_updated' && 'updated'}
                     {item.action === 'task_done' && 'completed'}
                     {item.action === 'milestone_done' && 'reached milestone'}
+                    {item.action === 'task_assigned' && 'changed assignee on'}
+                    {item.action === 'task_unassigned' && 'unassigned'}
                     {' '}
                     <span className="text-white/80">{item.entity_title}</span>
                   </p>

@@ -697,7 +697,7 @@ export default function ProjectDetail() {
               if (overdueOnly) filtered = filtered.filter((t) => t.due_date && new Date(t.due_date) < new Date() && !doneKeys.has(t.status))
               return (
                 <>
-                  {activeTab === 'kanban' && <KanbanBoard projectId={project.id} tasks={filtered} onTasksChange={setTasks} user={user} workflow={workflowStages} projectLabels={project.labels || []} />}
+                  {activeTab === 'kanban' && <KanbanBoard projectId={project.id} projectName={project.name} tasks={filtered} onTasksChange={setTasks} user={user} workflow={workflowStages} projectLabels={project.labels || []} />}
                   {activeTab === 'timeline' && <TimelineView milestones={milestones} onMilestonesChange={setMilestones} tasks={tasks} />}
                   {activeTab === 'analytics' && <AnalyticsPanel tasks={filtered} milestones={milestones} stages={workflowStages} />}
                   {activeTab === 'calendar' && <CalendarView tasks={filtered} milestones={milestones} />}

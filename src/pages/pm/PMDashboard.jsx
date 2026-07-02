@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getProjects, getTasks, getSharedProjects, getStorageUsedMb } from '../../lib/pmService'
 import { STORAGE_LIMITS_MB } from '../../lib/entitlements'
 import { sendWeeklyDigest } from '../../lib/openaiService'
+import useLockBodyScroll from '../../hooks/useLockBodyScroll'
 
 import ProjectCard from '../../components/pm/ProjectCard'
 import UpgradeModal from '../../components/pm/UpgradeModal'
@@ -26,6 +27,7 @@ export default function PMDashboard() {
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [pendingCycle, setPendingCycle] = useState('monthly')
   const [showManageSub, setShowManageSub] = useState(false)
+  useLockBodyScroll(showManageSub)
   const [showMyTasks, setShowMyTasks] = useState(true)
   const [showAllTasks, setShowAllTasks] = useState(false)
   const [sendingDigest, setSendingDigest] = useState(false)

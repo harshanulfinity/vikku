@@ -3,6 +3,7 @@ import { useAutoRefresh } from '../../hooks/useAutoRefresh'
 import { Search, RefreshCw, ChevronDown, Download, X, Folder, AlertTriangle } from 'lucide-react'
 import AdminLayout from './AdminLayout'
 import { getAdminUsers, adminChangePlan, getAdminUserDetail, adminDeleteUser, getAdminExpiring } from '../../lib/adminService'
+import useLockBodyScroll from '../../hooks/useLockBodyScroll'
 
 const PLAN_STYLES = {
   free:  'bg-white/10 text-white/50',
@@ -69,6 +70,7 @@ function PlanDropdown({ userId, currentPlan, onChanged }) {
 }
 
 function UserDetailModal({ userId, onClose, onDeleted }) {
+  useLockBodyScroll()
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
