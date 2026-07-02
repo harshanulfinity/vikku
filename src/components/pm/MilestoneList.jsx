@@ -115,7 +115,7 @@ export default function MilestoneList({ projectId, milestones, onMilestonesChang
               type="date"
               value={newDate}
               onChange={(e) => setNewDate(e.target.value)}
-              className="w-full bg-transparent text-xs text-white/60 outline-none mb-3 [color-scheme:dark]"
+              className="w-full bg-transparent text-xs text-white/60 outline-none mb-3"
             />
             <div className="flex gap-2">
               <button

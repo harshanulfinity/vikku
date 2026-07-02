@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react'
 import { X, Users, Copy, Check, Link, Lock, Loader2 } from 'lucide-react'
 import { getProjectMembers } from '../../lib/pmService'
 import { getSubscription } from '../../lib/razorpayService'
+import useLockBodyScroll from '../../hooks/useLockBodyScroll'
 
 const MEMBER_LIMITS = { free: 3, pro: 10, team: Infinity }
 
 export default function InviteMemberModal({ projectId, projectName, ownerUserId, onClose }) {
+  useLockBodyScroll()
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(true)
   const [memberCount, setMemberCount] = useState(0)

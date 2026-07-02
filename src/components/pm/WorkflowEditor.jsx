@@ -7,6 +7,7 @@ import {
 } from '../../lib/pmService'
 import { WORKFLOW_TEMPLATES, STAGE_COLORS, generateStatusKey } from '../../lib/pmConstants'
 import WorkflowMigrationModal from './WorkflowMigrationModal'
+import useLockBodyScroll from '../../hooks/useLockBodyScroll'
 
 function ColorPicker({ value, onChange }) {
   const [open, setOpen] = useState(false)
@@ -90,6 +91,7 @@ export default function WorkflowEditor({
   onClose,
   onWorkflowAssigned,
 }) {
+  useLockBodyScroll()
   const { user } = useAuth()
   const [workflows, setWorkflows] = useState([])
   const [loading, setLoading] = useState(true)

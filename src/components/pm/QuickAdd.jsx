@@ -4,6 +4,7 @@ import { Zap, X } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getProjects, createTask } from '../../lib/pmService'
 import { DEFAULT_LABELS, getLabelStyle } from '../../lib/pmConstants'
+import useLockBodyScroll from '../../hooks/useLockBodyScroll'
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent']
 const PRIORITY_STYLES = {
@@ -16,6 +17,7 @@ const PRIORITY_STYLES = {
 export default function QuickAdd() {
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
+  useLockBodyScroll(open)
   const [projects, setProjects] = useState([])
   const [selectedProject, setSelectedProject] = useState('')
   const [title, setTitle] = useState('')
@@ -180,7 +182,7 @@ export default function QuickAdd() {
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 outline-none focus:border-white/20 transition-colors [color-scheme:dark]"
+            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 outline-none focus:border-white/20 transition-colors"
           />
 
           <button

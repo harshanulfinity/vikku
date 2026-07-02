@@ -3,8 +3,10 @@ import { createPortal } from 'react-dom'
 import { ArrowRight, AlertCircle, Loader2, X } from 'lucide-react'
 import { DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
 import { migrateTaskStatuses } from '../../lib/pmService'
+import useLockBodyScroll from '../../hooks/useLockBodyScroll'
 
 export default function WorkflowMigrationModal({ projectId, projectTasks, targetWorkflow, onDone, onClose }) {
+  useLockBodyScroll()
   const targetStages = targetWorkflow ? targetWorkflow.stages : DEFAULT_WORKFLOW_STAGES
 
   // Find all current status_keys that exist in tasks but not in target workflow

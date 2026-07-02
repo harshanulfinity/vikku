@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { X, Sparkles, Loader2, AlertCircle, Check, Minus } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { openRazorpayCheckout, PLAN_PRICING, priceBreakdown } from '../../lib/razorpayService'
+import useLockBodyScroll from '../../hooks/useLockBodyScroll'
 
 // Feature comparison table: [label, free, pro, team]
 // true = check, false = dash, string = custom text
@@ -70,6 +71,7 @@ function Cell({ value, isHighlight }) {
 }
 
 export default function UpgradeModal({ onClose, onUpgraded, reason, currentPlan = 'free', initialBillingCycle = 'monthly' }) {
+  useLockBodyScroll()
   const { user } = useAuth()
   const [processing, setProcessing] = useState(null)
   const [error, setError] = useState('')

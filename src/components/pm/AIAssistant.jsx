@@ -5,10 +5,12 @@ import { planProject } from '../../lib/openaiService'
 import { bulkCreateTasks, bulkCreateMilestones } from '../../lib/pmService'
 import { useAuth } from '../../contexts/AuthContext'
 import UpgradeModal from './UpgradeModal'
+import useLockBodyScroll from '../../hooks/useLockBodyScroll'
 
 export default function AIAssistant({ projectId, projectName, onDone, isPro, workflow }) {
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
+  useLockBodyScroll(open)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [adding, setAdding] = useState(false)

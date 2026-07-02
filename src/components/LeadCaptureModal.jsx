@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { X, Mail, ArrowRight, CheckCircle, Calendar } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { emailToolResult } from '../lib/toolResultsService'
+import useLockBodyScroll from '../hooks/useLockBodyScroll'
 
 const SOURCE_LABELS = {
   roi_calculator: 'ROI Calculator',
@@ -17,6 +18,8 @@ export default function LeadCaptureModal({ open, onClose, source, shareId, onUnl
   useEffect(() => {
     if (!open) { setEmail(''); setStatus('idle') }
   }, [open])
+
+  useLockBodyScroll(open)
 
   if (!open) return null
 

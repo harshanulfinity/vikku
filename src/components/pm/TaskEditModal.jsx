@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import useLockBodyScroll from '../../hooks/useLockBodyScroll'
 import {
   X, Trash2, Loader2, MessageCircle, Send, Trash,
   CheckSquare, Square, Plus, Clock, User, Timer, Link, ExternalLink,
@@ -13,7 +14,7 @@ import {
   getTaskAttachments, uploadTaskAttachment, deleteTaskAttachment, getAttachmentUrl,
   getTasks, getTaskDependencies, addTaskDependency, removeTaskDependency,
   getStorageUsedMb, toggleAttachmentVisibility,
-  getProjectLabels, saveProjectLabels,
+  getProjectLabels, saveProjectLabels, logActivity,
 } from '../../lib/pmService'
 import { STORAGE_LIMITS_MB } from '../../lib/entitlements'
 import { DEFAULT_LABELS, LABEL_COLORS, getLabelStyle } from '../../lib/pmConstants'
@@ -54,6 +55,7 @@ function fmtMins(m) {
 }
 
 export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
+  useLockBodyScroll()
   const { user } = useAuth()
   const { isPro } = useSubscription()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -159,6 +161,16 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
       console.error('updateTask failed:', err)
     })
     const prevEmail = task.assigned_to_email
+    if (user && (form.assigned_to_email || null) !== (prevEmail || null)) {
+      logActivity({
+        project_id: task.project_id,
+        user_id: user.id,
+        user_email: user.email,
+        action: form.assigned_to_email ? 'task_assigned' : 'task_unassigned',
+        entity_type: 'task',
+        entity_title: form.title.trim(),
+      })
+    }
     if (form.assigned_to_email && form.assigned_to_email !== prevEmail && form.assigned_to_email !== user?.email) {
       notifyTaskAssigned({
         taskTitle: form.title.trim(),
@@ -486,7 +498,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                   type="date"
                   value={form.due_date}
                   onChange={(e) => setForm({ ...form, due_date: e.target.value })}
-                  className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 outline-none focus:border-white/20 transition-colors [color-scheme:dark]"
+                  className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 outline-none focus:border-white/20 transition-colors"
                 />
                 {form.due_date && (
                   <div className="flex items-center gap-3 mt-1.5">
@@ -511,7 +523,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
               <select
                 value={form.recurrence}
                 onChange={(e) => setForm({ ...form, recurrence: e.target.value })}
-                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 outline-none focus:border-white/20 transition-colors [color-scheme:dark]"
+                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white/70 outline-none focus:border-white/20 transition-colors"
               >
                 <option value="">None</option>
                 <option value="daily">Daily</option>
