@@ -60,7 +60,13 @@ export async function getProjectByToken(token) {
       .select('*')
       .eq('share_token', token)
       .single()
-    if (error) { console.error('Error fetching project by token:', error); return null }
+    if (error) {
+      // PGRST116 = no matching row, 22P02 = token isn't a valid uuid; both just mean "bad link"
+      if (error.code !== 'PGRST116' && error.code !== '22P02') {
+        console.error('Error fetching project by token:', error.message)
+      }
+      return null
+    }
     // Strip PIN from client response; expose only whether one is set
     const { share_pin, ...rest } = data
     return { ...rest, has_share_pin: !!share_pin }
@@ -72,15 +78,15 @@ export async function getProjectByToken(token) {
 
 export async function createProject(fields) {
   if (!supabase) throw new Error('Database not configured')
+  const id = crypto.randomUUID()
+  const slug = generateProjectSlug(fields.name, id)
   const { data, error } = await supabase
     .from('pm_projects')
-    .insert(fields)
+    .insert({ ...fields, id, slug })
     .select()
     .single()
   if (error) throw error
-  const slug = generateProjectSlug(data.name, data.id)
-  await supabase.from('pm_projects').update({ slug }).eq('id', data.id)
-  return { ...data, slug }
+  return data
 }
 
 export async function updateProject(id, fields) {
@@ -168,8 +174,11 @@ export async function updateTask(id, fields) {
 
 export async function deleteTask(id) {
   if (!supabase) throw new Error('Database not configured')
-  const { error } = await supabase.from('pm_tasks').delete().eq('id', id)
+  const { data, error } = await supabase.from('pm_tasks').delete().eq('id', id).select('id')
   if (error) throw error
+  // RLS can filter a delete silently (0 rows affected, no error); surface it
+  // so the UI doesn't remove a task that still exists on the server
+  if (!data?.length) throw new Error("Task couldn't be deleted - you may not have permission")
 }
 
 export async function bulkCreateTasks(tasks) {
@@ -450,16 +459,17 @@ export async function duplicateProject(projectId) {
   if (!supabase) throw new Error('Database not configured')
   const { data: orig, error: pe } = await supabase.from('pm_projects').select('*').eq('id', projectId).single()
   if (pe || !orig) throw new Error('Project not found')
+  const newId = crypto.randomUUID()
+  const slug = generateProjectSlug(`${orig.name} copy`, newId)
   const { data: newProject, error: ne } = await supabase
     .from('pm_projects')
     .insert({
+      id: newId, slug,
       user_id: orig.user_id, name: `${orig.name} (copy)`, description: orig.description,
       status: 'active', client_name: orig.client_name, client_email: orig.client_email, color: orig.color,
     })
     .select().single()
   if (ne) throw ne
-  const slug = generateProjectSlug(`${orig.name} copy`, newProject.id)
-  await supabase.from('pm_projects').update({ slug }).eq('id', newProject.id)
   const { data: tasks } = await supabase.from('pm_tasks').select('*').eq('project_id', projectId)
   if (tasks && tasks.length > 0) {
     await supabase.from('pm_tasks').insert(

@@ -82,8 +82,12 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
   }
 
   const handleDelete = async (taskId) => {
-    await deleteTask(taskId)
-    onTasksChange(tasks.filter((t) => t.id !== taskId))
+    try {
+      await deleteTask(taskId)
+      onTasksChange(tasks.filter((t) => t.id !== taskId))
+    } catch (err) {
+      alert(err?.message || 'Failed to delete task')
+    }
   }
 
   const handleUpdate = (updated) => {
@@ -91,6 +95,68 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
   }
 
   const handleDragStart = (taskId) => setDragTaskId(taskId)
+
+  // ── Touch drag-and-drop (mobile) ─────────────────────────────
+  const touchDragRef = useRef({ taskId: null, ghost: null, moved: false })
+
+  const handleTouchStart = (e, taskId) => {
+    if (selectMode) return
+    touchDragRef.current = { taskId, ghost: null, moved: false }
+  }
+
+  const handleTouchMove = (e) => {
+    const { taskId } = touchDragRef.current
+    if (!taskId) return
+    const touch = e.touches[0]
+
+    if (!touchDragRef.current.moved) {
+      touchDragRef.current.moved = true
+      // Clone the card as a floating ghost
+      const cardEl = e.currentTarget
+      const rect = cardEl.getBoundingClientRect()
+      const ghost = cardEl.cloneNode(true)
+      ghost.style.cssText = `position:fixed;width:${rect.width}px;opacity:0.85;pointer-events:none;z-index:9999;transform:scale(1.03);border-radius:12px;left:${rect.left}px;top:${rect.top}px;`
+      document.body.appendChild(ghost)
+      touchDragRef.current.ghost = ghost
+      touchDragRef.current.offsetX = touch.clientX - rect.left
+      touchDragRef.current.offsetY = touch.clientY - rect.top
+      setDragTaskId(taskId)
+    }
+
+    e.preventDefault()
+    const { ghost, offsetX, offsetY } = touchDragRef.current
+    if (ghost) {
+      ghost.style.left = (touch.clientX - offsetX) + 'px'
+      ghost.style.top  = (touch.clientY - offsetY) + 'px'
+    }
+
+    // Highlight the column underneath
+    if (ghost) ghost.style.display = 'none'
+    const el = document.elementFromPoint(touch.clientX, touch.clientY)
+    if (ghost) ghost.style.display = ''
+    let col = el
+    while (col && !col.dataset.statusKey) col = col.parentElement
+    setDragOverCol(col?.dataset.statusKey || null)
+  }
+
+  const handleTouchEnd = (e) => {
+    const { taskId, ghost } = touchDragRef.current
+    if (ghost) { document.body.removeChild(ghost); touchDragRef.current.ghost = null }
+    touchDragRef.current.taskId = null
+
+    if (!taskId || !touchDragRef.current.moved) { setDragTaskId(null); setDragOverCol(null); return }
+
+    const touch = e.changedTouches[0]
+    const el = document.elementFromPoint(touch.clientX, touch.clientY)
+    let col = el
+    while (col && !col.dataset.statusKey) col = col.parentElement
+    if (col?.dataset.statusKey) {
+      handleDrop(col.dataset.statusKey)
+    } else {
+      setDragTaskId(null)
+      setDragOverCol(null)
+    }
+  }
 
   const handleTaskDragOver = (e, taskId) => {
     e.preventDefault()
@@ -187,7 +253,13 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
     setBulkWorking(true)
     const ids = [...selected]
     onTasksChange(tasks.filter((t) => !selected.has(t.id)))
-    await Promise.all(ids.map((id) => deleteTask(id)))
+    const results = await Promise.allSettled(ids.map((id) => deleteTask(id)))
+    const failedIds = new Set(ids.filter((_, i) => results[i].status === 'rejected'))
+    if (failedIds.size) {
+      const failedTasks = tasks.filter((t) => failedIds.has(t.id))
+      onTasksChange((prev) => [...prev, ...failedTasks])
+      alert(`${failedIds.size} task${failedIds.size !== 1 ? 's' : ''} couldn't be deleted - you may not have permission`)
+    }
     exitSelectMode()
     setBulkWorking(false)
   }
@@ -331,6 +403,7 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
             return (
               <div
                 key={stage.status_key}
+                data-status-key={stage.status_key}
                 style={{ minWidth: '200px', flex: '1 0 200px', maxWidth: '320px' }}
                 className={`flex flex-col min-h-[300px] rounded-2xl p-3 transition-all duration-200 ${
                   wipExceeded
@@ -381,7 +454,11 @@ export default function KanbanBoard({ projectId, tasks, onTasksChange, user, wor
                     <div
                       key={task.id}
                       onDragOver={(e) => handleTaskDragOver(e, task.id)}
+                      onTouchStart={(e) => handleTouchStart(e, task.id)}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
                       className="relative"
+                      style={{ touchAction: dragTaskId ? 'none' : 'auto' }}
                     >
                       {dragOverTaskId === task.id && dragInsertBefore && (
                         <div className="h-0.5 bg-blue-400/60 rounded-full mx-1 mb-1" />

@@ -1,7 +1,5 @@
-import { lazy, Suspense } from 'react'
 import { ArrowRight, ChevronDown } from 'lucide-react'
-
-const Globe = lazy(() => import('./Globe'))
+import KanbanHero from './KanbanHero'
 
 export default function Hero() {
   const scrollToServices = () =>
@@ -96,11 +94,9 @@ export default function Hero() {
         </div>
         </div>
 
-        {/* Right: Globe */}
-        <div className="flex justify-center items-center scale-90">
-          <Suspense fallback={<div className="w-[70vw] max-w-[480px] aspect-square" />}>
-            <Globe className="w-[70vw] max-w-[480px]" />
-          </Suspense>
+        {/* Right: Kanban preview */}
+        <div className="flex justify-center items-center">
+          <KanbanHero />
         </div>
       </div>
 

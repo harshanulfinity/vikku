@@ -183,9 +183,14 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const handleDelete = async () => {
     if (!window.confirm('Delete this task?')) return
     setDeleting(true)
-    await deleteTask(task.id)
-    onDeleted(task.id)
-    onClose()
+    try {
+      await deleteTask(task.id)
+      onDeleted(task.id)
+      onClose()
+    } catch (err) {
+      setDeleting(false)
+      alert(err?.message || 'Failed to delete task')
+    }
   }
 
   const handleSendComment = async () => {
