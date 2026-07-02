@@ -197,6 +197,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     setDeleting(true)
     try {
       await deleteTask(task.id)
+      if (user) logActivity({ project_id: task.project_id, user_id: user.id, user_email: user.email, action: 'task_deleted', entity_type: 'task', entity_title: task.title })
       onDeleted(task.id)
       onClose()
     } catch (err) {

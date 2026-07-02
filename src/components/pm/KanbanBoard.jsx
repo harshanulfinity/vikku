@@ -103,8 +103,10 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
 
   const handleDelete = async (taskId) => {
     try {
+      const task = tasks.find((t) => t.id === taskId)
       await deleteTask(taskId)
       onTasksChange(tasks.filter((t) => t.id !== taskId))
+      if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_deleted', entity_type: 'task', entity_title: task?.title })
     } catch (err) {
       alert(err?.message || 'Failed to delete task')
     }
@@ -272,6 +274,7 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
     if (!selected.size || !window.confirm(`Delete ${selected.size} task${selected.size !== 1 ? 's' : ''}?`)) return
     setBulkWorking(true)
     const ids = [...selected]
+    const deletedTasks = tasks.filter((t) => selected.has(t.id))
     onTasksChange(tasks.filter((t) => !selected.has(t.id)))
     const results = await Promise.allSettled(ids.map((id) => deleteTask(id)))
     const failedIds = new Set(ids.filter((_, i) => results[i].status === 'rejected'))
@@ -279,6 +282,11 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
       const failedTasks = tasks.filter((t) => failedIds.has(t.id))
       onTasksChange((prev) => [...prev, ...failedTasks])
       alert(`${failedIds.size} task${failedIds.size !== 1 ? 's' : ''} couldn't be deleted - you may not have permission`)
+    }
+    if (user) {
+      deletedTasks.filter((t) => !failedIds.has(t.id)).forEach((t) => {
+        logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_deleted', entity_type: 'task', entity_title: t.title })
+      })
     }
     exitSelectMode()
     setBulkWorking(false)
