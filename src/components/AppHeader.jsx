@@ -35,7 +35,7 @@ export default function AppHeader({ breadcrumbs = [], actions, badge }) {
             ) : null
           })()}
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(user ? '/dashboard' : '/')}
             className="font-display font-bold text-sm text-white/50 hover:text-white transition-colors flex-shrink-0"
           >
             vikku
