@@ -202,6 +202,9 @@ export default function TaskFilterBar({ filters, onChange, creators, user, proje
             <ChevronDown size={10} />
           </button>
           {panelOpen && (
+            <div className="fixed inset-0 z-20 bg-black/40" onClick={() => setPanelOpen(false)} />
+          )}
+          {panelOpen && (
             <div className="absolute top-full left-0 mt-1.5 w-80 max-h-[80vh] overflow-y-auto bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl z-30 p-3 space-y-4">
               {/* Smart Views */}
               <div>
