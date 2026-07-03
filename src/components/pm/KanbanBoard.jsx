@@ -101,15 +101,8 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
     }
   }
 
-  const handleDelete = async (taskId) => {
-    try {
-      const task = tasks.find((t) => t.id === taskId)
-      await deleteTask(taskId)
-      onTasksChange(tasks.filter((t) => t.id !== taskId))
-      if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_deleted', entity_type: 'task', entity_title: task?.title })
-    } catch (err) {
-      alert(err?.message || 'Failed to delete task')
-    }
+  const handleTaskRemoved = (taskId) => {
+    onTasksChange(tasks.filter((t) => t.id !== taskId))
   }
 
   const handleUpdate = (updated) => {
@@ -396,7 +389,7 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
                     <TaskCard
                       key={task.id}
                       task={task}
-                      onDelete={handleDelete}
+                      onTaskRemoved={handleTaskRemoved}
                       onUpdate={handleUpdate}
                       draggable={false}
                       selectMode={selectMode}
@@ -493,7 +486,7 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
                       )}
                       <TaskCard
                         task={task}
-                        onDelete={handleDelete}
+                        onTaskRemoved={handleTaskRemoved}
                         onUpdate={handleUpdate}
                         draggable={!selectMode}
                         onDragStart={() => handleDragStart(task.id)}
