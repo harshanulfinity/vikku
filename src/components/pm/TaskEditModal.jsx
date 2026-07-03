@@ -398,7 +398,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
       />
     )}
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-lg bg-[#111] border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-lg sm:max-w-3xl lg:max-w-4xl bg-[#111] border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] flex-shrink-0">
@@ -430,7 +430,8 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
           </div>
         )}
 
-        <div className="overflow-y-auto flex-1">
+        <div className="flex flex-col sm:flex-row flex-1 min-h-0">
+          <div className="overflow-y-auto flex-1 sm:border-r sm:border-white/[0.08]">
           <div className="p-5 space-y-4">
 
             {/* Title */}
@@ -848,61 +849,6 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
               </div>
             )}
 
-            {/* Comments and activity */}
-            <div className="border-t border-white/[0.06] pt-4">
-              <div className="flex items-center gap-1.5 mb-3">
-                <MessageCircle size={12} className="text-white/30" />
-                <label className="text-[10px] text-white/40 uppercase tracking-wider">Comments and activity</label>
-              </div>
-              {activityFeed.length > 0 && (
-                <div className="space-y-2 mb-3 max-h-56 overflow-y-auto">
-                  {activityFeed.map((item) => item._kind === 'comment' ? (
-                    <div key={item.id} className="flex gap-2.5 group">
-                      <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-[9px] text-white/50">{(item.data.user_email || '?')[0].toUpperCase()}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-white/40">{item.data.user_email?.split('@')[0]}</span>
-                          <span className="text-[10px] text-white/20">{timeAgo(item.data.created_at)}</span>
-                          {item.data.user_id === user?.id && (
-                            <button onClick={() => handleDeleteComment(item.data.id)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all ml-auto"><Trash size={10} /></button>
-                          )}
-                        </div>
-                        <p className="text-xs text-white/70 leading-relaxed mt-0.5">{item.data.content}</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div key={item.id} className="flex gap-2.5">
-                      <div className="w-5 h-5 rounded-full bg-white/[0.06] flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Activity size={9} className="text-white/30" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] text-white/50 leading-snug">
-                          <span className="text-white/40">{item.data.user_email?.split('@')[0] || 'Someone'}</span>
-                          {' '}{describeActivity(item.data)}
-                        </p>
-                        <p className="text-[10px] text-white/20 mt-0.5">{timeAgo(item.data.created_at)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {commentError && <p className="text-[10px] text-red-400 mb-2">{commentError}</p>}
-              <div className="flex gap-2">
-                <input
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendComment() } }}
-                  placeholder="Add a comment..."
-                  className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
-                />
-                <button onClick={handleSendComment} disabled={sendingComment || !newComment.trim()} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all disabled:opacity-30">
-                  {sendingComment ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
-                </button>
-              </div>
-            </div>
-
             {/* Attachments */}
             <div className="border-t border-white/[0.06] pt-4">
               <div className="flex items-center justify-between mb-3">
@@ -951,6 +897,62 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                 <p className="text-[10px] text-white/20 text-center py-2">No attachments yet. Add files, screenshots, or docs.</p>
               )}
             </div>
+          </div>
+          </div>
+
+          {/* Comments and activity */}
+          <div className="overflow-y-auto flex-1 sm:w-80 sm:flex-shrink-0 p-5 flex flex-col">
+            <div className="flex items-center gap-1.5 mb-3">
+              <MessageCircle size={12} className="text-white/30" />
+              <label className="text-[10px] text-white/40 uppercase tracking-wider">Comments and activity</label>
+            </div>
+            {commentError && <p className="text-[10px] text-red-400 mb-2">{commentError}</p>}
+            <div className="flex gap-2 mb-4">
+              <input
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendComment() } }}
+                placeholder="Add a comment..."
+                className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-white/20 transition-colors"
+              />
+              <button onClick={handleSendComment} disabled={sendingComment || !newComment.trim()} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all disabled:opacity-30">
+                {sendingComment ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+              </button>
+            </div>
+            {activityFeed.length > 0 && (
+              <div className="space-y-3">
+                {activityFeed.map((item) => item._kind === 'comment' ? (
+                  <div key={item.id} className="flex gap-2.5 group">
+                    <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[9px] text-white/50">{(item.data.user_email || '?')[0].toUpperCase()}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-white/40">{item.data.user_email?.split('@')[0]}</span>
+                        <span className="text-[10px] text-white/20">{timeAgo(item.data.created_at)}</span>
+                        {item.data.user_id === user?.id && (
+                          <button onClick={() => handleDeleteComment(item.data.id)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all ml-auto"><Trash size={10} /></button>
+                        )}
+                      </div>
+                      <p className="text-xs text-white/70 leading-relaxed mt-0.5">{item.data.content}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div key={item.id} className="flex gap-2.5">
+                    <div className="w-5 h-5 rounded-full bg-white/[0.06] flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Activity size={9} className="text-white/30" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] text-white/50 leading-snug">
+                        <span className="text-white/40">{item.data.user_email?.split('@')[0] || 'Someone'}</span>
+                        {' '}{describeActivity(item.data)}
+                      </p>
+                      <p className="text-[10px] text-white/20 mt-0.5">{timeAgo(item.data.created_at)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
