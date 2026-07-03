@@ -187,46 +187,8 @@ export default function TaskFilterBar({ filters, onChange, creators, user, proje
 
   return (
     <div className="mb-3">
-      {/* Smart Views */}
+      {/* Filters + Sort + Presets */}
       <div className="flex items-center gap-2 mb-2 flex-wrap">
-        <Sparkles size={10} className="text-white/20" />
-        {SMART_VIEWS.map((view) => {
-          const active = filters.smartView === view.key
-          return (
-            <button
-              key={view.key}
-              onClick={() => onChange({ smartView: active ? '' : view.key })}
-              title={view.hint}
-              className={`text-[10px] px-2.5 py-1 rounded-lg border font-medium transition-all ${
-                active ? 'bg-violet-500/15 text-violet-300 border-violet-500/30' : 'border-white/[0.08] text-white/30 hover:border-white/20'
-              }`}
-            >
-              {view.label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Quick chips + Filters + Sort + Presets */}
-      <div className="flex items-center gap-2 mb-2 flex-wrap">
-        {QUICK_CHIPS.map(({ key, label, icon: Icon }) => {
-          const active = isChipActive(key, filters)
-          return (
-            <button
-              key={key}
-              onClick={() => toggleChip(key, filters, onChange)}
-              className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg border font-medium transition-all ${
-                active ? 'bg-white/10 text-white/70 border-white/20' : 'border-white/[0.08] text-white/30 hover:border-white/20'
-              }`}
-            >
-              <Icon size={10} />
-              {label}
-            </button>
-          )
-        })}
-
-        <div className="w-px h-4 bg-white/[0.08]" />
-
         {/* Filters panel */}
         <div className="relative" ref={panelRef}>
           <button
@@ -240,9 +202,56 @@ export default function TaskFilterBar({ filters, onChange, creators, user, proje
             <ChevronDown size={10} />
           </button>
           {panelOpen && (
-            <div className="absolute top-full left-0 mt-1.5 w-72 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl z-30 p-3 space-y-4">
-              {/* Priority */}
+            <div className="absolute top-full left-0 mt-1.5 w-80 max-h-[80vh] overflow-y-auto bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl z-30 p-3 space-y-4">
+              {/* Smart Views */}
               <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Sparkles size={10} className="text-white/30" />
+                  <p className="text-[10px] text-white/40 uppercase tracking-wider">Smart Views</p>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {SMART_VIEWS.map((view) => {
+                    const active = filters.smartView === view.key
+                    return (
+                      <button
+                        key={view.key}
+                        onClick={() => onChange({ smartView: active ? '' : view.key })}
+                        title={view.hint}
+                        className={`text-[10px] px-2 py-1 rounded-lg border font-medium transition-all ${
+                          active ? 'bg-violet-500/15 text-violet-300 border-violet-500/30' : 'border-white/[0.08] text-white/30 hover:border-white/20'
+                        }`}
+                      >
+                        {view.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Quick chips */}
+              <div className="border-t border-white/[0.06] pt-3">
+                <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2">Quick Filters</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {QUICK_CHIPS.map(({ key, label, icon: Icon }) => {
+                    const active = isChipActive(key, filters)
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => toggleChip(key, filters, onChange)}
+                        className={`flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-lg border font-medium transition-all ${
+                          active ? 'bg-white/10 text-white/70 border-white/20' : 'border-white/[0.08] text-white/30 hover:border-white/20'
+                        }`}
+                      >
+                        <Icon size={10} />
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Priority */}
+              <div className="border-t border-white/[0.06] pt-3">
                 <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2">Priority</p>
                 <div className="space-y-1">
                   {PRIORITY_OPTIONS.map((p) => {
