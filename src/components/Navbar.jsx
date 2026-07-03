@@ -96,18 +96,7 @@ export default function Navbar() {
           {navLinks.map(({ label, href, dropdown, isRoute }) => {
             const isActive = activeId === href.slice(1)
             if (isRoute) {
-              const handleRoute = () => {
-                if (label === 'PM Tool' && !user) {
-                  if (location.pathname !== '/') {
-                    navigate('/')
-                    setTimeout(() => document.getElementById('pm-pricing')?.scrollIntoView({ behavior: 'smooth' }), 300)
-                  } else {
-                    document.getElementById('pm-pricing')?.scrollIntoView({ behavior: 'smooth' })
-                  }
-                } else {
-                  navigate(href)
-                }
-              }
+              const handleRoute = () => navigate(href)
               return (
                 <button
                   key={label}
@@ -258,18 +247,8 @@ export default function Navbar() {
                   <button
                     onClick={() => {
                       if (isRoute) {
-                        if (label === 'PM Tool' && !user) {
-                          setMenuOpen(false)
-                          if (location.pathname !== '/') {
-                            navigate('/')
-                            setTimeout(() => document.getElementById('pm-pricing')?.scrollIntoView({ behavior: 'smooth' }), 300)
-                          } else {
-                            document.getElementById('pm-pricing')?.scrollIntoView({ behavior: 'smooth' })
-                          }
-                        } else {
-                          navigate(href)
-                          setMenuOpen(false)
-                        }
+                        navigate(href)
+                        setMenuOpen(false)
                       } else {
                         handleNav(href)
                       }
