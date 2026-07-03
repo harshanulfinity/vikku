@@ -1,9 +1,120 @@
-import { useState, useRef } from 'react'
-import { Plus, X, ClipboardList, Zap, Eye, CheckCircle, Trash2, MousePointer, List, Columns, User } from 'lucide-react'
+import { useState, useRef, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { Plus, X, ClipboardList, Zap, Eye, CheckCircle, Trash2, MousePointer, List, Columns } from 'lucide-react'
 import TaskCard from './TaskCard'
 import TaskCreateModal from './TaskCreateModal'
+import TaskFilterBar, { DEFAULT_FILTERS } from './TaskFilterBar'
 import { createTask, updateTask, deleteTask, logActivity } from '../../lib/pmService'
 import { notifyTaskAssigned, insertPmNotification, getMemberUserId } from '../../lib/notificationService'
+
+const PRIORITY_SORT_ORDER = { urgent: 0, high: 1, medium: 2, low: 3 }
+
+function compareTasks(a, b, field, dir) {
+  let av, bv
+  switch (field) {
+    case 'due_date':
+      av = a.due_date ? new Date(a.due_date).getTime() : Infinity
+      bv = b.due_date ? new Date(b.due_date).getTime() : Infinity
+      break
+    case 'priority':
+      av = PRIORITY_SORT_ORDER[a.priority] ?? 4
+      bv = PRIORITY_SORT_ORDER[b.priority] ?? 4
+      break
+    case 'created_at':
+      av = new Date(a.created_at).getTime()
+      bv = new Date(b.created_at).getTime()
+      break
+    case 'updated_at':
+      av = new Date(a.updated_at || a.created_at).getTime()
+      bv = new Date(b.updated_at || b.created_at).getTime()
+      break
+    case 'title':
+      av = (a.title || '').toLowerCase()
+      bv = (b.title || '').toLowerCase()
+      break
+    case 'assigned_to_email':
+      av = a.assigned_to_email || '￿'
+      bv = b.assigned_to_email || '￿'
+      break
+    default:
+      return 0
+  }
+  if (av < bv) return dir === 'asc' ? -1 : 1
+  if (av > bv) return dir === 'asc' ? 1 : -1
+  return 0
+}
+
+function encodeFiltersToParams(params, filters) {
+  const next = new URLSearchParams(params)
+  const set = (key, val) => { val ? next.set(key, val) : next.delete(key) }
+  set('priority', filters.priorities.join(',') || '')
+  const created = [...(filters.createdByMe ? ['me'] : []), ...filters.createdByMembers]
+  set('created', created.join(',') || '')
+  set('assigned', filters.assignedToMe ? 'me' : '')
+  set('overdue', filters.overdue ? '1' : '')
+  set('due', filters.dueToday ? 'today' : '')
+  set('recent', filters.recentlyUpdated ? '1' : '')
+  set('completed', filters.completed ? '1' : '')
+  set('unassigned', filters.unassigned ? '1' : '')
+  set('blocked', filters.blocked ? '1' : '')
+  set('view', filters.smartView || '')
+  set('sort', filters.sortField || '')
+  set('dir', filters.sortField ? filters.sortDir : '')
+  return next
+}
+
+function decodeParamsToFilters(params) {
+  const created = (params.get('created') || '').split(',').filter(Boolean)
+  return {
+    priorities: (params.get('priority') || '').split(',').filter(Boolean),
+    assignedToMe: params.get('assigned') === 'me',
+    createdByMe: created.includes('me'),
+    createdByMembers: created.filter((c) => c !== 'me'),
+    overdue: params.get('overdue') === '1',
+    dueToday: params.get('due') === 'today',
+    recentlyUpdated: params.get('recent') === '1',
+    completed: params.get('completed') === '1',
+    unassigned: params.get('unassigned') === '1',
+    blocked: params.get('blocked') === '1',
+    smartView: params.get('view') || '',
+    sortField: params.get('sort') || '',
+    sortDir: params.get('dir') === 'desc' ? 'desc' : 'asc',
+  }
+}
+
+function matchesSmartView(t, view, userEmail, doneKeys) {
+  const isDone = doneKeys.has(t.status)
+  switch (view) {
+    case 'myWork':
+      return t.assigned_to_email === userEmail && !isDone
+    case 'dueSoon': {
+      if (!t.due_date || isDone) return false
+      const due = new Date(t.due_date + 'T00:00:00')
+      const now = new Date(); now.setHours(0, 0, 0, 0)
+      const in7 = new Date(now); in7.setDate(in7.getDate() + 7)
+      return due >= now && due <= in7
+    }
+    case 'needsAttention': {
+      const overdue = t.due_date && new Date(t.due_date) < new Date() && !isDone
+      return overdue || !t.assigned_to_email || !!t._isBlocked
+    }
+    case 'recentlyUpdated': {
+      const ts = new Date(t.updated_at || t.created_at).getTime()
+      return Date.now() - ts <= 48 * 3600 * 1000
+    }
+    case 'completedThisWeek': {
+      if (!isDone || !t.completed_at) return false
+      const completedAt = new Date(t.completed_at)
+      const now = new Date()
+      const startOfWeek = new Date(now)
+      startOfWeek.setDate(now.getDate() - now.getDay())
+      startOfWeek.setHours(0, 0, 0, 0)
+      return completedAt >= startOfWeek
+    }
+    default:
+      return true
+  }
+}
 
 function getNextDueDate(dueDate, recurrence) {
   if (!dueDate) return null
@@ -40,16 +151,58 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
   const dragOverTaskIdRef = useRef(null)
   const dragInsertBeforeRef = useRef(true)
   const [labelFilter, setLabelFilter] = useState('')
-  const [myTasksOnly, setMyTasksOnly] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [filters, setFiltersState] = useState(() => ({ ...DEFAULT_FILTERS, ...decodeParamsToFilters(searchParams) }))
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState(new Set())
   const [bulkWorking, setBulkWorking] = useState(false)
   const [migratingOrphans, setMigratingOrphans] = useState(false)
   const [viewMode, setViewMode] = useState('kanban') // 'kanban' | 'list'
 
-  const filteredTasks = tasks
+  const updateFilters = (patch) => {
+    setFiltersState((prev) => {
+      const next = { ...prev, ...patch }
+      setSearchParams(encodeFiltersToParams(searchParams, next), { replace: true })
+      return next
+    })
+  }
+
+  const doneKeys = useMemo(() => new Set(stages.filter((s) => s.is_done).map((s) => s.status_key)), [stages])
+  const creators = useMemo(() => [...new Set(tasks.map((t) => t.created_by_email).filter(Boolean))].sort(), [tasks])
+
+  const taskMatchesFilters = (t) => {
+    if (filters.priorities.length && !filters.priorities.includes(t.priority || 'none')) return false
+    if (filters.assignedToMe && t.assigned_to_email !== user?.email) return false
+    if (filters.createdByMe && t.created_by_email !== user?.email) return false
+    if (filters.createdByMembers.length && !filters.createdByMembers.includes(t.created_by_email)) return false
+    if (filters.overdue) {
+      const isOverdue = t.due_date && new Date(t.due_date) < new Date() && !doneKeys.has(t.status)
+      if (!isOverdue) return false
+    }
+    if (filters.dueToday) {
+      if (!t.due_date) return false
+      const today = new Date(); today.setHours(0, 0, 0, 0)
+      const due = new Date(t.due_date + 'T00:00:00')
+      if (due.getTime() !== today.getTime()) return false
+    }
+    if (filters.recentlyUpdated) {
+      const ts = new Date(t.updated_at || t.created_at).getTime()
+      if (Date.now() - ts > 48 * 3600 * 1000) return false
+    }
+    if (filters.completed && !doneKeys.has(t.status)) return false
+    if (filters.unassigned && t.assigned_to_email) return false
+    if (filters.blocked && !t._isBlocked) return false
+    if (filters.smartView && !matchesSmartView(t, filters.smartView, user?.email, doneKeys)) return false
+    return true
+  }
+
+  let filteredTasks = tasks
     .filter((t) => !labelFilter || t.label === labelFilter)
-    .filter((t) => !myTasksOnly || t.assigned_to_email === user?.email)
+    .filter(taskMatchesFilters)
+
+  if (filters.sortField) {
+    filteredTasks = [...filteredTasks].sort((a, b) => compareTasks(a, b, filters.sortField, filters.sortDir))
+  }
 
   const tasksByStage = stages.reduce((acc, stage) => {
     acc[stage.status_key] = filteredTasks.filter((t) => t.status === stage.status_key)
@@ -295,7 +448,10 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
 
   return (
     <div>
-      {/* Filter + Select bar */}
+      {/* Priority/Created-by/quick filters + sort + presets */}
+      <TaskFilterBar filters={filters} onChange={updateFilters} creators={creators} user={user} projectId={projectId} />
+
+      {/* Label filter + Select/List toggle */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         {usedLabels.length > 0 && (
           <>
@@ -327,15 +483,6 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
             <div className="w-px h-4 bg-white/[0.08]" />
           </>
         )}
-        <button
-          onClick={() => setMyTasksOnly(!myTasksOnly)}
-          className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg border font-medium transition-all ${
-            myTasksOnly ? 'bg-white/10 text-white/70 border-white/20' : 'border-white/[0.08] text-white/30 hover:border-white/20'
-          }`}
-        >
-          <User size={10} />
-          My Tasks
-        </button>
         <button
           onClick={() => { setSelectMode(!selectMode); if (selectMode) exitSelectMode() }}
           className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg border font-medium transition-all ${
@@ -432,7 +579,9 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
         <div className="flex gap-3 overflow-x-auto pb-2" style={{ minWidth: 0 }}>
           {stages.map((stage) => {
             const isOver = dragOverCol === stage.status_key
-            const stageTasks = (tasksByStage[stage.status_key] || []).sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+            const stageTasks = filters.sortField
+              ? (tasksByStage[stage.status_key] || [])
+              : (tasksByStage[stage.status_key] || []).sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
             const DefaultIcon = DEFAULT_EMPTY[stage.status_key]?.Icon || ClipboardList
             const defaultHint = DEFAULT_EMPTY[stage.status_key]?.hint || 'Drop tasks here'
             const wipLimit = stage.wip_limit || 0
