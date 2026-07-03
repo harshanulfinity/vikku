@@ -189,7 +189,7 @@ export default function NewProject() {
       const project = await createProject({ ...form, name: trimmedName, user_id: user.id })
 
       if (template && template.tasks.length > 0) {
-        await bulkCreateTasks(template.tasks.map((t) => ({ ...t, project_id: project.id })))
+        await bulkCreateTasks(template.tasks.map((t) => ({ ...t, project_id: project.id, created_by_email: user.email })))
       }
       const estimateMilestones = fromEstimate?.phases?.length && (!template || template.milestones.length === 0)
         ? fromEstimate.phases

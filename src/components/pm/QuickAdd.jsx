@@ -57,6 +57,7 @@ export default function QuickAdd() {
         priority,
         label: label || null,
         due_date: dueDate || null,
+        created_by_email: user?.email || null,
       })
       setSaved(true)
       setTimeout(() => {

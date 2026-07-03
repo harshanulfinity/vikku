@@ -65,6 +65,7 @@ export default function AIAssistant({ projectId, projectName, onDone, isPro, wor
         ...t,
         project_id: projectId,
         status: (firstKey && !stageKeys.has(t.status)) ? firstKey : t.status,
+        created_by_email: user?.email || null,
       }))
       const milestonesWithProject = plan.milestones.map((m) => ({ ...m, project_id: projectId }))
       await Promise.all([bulkCreateTasks(tasksWithProject), bulkCreateMilestones(milestonesWithProject)])

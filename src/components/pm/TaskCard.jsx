@@ -57,6 +57,7 @@ export default function TaskCard({ task, onTaskRemoved, onUpdate, draggable, onD
           ${needsAlert && !selected ? 'border-red-500/25' : ''}
         `}
         style={{ borderLeft: `2px solid ${priorityColor}33` }}
+        title={task.created_by_email ? `Added by ${task.created_by_email}` : undefined}
       >
         {/* Select checkbox */}
         {selectMode && (

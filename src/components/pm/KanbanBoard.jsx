@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Plus, X, ClipboardList, Zap, Eye, CheckCircle, Trash2, MousePointer, List, Columns } from 'lucide-react'
+import { Plus, X, ClipboardList, Zap, Eye, CheckCircle, Trash2, MousePointer, List, Columns, User } from 'lucide-react'
 import TaskCard from './TaskCard'
 import TaskCreateModal from './TaskCreateModal'
 import { createTask, updateTask, deleteTask, logActivity } from '../../lib/pmService'
@@ -40,13 +40,16 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
   const dragOverTaskIdRef = useRef(null)
   const dragInsertBeforeRef = useRef(true)
   const [labelFilter, setLabelFilter] = useState('')
+  const [myTasksOnly, setMyTasksOnly] = useState(false)
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState(new Set())
   const [bulkWorking, setBulkWorking] = useState(false)
   const [migratingOrphans, setMigratingOrphans] = useState(false)
   const [viewMode, setViewMode] = useState('kanban') // 'kanban' | 'list'
 
-  const filteredTasks = labelFilter ? tasks.filter((t) => t.label === labelFilter) : tasks
+  const filteredTasks = tasks
+    .filter((t) => !labelFilter || t.label === labelFilter)
+    .filter((t) => !myTasksOnly || t.assigned_to_email === user?.email)
 
   const tasksByStage = stages.reduce((acc, stage) => {
     acc[stage.status_key] = filteredTasks.filter((t) => t.status === stage.status_key)
@@ -71,6 +74,7 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
         description: description || null,
         due_date: due_date || null,
         assigned_to_email: assigned_to_email || null,
+        created_by_email: user?.email || null,
         label: label || null,
         task_link: task_link || null,
       })
@@ -233,6 +237,7 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
         status: firstStage.status_key,
         due_date: getNextDueDate(task.due_date, task.recurrence),
         assigned_to_email: task.assigned_to_email || null,
+        created_by_email: task.created_by_email || null,
         label: task.label || null,
         recurrence: task.recurrence,
       }).then((newTask) => {
@@ -319,6 +324,15 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
             <div className="w-px h-4 bg-white/[0.08]" />
           </>
         )}
+        <button
+          onClick={() => setMyTasksOnly(!myTasksOnly)}
+          className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg border font-medium transition-all ${
+            myTasksOnly ? 'bg-white/10 text-white/70 border-white/20' : 'border-white/[0.08] text-white/30 hover:border-white/20'
+          }`}
+        >
+          <User size={10} />
+          My Tasks
+        </button>
         <button
           onClick={() => { setSelectMode(!selectMode); if (selectMode) exitSelectMode() }}
           className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg border font-medium transition-all ${

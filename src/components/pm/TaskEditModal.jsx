@@ -376,6 +376,15 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
           </button>
         </div>
 
+        {(task.created_by_email || task.created_at) && (
+          <div className="px-5 pt-3 -mb-1 flex-shrink-0">
+            <p className="text-[10px] text-white/25">
+              Added by {task.created_by_email ? task.created_by_email.split('@')[0] : 'someone'}
+              {task.created_at && ` · ${timeAgo(task.created_at)}`}
+            </p>
+          </div>
+        )}
+
         <div className="overflow-y-auto flex-1">
           <div className="p-5 space-y-4">
 
