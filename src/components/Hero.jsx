@@ -1,7 +1,9 @@
 import { ArrowRight, ChevronDown } from 'lucide-react'
 import KanbanHero from './KanbanHero'
+import { useTheme } from '../contexts/ThemeContext'
 
 export default function Hero() {
+  const { theme } = useTheme()
   const scrollToServices = () =>
     document.querySelector('#services')?.scrollIntoView({ behavior: 'smooth' })
   const scrollToContact = () =>
@@ -34,7 +36,9 @@ export default function Hero() {
           className="font-display font-extrabold leading-[1.08] tracking-tight text-white mb-4"
           style={{
             fontSize: 'clamp(1.4rem, 4vw, 3.4rem)',
-            textShadow: '4px 4px 12px rgba(0, 0, 0, 0.5), 8px 8px 20px rgba(0, 0, 0, 0.3)'
+            textShadow: theme === 'light'
+              ? '1px 1px 2px rgba(15, 23, 42, 0.08)'
+              : '4px 4px 12px rgba(0, 0, 0, 0.5), 8px 8px 20px rgba(0, 0, 0, 0.3)'
           }}
         >
           <div style={{ whiteSpace: 'nowrap' }}>
