@@ -1,9 +1,11 @@
 import { Component } from 'react'
 
+const CHUNK_ERROR_RE = /Failed to fetch dynamically imported module|Loading chunk .* failed|error loading dynamically imported module/i
+
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props)
-    this.state = { hasError: false, error: null }
+    this.state = { hasError: false, error: null, reloading: false }
   }
 
   static getDerivedStateFromError(error) {
@@ -12,6 +14,13 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('ErrorBoundary caught an error:', error, info)
+    // A new deploy replaced this tab's JS chunk hashes - reload once to pick
+    // up the current build instead of showing a scary error for a non-issue.
+    if (CHUNK_ERROR_RE.test(error?.message || '') && !sessionStorage.getItem('vikku-chunk-reload')) {
+      sessionStorage.setItem('vikku-chunk-reload', '1')
+      this.setState({ reloading: true })
+      window.location.reload()
+    }
   }
 
   handleReload = () => {
@@ -20,6 +29,8 @@ export default class ErrorBoundary extends Component {
   }
 
   render() {
+    if (this.state.reloading) return null
+
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback
 
