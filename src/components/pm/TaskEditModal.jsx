@@ -5,7 +5,7 @@ import {
   X, Trash2, Loader2, MessageCircle, Send, Trash,
   CheckSquare, Square, Plus, Clock, User, Timer, Link, ExternalLink,
   Paperclip, Download, FileText, Bell, BellOff, TrendingUp, TrendingDown,
-  GitMerge, RotateCcw, Eye, EyeOff, ThumbsUp, ThumbsDown,
+  GitMerge, RotateCcw, Eye, EyeOff, ThumbsUp, ThumbsDown, Activity,
 } from 'lucide-react'
 import {
   updateTask, deleteTask, getTaskComments, createTaskComment, deleteTaskComment,
@@ -14,7 +14,7 @@ import {
   getTaskAttachments, uploadTaskAttachment, deleteTaskAttachment, getAttachmentUrl,
   getTasks, getTaskDependencies, addTaskDependency, removeTaskDependency,
   getStorageUsedMb, toggleAttachmentVisibility,
-  getProjectLabels, saveProjectLabels, logActivity,
+  getProjectLabels, saveProjectLabels, logActivity, getEntityActivity,
 } from '../../lib/pmService'
 import { STORAGE_LIMITS_MB } from '../../lib/entitlements'
 import { DEFAULT_LABELS, LABEL_COLORS, getLabelStyle } from '../../lib/pmConstants'
@@ -43,6 +43,19 @@ function timeAgo(dateStr) {
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
   return `${Math.floor(diff / 86400)}d ago`
+}
+
+const ACTIVITY_FALLBACK_TEXT = {
+  task_created: 'created this task',
+  task_updated: 'updated this task',
+  task_done: 'marked this task done',
+  task_assigned: 'changed the assignee',
+  task_unassigned: 'unassigned this task',
+  task_deleted: 'deleted this task',
+}
+
+function describeActivity(item) {
+  return item.detail || ACTIVITY_FALLBACK_TEXT[item.action] || 'updated this task'
 }
 
 function fmtMins(m) {
@@ -77,6 +90,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const [comments, setComments] = useState([])
   const [newComment, setNewComment] = useState('')
   const [sendingComment, setSendingComment] = useState(false)
+  const [taskActivity, setTaskActivity] = useState([])
 
   const [members, setMembers] = useState([])
   const [showAssigneeMenu, setShowAssigneeMenu] = useState(false)
@@ -107,6 +121,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
 
   useEffect(() => {
     getTaskComments(task.id).then(setComments)
+    getEntityActivity(task.id).then(setTaskActivity)
     getSubtasks(task.id).then(setSubtasks)
     getTimeLogs(task.id).then(setTimeLogs)
     getTaskAttachments(task.id).then(setAttachments)
@@ -140,6 +155,11 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const totalLogged = timeLogs.reduce((s, l) => s + (l.minutes || 0), 0)
   const subtasksDone = subtasks.filter((s) => s.completed).length
 
+  const activityFeed = [
+    ...comments.map((c) => ({ _kind: 'comment', id: `c-${c.id}`, created_at: c.created_at, data: c })),
+    ...taskActivity.map((a) => ({ _kind: 'activity', id: `a-${a.id}`, created_at: a.created_at, data: a })),
+  ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+
   const handleSave = () => {
     if (!form.title.trim()) return
     if (String(task.id).startsWith('temp-')) return
@@ -168,7 +188,32 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
         user_email: user.email,
         action: form.assigned_to_email ? 'task_assigned' : 'task_unassigned',
         entity_type: 'task',
+        entity_id: task.id,
         entity_title: form.title.trim(),
+        detail: form.assigned_to_email ? `assigned to ${form.assigned_to_email}` : undefined,
+      })
+    }
+    if (user) {
+      const fieldChanges = []
+      if (form.title.trim() !== task.title) fieldChanges.push(`renamed to "${form.title.trim()}"`)
+      if (form.priority !== task.priority) fieldChanges.push(`priority changed to ${form.priority}`)
+      if ((form.due_date || null) !== (task.due_date || null)) {
+        fieldChanges.push(form.due_date ? `due date set to ${form.due_date}` : 'due date removed')
+      }
+      if ((form.label || null) !== (task.label || null)) {
+        fieldChanges.push(form.label ? `label set to ${form.label}` : 'label removed')
+      }
+      fieldChanges.forEach((detail) => {
+        logActivity({
+          project_id: task.project_id,
+          user_id: user.id,
+          user_email: user.email,
+          action: 'task_updated',
+          entity_type: 'task',
+          entity_id: task.id,
+          entity_title: form.title.trim(),
+          detail,
+        })
       })
     }
     if (form.assigned_to_email && form.assigned_to_email !== prevEmail && form.assigned_to_email !== user?.email) {
@@ -197,7 +242,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     setDeleting(true)
     try {
       await deleteTask(task.id)
-      if (user) logActivity({ project_id: task.project_id, user_id: user.id, user_email: user.email, action: 'task_deleted', entity_type: 'task', entity_title: task.title })
+      if (user) logActivity({ project_id: task.project_id, user_id: user.id, user_email: user.email, action: 'task_deleted', entity_type: 'task', entity_id: task.id, entity_title: task.title })
       onDeleted(task.id)
       onClose()
     } catch (err) {
@@ -803,28 +848,41 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
               </div>
             )}
 
-            {/* Comments */}
+            {/* Comments and activity */}
             <div className="border-t border-white/[0.06] pt-4">
               <div className="flex items-center gap-1.5 mb-3">
                 <MessageCircle size={12} className="text-white/30" />
-                <label className="text-[10px] text-white/40 uppercase tracking-wider">Comments {comments.length > 0 && `(${comments.length})`}</label>
+                <label className="text-[10px] text-white/40 uppercase tracking-wider">Comments and activity</label>
               </div>
-              {comments.length > 0 && (
-                <div className="space-y-2 mb-3 max-h-40 overflow-y-auto">
-                  {comments.map((c) => (
-                    <div key={c.id} className="flex gap-2.5 group">
+              {activityFeed.length > 0 && (
+                <div className="space-y-2 mb-3 max-h-56 overflow-y-auto">
+                  {activityFeed.map((item) => item._kind === 'comment' ? (
+                    <div key={item.id} className="flex gap-2.5 group">
                       <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-[9px] text-white/50">{(c.user_email || '?')[0].toUpperCase()}</span>
+                        <span className="text-[9px] text-white/50">{(item.data.user_email || '?')[0].toUpperCase()}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-white/40">{c.user_email?.split('@')[0]}</span>
-                          <span className="text-[10px] text-white/20">{timeAgo(c.created_at)}</span>
-                          {c.user_id === user?.id && (
-                            <button onClick={() => handleDeleteComment(c.id)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all ml-auto"><Trash size={10} /></button>
+                          <span className="text-[10px] text-white/40">{item.data.user_email?.split('@')[0]}</span>
+                          <span className="text-[10px] text-white/20">{timeAgo(item.data.created_at)}</span>
+                          {item.data.user_id === user?.id && (
+                            <button onClick={() => handleDeleteComment(item.data.id)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all ml-auto"><Trash size={10} /></button>
                           )}
                         </div>
-                        <p className="text-xs text-white/70 leading-relaxed mt-0.5">{c.content}</p>
+                        <p className="text-xs text-white/70 leading-relaxed mt-0.5">{item.data.content}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div key={item.id} className="flex gap-2.5">
+                      <div className="w-5 h-5 rounded-full bg-white/[0.06] flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Activity size={9} className="text-white/30" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] text-white/50 leading-snug">
+                          <span className="text-white/40">{item.data.user_email?.split('@')[0] || 'Someone'}</span>
+                          {' '}{describeActivity(item.data)}
+                        </p>
+                        <p className="text-[10px] text-white/20 mt-0.5">{timeAgo(item.data.created_at)}</p>
                       </div>
                     </div>
                   ))}

@@ -80,7 +80,7 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
       })
       if (!task) throw new Error('no task returned')
       onTasksChange((prev) => prev.map((t) => t.id === tempId ? task : t))
-      if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_created', entity_type: 'task', entity_title: title })
+      if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_created', entity_type: 'task', entity_id: task.id, entity_title: title })
       // Notify assignee when a task is created already assigned to someone else
       if (assigned_to_email && assigned_to_email !== user?.email) {
         notifyTaskAssigned({
@@ -224,7 +224,10 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
       const completedAt = isDoneStage ? new Date().toISOString() : null
       if (isDoneStage !== wasDoneStage) updateTask(dragTaskId, { completed_at: completedAt })
     }
-    if (user && !sameCol) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: isDoneStage ? 'task_done' : 'task_updated', entity_type: 'task', entity_title: task.title })
+    if (user && !sameCol) {
+      const targetStageName = stages.find((s) => s.status_key === newStatusKey)?.name || newStatusKey
+      logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: isDoneStage ? 'task_done' : 'task_updated', entity_type: 'task', entity_id: task.id, entity_title: task.title, detail: isDoneStage ? undefined : `moved to ${targetStageName}` })
+    }
 
     // Recurring task: create next occurrence when completed
     if (isDoneStage && !sameCol && task.recurrence) {
@@ -283,7 +286,7 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
     }
     if (user) {
       deletedTasks.filter((t) => !failedIds.has(t.id)).forEach((t) => {
-        logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_deleted', entity_type: 'task', entity_title: t.title })
+        logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_deleted', entity_type: 'task', entity_id: t.id, entity_title: t.title })
       })
     }
     exitSelectMode()

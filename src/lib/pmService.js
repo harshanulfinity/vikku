@@ -367,6 +367,19 @@ export async function getProjectActivity(projectId, limit = 20) {
   } catch (err) { return [] }
 }
 
+export async function getEntityActivity(entityId) {
+  if (!supabase || !entityId) return []
+  try {
+    const { data, error } = await supabase
+      .from('pm_activity')
+      .select('*')
+      .eq('entity_id', entityId)
+      .order('created_at', { ascending: false })
+    if (error) { console.error('Error fetching entity activity:', error); return [] }
+    return data || []
+  } catch (err) { return [] }
+}
+
 export async function logActivity(fields) {
   if (!supabase) return
   try {
