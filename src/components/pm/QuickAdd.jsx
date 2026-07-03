@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Zap, X } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { useTheme } from '../../contexts/ThemeContext'
 import { getProjects, createTask } from '../../lib/pmService'
 import { DEFAULT_LABELS, getLabelStyle } from '../../lib/pmConstants'
 import useLockBodyScroll from '../../hooks/useLockBodyScroll'
@@ -16,6 +17,7 @@ const PRIORITY_STYLES = {
 
 export default function QuickAdd() {
   const { user } = useAuth()
+  const { theme } = useTheme()
   const [open, setOpen] = useState(false)
   useLockBodyScroll(open)
   const [projects, setProjects] = useState([])
@@ -169,7 +171,7 @@ export default function QuickAdd() {
                   className="text-[10px] px-2 py-1 rounded-lg border font-medium transition-all"
                   style={active && s
                     ? { background: s.bg, color: s.color, borderColor: s.border }
-                    : { borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)' }
+                    : { borderColor: 'rgba(255,255,255,0.08)', color: theme === 'light' ? 'rgba(15,23,42,0.5)' : 'rgba(255,255,255,0.3)' }
                   }
                 >
                   {lbl.name}

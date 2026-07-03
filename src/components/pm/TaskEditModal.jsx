@@ -19,6 +19,7 @@ import {
 import { STORAGE_LIMITS_MB } from '../../lib/entitlements'
 import { DEFAULT_LABELS, LABEL_COLORS, getLabelStyle } from '../../lib/pmConstants'
 import { useAuth } from '../../contexts/AuthContext'
+import { useTheme } from '../../contexts/ThemeContext'
 import useSubscription from '../../hooks/useSubscription'
 import TaskTimer from './TaskTimer'
 import UpgradeModal from './UpgradeModal'
@@ -70,6 +71,7 @@ function fmtMins(m) {
 export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   useLockBodyScroll()
   const { user } = useAuth()
+  const { theme } = useTheme()
   const { isPro } = useSubscription()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [form, setForm] = useState({
@@ -481,7 +483,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                         className="text-[10px] px-2 py-1 font-medium transition-all"
                         style={active
                           ? { backgroundColor: `${lbl.color}22`, color: lbl.color }
-                          : { backgroundColor: 'transparent', color: 'rgba(255,255,255,0.55)' }
+                          : { backgroundColor: 'transparent', color: theme === 'light' ? 'rgba(15,23,42,0.55)' : 'rgba(255,255,255,0.55)' }
                         }
                       >
                         {lbl.name}

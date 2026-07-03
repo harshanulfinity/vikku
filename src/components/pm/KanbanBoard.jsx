@@ -6,6 +6,7 @@ import TaskCreateModal from './TaskCreateModal'
 import TaskFilterBar, { DEFAULT_FILTERS } from './TaskFilterBar'
 import { createTask, updateTask, deleteTask, logActivity } from '../../lib/pmService'
 import { notifyTaskAssigned, insertPmNotification, getMemberUserId } from '../../lib/notificationService'
+import { useTheme } from '../../contexts/ThemeContext'
 
 const PRIORITY_SORT_ORDER = { urgent: 0, high: 1, medium: 2, low: 3 }
 
@@ -142,6 +143,7 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
   // workflow = array of stage objects [{status_key, name, color, is_done, position}, ...]
   // or null/undefined → use DEFAULT_WORKFLOW_STAGES
   const stages = (workflow && workflow.length > 0) ? workflow : DEFAULT_WORKFLOW_STAGES
+  const { theme } = useTheme()
 
   const [createModalStage, setCreateModalStage] = useState(null) // { status_key, name }
   const [dragTaskId, setDragTaskId] = useState(null)
@@ -473,7 +475,7 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
                   className="text-[10px] px-2.5 py-1 rounded-lg border font-medium transition-all"
                   style={active && s
                     ? { background: s.bg, color: s.color, borderColor: s.border }
-                    : { borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)' }
+                    : { borderColor: 'rgba(255,255,255,0.08)', color: theme === 'light' ? 'rgba(15,23,42,0.5)' : 'rgba(255,255,255,0.3)' }
                   }
                 >
                   {lbl}
