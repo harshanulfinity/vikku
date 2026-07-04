@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { DollarSign, Clock, LayoutDashboard, TrendingUp, Kanban, ArrowRight, FileText, Wrench } from 'lucide-react'
+import { DollarSign, Clock, LayoutDashboard, TrendingUp, Kanban, ArrowRight, FileText, Wrench, Radar } from 'lucide-react'
 import AppHeader from '../components/AppHeader'
 import { getMyToolResults } from '../lib/toolResultsService'
 
@@ -38,6 +38,21 @@ export default function Dashboard() {
   // Tools grouped by where the visitor is in their project journey, so a
   // first-time user can find "their" tool by the question they came with.
   const toolGroups = [
+    {
+      step: '00',
+      title: 'Check what you already have',
+      question: 'Will AI recommend your business today?',
+      tools: [
+        {
+          icon: Radar,
+          title: 'AI Visibility Score',
+          description: "Paste your URL and see how likely AI is to recommend your business - and what's blocking you",
+          useWhen: 'You already have a website and want to know if AI assistants can find and recommend it',
+          gives: 'A visibility score, a prioritized list of blockers, and concrete fixes',
+          path: '/dashboard/ai-visibility-score',
+        },
+      ],
+    },
     {
       step: '01',
       title: 'Decide & budget',
@@ -111,8 +126,8 @@ export default function Dashboard() {
           <div>
             <h2 className="font-display font-extrabold text-3xl text-white mb-3">AI Tools</h2>
             <p className="text-white/60 text-sm max-w-xl">
-              Five free tools that take you from rough idea to a costed, planned project —
-              organised by the question you're trying to answer.
+              Six free tools, organised by the question you're trying to answer — from checking
+              whether AI can already find you, to costing and planning what's next.
             </p>
           </div>
           <button

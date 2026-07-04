@@ -43,6 +43,16 @@ function lines(tool, r) {
     if (r.breakdown?.length) { out.push({ h: 'Cost breakdown' }); r.breakdown.forEach(b => out.push({ label: b.category, value: `${money(b.costMin, sym)} – ${money(b.costMax, sym)}` })) }
     if (r.recommendations?.length) { out.push({ h: 'Recommendations' }); bullets(r.recommendations) }
     if (r.risksOfSkipping?.length) { out.push({ h: 'Risks of skipping maintenance' }); bullets(r.risksOfSkipping) }
+  } else if (tool === 'ai_visibility_score') {
+    out.push({ label: 'Score', value: `${r.score}/100` })
+    if (r.verdict) out.push({ label: 'Verdict', value: r.verdict })
+    if (r.summary) { out.push({ h: 'Summary' }); out.push({ bullet: r.summary }) }
+    if (r.blockers?.length) {
+      out.push({ h: 'Blockers' })
+      r.blockers.forEach((b) => out.push({ bullet: `[${b.severity || 'low'}] ${b.issue}${b.fix ? ` — Fix: ${b.fix}` : ''}` }))
+    }
+    if (r.strengths?.length) { out.push({ h: 'Strengths' }); bullets(r.strengths) }
+    if (r.quickWins?.length) { out.push({ h: 'Quick wins' }); bullets(r.quickWins) }
   }
   return out
 }

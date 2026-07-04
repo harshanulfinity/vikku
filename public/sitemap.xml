@@ -11,6 +11,13 @@
 
   <!-- AI Tools — highest priority for SEO -->
   <url>
+    <loc>https://www.vikku.in/tools/ai-visibility-score</loc>
+    <lastmod>2026-07-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <url>
     <loc>https://www.vikku.in/tools/cost-estimator</loc>
     <lastmod>2025-06-23</lastmod>
     <changefreq>weekly</changefreq>

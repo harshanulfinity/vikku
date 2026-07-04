@@ -367,6 +367,19 @@ export async function getProjectActivity(projectId, limit = 20) {
   } catch (err) { return [] }
 }
 
+export async function getEntityActivity(entityId) {
+  if (!supabase || !entityId) return []
+  try {
+    const { data, error } = await supabase
+      .from('pm_activity')
+      .select('*')
+      .eq('entity_id', entityId)
+      .order('created_at', { ascending: false })
+    if (error) { console.error('Error fetching entity activity:', error); return [] }
+    return data || []
+  } catch (err) { return [] }
+}
+
 export async function logActivity(fields) {
   if (!supabase) return
   try {
@@ -848,4 +861,40 @@ export async function getProjectLabels(projectId) {
 export async function saveProjectLabels(projectId, labels) {
   if (!supabase) return
   await supabase.from('pm_projects').update({ labels }).eq('id', projectId)
+}
+
+// ── Filter presets ────────────────────────────────────────
+
+export async function getFilterPresets(userId, projectId) {
+  if (!supabase) return []
+  try {
+    const { data, error } = await supabase
+      .from('pm_filter_presets')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: true })
+    if (error) { console.error('Error fetching filter presets:', error); return [] }
+    return data || []
+  } catch (err) { return [] }
+}
+
+export async function createFilterPreset(fields) {
+  if (!supabase) throw new Error('Database not configured')
+  const { data, error } = await supabase.from('pm_filter_presets').insert(fields).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function updateFilterPreset(id, fields) {
+  if (!supabase) throw new Error('Database not configured')
+  const { data, error } = await supabase.from('pm_filter_presets').update(fields).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteFilterPreset(id) {
+  if (!supabase) throw new Error('Database not configured')
+  const { error } = await supabase.from('pm_filter_presets').delete().eq('id', id)
+  if (error) throw error
 }

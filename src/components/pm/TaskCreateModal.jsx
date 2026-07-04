@@ -4,6 +4,7 @@ import { X, User, Link, ExternalLink, Layers, Plus } from 'lucide-react'
 import { getProjectMembers, getProjectLabels, saveProjectLabels } from '../../lib/pmService'
 import { DEFAULT_LABELS, LABEL_COLORS, getLabelStyle, DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
 import useLockBodyScroll from '../../hooks/useLockBodyScroll'
+import { useTheme } from '../../contexts/ThemeContext'
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent']
 
@@ -29,6 +30,7 @@ const PRIORITY_STYLES = {
 
 export default function TaskCreateModal({ projectId, initialStatus, initialStatusName, stages, user, onSubmit, onClose }) {
   useLockBodyScroll()
+  const { theme } = useTheme()
   const activeStages = stages && stages.length > 0 ? stages : DEFAULT_WORKFLOW_STAGES
 
   // Resolve the display name for initialStatus
@@ -185,7 +187,7 @@ export default function TaskCreateModal({ projectId, initialStatus, initialStatu
                         className="text-[10px] px-2 py-1 font-medium transition-all"
                         style={active
                           ? { backgroundColor: `${lbl.color}22`, color: lbl.color }
-                          : { backgroundColor: 'transparent', color: 'rgba(255,255,255,0.55)' }
+                          : { backgroundColor: 'transparent', color: theme === 'light' ? 'rgba(15,23,42,0.55)' : 'rgba(255,255,255,0.55)' }
                         }
                       >
                         {lbl.name}

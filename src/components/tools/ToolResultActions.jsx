@@ -8,7 +8,8 @@ const CROSS_TOOL = {
   timeline_calculator:    { to: '/tools/tech-recommender',        label: 'Get tech stack recommendation' },
   tech_recommender:       { to: '/tools/maintenance-calculator',  label: 'Estimate maintenance cost' },
   maintenance_calculator: { to: '/tools/cost-estimator',          label: 'Estimate a rebuild cost' },
-  roi_calculator:         { to: '/tools/cost-estimator',          label: 'Estimate the build cost' },
+  roi_calculator:         { to: '/tools/ai-visibility-score',     label: 'Check your AI visibility' },
+  ai_visibility_score:    { to: '/tools/cost-estimator',          label: 'Estimate the cost to fix this' },
 }
 
 /**

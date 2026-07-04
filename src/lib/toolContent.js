@@ -42,6 +42,11 @@ export const TOOL_SEO = {
     description: 'Find out how much it really costs to maintain your app or website every month - hosting, monitoring, bug fixes, security, and support. Free AI estimate.',
     canonical: '/tools/maintenance-calculator',
   },
+  ai_visibility_score: {
+    title: 'AI Visibility Score - Will ChatGPT Recommend Your Business? | Vikku',
+    description: 'Paste your URL and see how likely AI assistants are to find and recommend your business - plus exactly what to fix. Free instant check.',
+    canonical: '/tools/ai-visibility-score',
+  },
 }
 
 // Build FAQPage structured data from a tool's FAQ block (rich results in Google).
@@ -102,6 +107,15 @@ export const TOOL_FAQ = {
       { q: 'Why does scale affect maintenance cost?', a: 'More users means higher server costs, more support tickets, stricter uptime requirements, and greater risk from downtime - all of which raise the maintenance budget.' },
       { q: 'Is this the same as a retainer?', a: 'A maintenance retainer covers most of this. The estimate shows what a realistic retainer should cost for your product type and scale.' },
       { q: 'What happens if I skip maintenance?', a: 'Security vulnerabilities accumulate, performance degrades, third-party integrations break, and tech debt compounds - often costing far more to fix later.' },
+    ],
+  },
+  ai_visibility_score: {
+    heading: 'Will AI recommend your business?',
+    intro: 'AI assistants like ChatGPT and Perplexity are becoming a new front door for customers. This tool checks whether your website gives them what they need to find, understand, and recommend you.',
+    faqs: [
+      { q: 'How is the score calculated?', a: 'We check structured data, page clarity, crawler access, and content signals AI systems rely on, then combine that with an AI-driven read of your content quality.' },
+      { q: "Is my site's content sent anywhere?", a: 'Only a short excerpt of your public page text is analyzed to generate your report - nothing is stored beyond your saved result.' },
+      { q: 'Does this check if AI crawlers can access my site?', a: 'Yes - we check your robots.txt for blocks on GPTBot, ClaudeBot, PerplexityBot and other known AI crawlers.' },
     ],
   },
 }

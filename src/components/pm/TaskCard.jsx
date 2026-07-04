@@ -17,7 +17,7 @@ const PRIORITY_DOT = {
   low:    'bg-white/20',
 }
 
-export default function TaskCard({ task, onDelete, onUpdate, draggable, onDragStart, selectMode, selected, onToggleSelect, projectLabels }) {
+export default function TaskCard({ task, onTaskRemoved, onUpdate, draggable, onDragStart, selectMode, selected, onToggleSelect, projectLabels }) {
   const [editing, setEditing] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
 
@@ -43,7 +43,7 @@ export default function TaskCard({ task, onDelete, onUpdate, draggable, onDragSt
           task={task}
           onClose={() => setEditing(false)}
           onUpdated={(updated) => { onUpdate?.(updated); setEditing(false) }}
-          onDeleted={(id) => { onDelete?.(id); setEditing(false) }}
+          onDeleted={(id) => { onTaskRemoved?.(id); setEditing(false) }}
         />
       )}
       <div
@@ -57,6 +57,7 @@ export default function TaskCard({ task, onDelete, onUpdate, draggable, onDragSt
           ${needsAlert && !selected ? 'border-red-500/25' : ''}
         `}
         style={{ borderLeft: `2px solid ${priorityColor}33` }}
+        title={task.created_by_email ? `Added by ${task.created_by_email}` : undefined}
       >
         {/* Select checkbox */}
         {selectMode && (

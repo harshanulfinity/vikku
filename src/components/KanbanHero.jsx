@@ -61,14 +61,17 @@ export default function KanbanHero() {
         {/* Kanban board */}
         <div className="grid grid-cols-3 gap-2 p-3">
           {STAGES.map((stage, si) => {
-            const stageTasks = TASKS.filter(t => positions[t.id] === si)
+            const allStageTasks = TASKS.filter(t => positions[t.id] === si)
+            // Cap visible cards at 2 so a column never grows taller than the others
+            // mid-animation - keeps the whole widget's height stable across frames.
+            const stageTasks = allStageTasks.slice(0, 2)
             return (
-              <div key={stage.key} className="flex flex-col gap-2 rounded-xl p-2 min-h-[280px]" style={{ background: 'rgba(255,255,255,0.02)' }}>
+              <div key={stage.key} className="flex flex-col gap-2 rounded-xl p-2 h-[230px]" style={{ background: 'rgba(255,255,255,0.02)' }}>
                 {/* Column header */}
                 <div className="flex items-center gap-1.5 mb-1 px-0.5">
                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: stage.color }} />
                   <span className="text-[9px] font-semibold text-white/60 truncate">{stage.name}</span>
-                  <span className="ml-auto text-[8px] text-white/25 bg-white/[0.05] rounded-full px-1.5 py-0.5 leading-none">{stageTasks.length}</span>
+                  <span className="ml-auto text-[8px] text-white/25 bg-white/[0.05] rounded-full px-1.5 py-0.5 leading-none">{allStageTasks.length}</span>
                 </div>
                 <div className="h-px rounded-full mb-1" style={{ backgroundColor: `${stage.color}40` }} />
 
