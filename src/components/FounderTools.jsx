@@ -71,7 +71,7 @@ export default function FounderTools() {
   const { user } = useAuth()
 
   return (
-    <section className="py-24 px-6 bg-black relative overflow-hidden">
+    <section id="tools" className="py-24 px-6 bg-black relative overflow-hidden">
       {/* Subtle background glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-violet-600/5 rounded-full blur-3xl pointer-events-none" />
 

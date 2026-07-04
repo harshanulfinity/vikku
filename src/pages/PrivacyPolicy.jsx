@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import usePageMeta from '../hooks/usePageMeta'
 
 const SECTIONS = [
   {
@@ -86,9 +87,14 @@ Website: https://vikku.in`,
 ]
 
 export default function PrivacyPolicy() {
+  usePageMeta({
+    title:       'Privacy Policy - Vikku',
+    description: 'How Vikku collects, uses, stores, and protects your personal data.',
+    url:         'https://vikku.in/privacy',
+  })
+
   useEffect(() => {
     window.scrollTo(0, 0)
-    document.title = 'Privacy Policy - Vikku'
   }, [])
 
   return (

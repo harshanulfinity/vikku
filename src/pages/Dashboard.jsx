@@ -56,7 +56,7 @@ export default function Dashboard() {
     {
       step: '01',
       title: 'Decide & budget',
-      question: 'Is this project worth it — and what will it cost?',
+      question: 'Is this project worth it, and what will it cost?',
       tools: [
         {
           icon: TrendingUp,
@@ -122,17 +122,17 @@ export default function Dashboard() {
 
       {/* Content */}
       <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="mb-10 flex items-start justify-between gap-4">
+        <div className="mb-10 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <h2 className="font-display font-extrabold text-3xl text-white mb-3">AI Tools</h2>
             <p className="text-white/60 text-sm max-w-xl">
-              Six free tools, organised by the question you're trying to answer — from checking
+              Six free tools, organised by the question you're trying to answer, from checking
               whether AI can already find you, to costing and planning what's next.
             </p>
           </div>
           <button
             onClick={() => navigate('/dashboard/saved')}
-            className="flex-shrink-0 flex items-center gap-1.5 text-xs text-white/60 hover:text-white glass rounded-xl px-3 py-2 transition-colors"
+            className="self-start flex-shrink-0 flex items-center gap-1.5 text-xs text-white/60 hover:text-white glass rounded-xl px-3 py-2 transition-colors"
           >
             <FileText size={13} /> My saved results
           </button>
@@ -146,7 +146,7 @@ export default function Dashboard() {
                 <p className="font-semibold text-white mb-1">
                   Welcome{displayName ? `, ${displayName.split(' ')[0]}` : ''}! 👋
                 </p>
-                <p className="text-sm text-white/60">Every tool here works the same way — no forms, no jargon:</p>
+                <p className="text-sm text-white/60">Every tool here works the same way, no forms, no jargon:</p>
               </div>
               <button
                 onClick={() => { setShowWelcome(false); localStorage.setItem('vikku_onboarded', '1') }}
@@ -158,7 +158,7 @@ export default function Dashboard() {
             <div className="grid sm:grid-cols-3 gap-3 mb-4">
               {[
                 ['1', 'Describe your project', 'A few plain sentences is enough'],
-                ['2', 'AI crunches the numbers', 'Costs, timelines or stack — in seconds'],
+                ['2', 'AI crunches the numbers', 'Costs, timelines or stack, in seconds'],
                 ['3', 'Save & share the result', 'Keep it in "My saved results" or send a link'],
               ].map(([n, title, sub]) => (
                 <div key={n} className="flex items-start gap-3 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2.5">

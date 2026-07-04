@@ -57,6 +57,8 @@ export default function Seo({ title, description, canonical, image = DEFAULT_OG,
       document.head.appendChild(ldEl)
     }
 
+    document.documentElement.setAttribute('data-seo-ready', 'true')
+
     return () => {
       document.title = prevTitle
       touched.forEach(({ el, created, prev }) => {

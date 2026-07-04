@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { LogOut, ChevronRight, ChevronLeft, UserCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import NotificationBell from './pm/NotificationBell'
+import ThemeToggle from './ThemeToggle'
 
 /**
  * Shared app header for all authenticated pages.
@@ -65,6 +66,8 @@ export default function AppHeader({ breadcrumbs = [], actions, badge }) {
           {actions}
 
           {badge}
+
+          <ThemeToggle />
 
           <NotificationBell />
 

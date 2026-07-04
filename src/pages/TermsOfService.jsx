@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import usePageMeta from '../hooks/usePageMeta'
 
 const SECTIONS = [
   {
@@ -123,9 +124,14 @@ Website: https://vikku.in`,
 ]
 
 export default function TermsOfService() {
+  usePageMeta({
+    title:       'Terms of Service - Vikku',
+    description: 'The terms governing your use of Vikku\'s website, PM tool, and services.',
+    url:         'https://vikku.in/terms',
+  })
+
   useEffect(() => {
     window.scrollTo(0, 0)
-    document.title = 'Terms of Service - Vikku'
   }, [])
 
   return (
