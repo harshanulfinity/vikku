@@ -38,6 +38,7 @@ const ROICalculator         = lazy(() => import('./pages/ROICalculator'))
 const TimelineCalculator    = lazy(() => import('./pages/TimelineCalculator'))
 const TechRecommender       = lazy(() => import('./pages/TechRecommender'))
 const MaintenanceCalculator = lazy(() => import('./pages/MaintenanceCalculator'))
+const AIVisibilityScore     = lazy(() => import('./pages/AIVisibilityScore'))
 const ShareableResult       = lazy(() => import('./pages/ShareableResult'))
 const SavedResults          = lazy(() => import('./pages/SavedResults'))
 const PMDashboard           = lazy(() => import('./pages/pm/PMDashboard'))
@@ -125,11 +126,13 @@ export default function App() {
               <Route path="/dashboard/timeline-calculator" element={<TimelineCalculator />} />
               <Route path="/dashboard/tech-recommender"         element={<TechRecommender />} />
               <Route path="/dashboard/maintenance-calculator" element={<MaintenanceCalculator />} />
+              <Route path="/dashboard/ai-visibility-score"    element={<AIVisibilityScore />} />
               <Route path="/tools/cost-estimator"             element={<CostEstimator />} />
               <Route path="/tools/roi-calculator"             element={<ROICalculator />} />
               <Route path="/tools/timeline-calculator"        element={<TimelineCalculator />} />
               <Route path="/tools/tech-recommender"           element={<TechRecommender />} />
               <Route path="/tools/maintenance-calculator"     element={<MaintenanceCalculator />} />
+              <Route path="/tools/ai-visibility-score"        element={<AIVisibilityScore />} />
               <Route path="/r/:shareId"                    element={<ShareableResult />} />
               <Route path="/r-view/:shareId"               element={<ShareableResult />} />
               <Route path="/dashboard/saved"               element={<SavedResults />} />

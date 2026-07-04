@@ -136,6 +136,35 @@ function renderResult(tool, r) {
       </>
     )
   }
+  if (tool === 'ai_visibility_score') {
+    const sevColor = { high: 'text-red-400', medium: 'text-yellow-400', low: 'text-white/40' }
+    return (
+      <>
+        <Section title="AI Visibility Score">
+          <p className="text-3xl font-bold text-white">{r.score}/100</p>
+          {r.verdict && <p className="text-sm text-white/70 mt-2">{r.verdict}</p>}
+          {r.summary && <p className="text-sm text-white/50 mt-2 leading-relaxed">{r.summary}</p>}
+        </Section>
+        {r.blockers?.length > 0 && (
+          <Section title="Blockers">
+            <div className="space-y-4">
+              {r.blockers.map((b, i) => (
+                <div key={i}>
+                  <p className="text-sm text-white/80">
+                    <span className={`font-semibold ${sevColor[b.severity] || 'text-white/40'}`}>[{b.severity || 'low'}]</span>{' '}
+                    {b.issue}
+                  </p>
+                  {b.fix && <p className="text-xs text-white/50 mt-1">Fix: {b.fix}</p>}
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+        {r.strengths?.length > 0 && <Section title="Strengths">{bullets(r.strengths)}</Section>}
+        {r.quickWins?.length > 0 && <Section title="Quick wins">{bullets(r.quickWins)}</Section>}
+      </>
+    )
+  }
   return <Section title="Result"><pre className="text-xs text-white/60 whitespace-pre-wrap">{JSON.stringify(r, null, 2)}</pre></Section>
 }
 

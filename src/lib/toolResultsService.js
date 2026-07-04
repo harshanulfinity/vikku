@@ -14,6 +14,7 @@ export const TOOL_LABELS = {
   timeline_calculator:   'Project Timeline',
   tech_recommender:      'Tech Stack',
   maintenance_calculator:'Maintenance Estimate',
+  ai_visibility_score:   'AI Visibility Score',
 }
 
 /**

@@ -44,6 +44,14 @@ export async function calculateROI(inputs) {
   }
 }
 
+export async function checkAIVisibility(url) {
+  try {
+    return await callEdgeFunction('openai-visibility', { url })
+  } catch (error) {
+    throw new Error(`Failed to check AI visibility: ${error.message}`)
+  }
+}
+
 export async function calculateTimeline(inputs) {
   try {
     return await callEdgeFunction('openai-timeline', inputs)
