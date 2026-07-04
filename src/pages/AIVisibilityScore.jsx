@@ -84,7 +84,7 @@ export default function AIVisibilityScore() {
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
       saveToolResult({
         tool: 'ai_visibility_score',
-        title: `AI Visibility Score: ${res.score}/100 — ${(() => { try { return new URL(res.analyzedUrl || normalized).hostname } catch { return host } })()}`,
+        title: `AI Visibility Score: ${res.score}/100 for ${(() => { try { return new URL(res.analyzedUrl || normalized).hostname } catch { return host } })()}`,
         input: { url: normalized },
         result: res,
       }).then(({ shareId }) => setShareId(shareId))

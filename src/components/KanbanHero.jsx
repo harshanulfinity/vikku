@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTheme } from '../contexts/ThemeContext'
 
 const STAGES = [
   { key: 'backlog',   name: 'Backlog',      color: '#6b7280' },
@@ -20,6 +21,24 @@ const INIT = { a: 0, b: 1, c: 2, d: 0, e: 2 }
 const SEQ = ['d', 'b', 'a', 'e', 'c']
 
 export default function KanbanHero() {
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
+  const c = {
+    cardBg:     isLight ? 'rgba(15,23,42,0.03)'              : 'rgba(255,255,255,0.04)',
+    cardBorder: isLight ? 'rgba(15,23,42,0.08)'              : 'rgba(255,255,255,0.08)',
+    cardShadow: isLight ? '0 32px 80px rgba(15,23,42,0.12)'  : '0 32px 80px rgba(0,0,0,0.5)',
+    barBg:      isLight ? 'rgba(15,23,42,0.035)'             : 'rgba(0,0,0,0.3)',
+    barBorder:  isLight ? 'rgba(15,23,42,0.08)'              : 'rgba(255,255,255,0.06)',
+    urlBg:      isLight ? 'rgba(15,23,42,0.035)'             : 'rgba(255,255,255,0.04)',
+    urlBorder:  isLight ? 'rgba(15,23,42,0.08)'              : 'rgba(255,255,255,0.06)',
+    colBg:      isLight ? 'rgba(15,23,42,0.02)'              : 'rgba(255,255,255,0.02)',
+    taskBg:     isLight ? 'rgba(15,23,42,0.035)'             : 'rgba(255,255,255,0.05)',
+    taskBorder: isLight ? 'rgba(15,23,42,0.08)'              : 'rgba(255,255,255,0.07)',
+    dropBorder: isLight ? 'rgba(15,23,42,0.15)'              : 'rgba(255,255,255,0.07)',
+    footBg:     isLight ? 'rgba(15,23,42,0.025)'             : 'rgba(0,0,0,0.2)',
+    footBorder: isLight ? 'rgba(15,23,42,0.08)'              : 'rgba(255,255,255,0.05)',
+    reflection: isLight ? 'rgba(15,23,42,0.04)'              : 'rgba(255,255,255,0.04)',
+  }
   const [positions, setPositions] = useState(INIT)
   const [tick, setTick] = useState(0)
   const [fading, setFading] = useState(null)
@@ -45,15 +64,15 @@ export default function KanbanHero() {
   return (
     <div className="w-full max-w-[440px] mx-auto select-none">
       {/* Browser chrome */}
-      <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 32px 80px rgba(0,0,0,0.5)' }}>
+      <div className="rounded-2xl overflow-hidden" style={{ background: c.cardBg, border: `1px solid ${c.cardBorder}`, boxShadow: c.cardShadow }}>
         {/* Title bar */}
-        <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.3)' }}>
+        <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: `1px solid ${c.barBorder}`, background: c.barBg }}>
           <div className="flex gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
             <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
             <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
           </div>
-          <div className="flex-1 mx-3 rounded-md text-[10px] text-white/20 px-2 py-0.5 text-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex-1 mx-3 rounded-md text-[10px] text-white/20 px-2 py-0.5 text-center" style={{ background: c.urlBg, border: `1px solid ${c.urlBorder}` }}>
             vikku.in · Project Board
           </div>
         </div>
@@ -66,7 +85,7 @@ export default function KanbanHero() {
             // mid-animation - keeps the whole widget's height stable across frames.
             const stageTasks = allStageTasks.slice(0, 2)
             return (
-              <div key={stage.key} className="flex flex-col gap-2 rounded-xl p-2 h-[230px]" style={{ background: 'rgba(255,255,255,0.02)' }}>
+              <div key={stage.key} className="flex flex-col gap-2 rounded-xl p-2 h-[230px]" style={{ background: c.colBg }}>
                 {/* Column header */}
                 <div className="flex items-center gap-1.5 mb-1 px-0.5">
                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: stage.color }} />
@@ -81,8 +100,8 @@ export default function KanbanHero() {
                     <div
                       key={task.id}
                       style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.07)',
+                        background: c.taskBg,
+                        border: `1px solid ${c.taskBorder}`,
                         borderRadius: 8,
                         padding: '7px 8px',
                         opacity: fading === task.id ? 0 : entering === task.id ? 1 : 1,
@@ -121,7 +140,7 @@ export default function KanbanHero() {
                   ))}
 
                   {stageTasks.length === 0 && (
-                    <div className="flex-1 rounded-lg flex items-center justify-center min-h-[60px]" style={{ border: '1px dashed rgba(255,255,255,0.07)' }}>
+                    <div className="flex-1 rounded-lg flex items-center justify-center min-h-[60px]" style={{ border: `1px dashed ${c.dropBorder}` }}>
                       <span className="text-[8px] text-white/15">Drop here</span>
                     </div>
                   )}
@@ -132,7 +151,7 @@ export default function KanbanHero() {
         </div>
 
         {/* Bottom status bar */}
-        <div className="flex items-center gap-3 px-4 py-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)' }}>
+        <div className="flex items-center gap-3 px-4 py-2" style={{ borderTop: `1px solid ${c.footBorder}`, background: c.footBg }}>
           <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
           <span className="text-[9px] text-white/25">Live updates enabled</span>
           <span className="ml-auto text-[9px] text-white/20">{TASKS.length} tasks</span>
@@ -141,7 +160,7 @@ export default function KanbanHero() {
 
       {/* Reflection */}
       <div className="h-12 mt-0.5 rounded-b-2xl opacity-20 pointer-events-none" style={{
-        background: 'linear-gradient(to bottom, rgba(255,255,255,0.04), transparent)',
+        background: `linear-gradient(to bottom, ${c.reflection}, transparent)`,
         transform: 'scaleY(-1)',
         maskImage: 'linear-gradient(to bottom, black, transparent)',
         WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',

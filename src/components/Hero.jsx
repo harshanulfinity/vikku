@@ -1,9 +1,11 @@
+import { useNavigate } from 'react-router-dom'
 import { ArrowRight, ChevronDown } from 'lucide-react'
 import KanbanHero from './KanbanHero'
 import { useTheme } from '../contexts/ThemeContext'
 
 export default function Hero() {
   const { theme } = useTheme()
+  const navigate = useNavigate()
   const scrollToServices = () =>
     document.querySelector('#services')?.scrollIntoView({ behavior: 'smooth' })
   const scrollToContact = () =>
@@ -99,8 +101,14 @@ export default function Hero() {
         </div>
 
         {/* Right: Kanban preview */}
-        <div className="flex justify-center items-center">
+        <div className="flex flex-col justify-center items-center gap-3">
           <KanbanHero />
+          <button
+            onClick={() => navigate('/pm')}
+            className="text-xs text-white/50 hover:text-white/80 transition-colors"
+          >
+            Try our free PM Tool <span className="underline">here →</span>
+          </button>
         </div>
       </div>
 

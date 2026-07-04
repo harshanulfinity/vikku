@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { ArrowLeft, Mail, Lock, AlertCircle } from 'lucide-react'
+import usePageMeta from '../hooks/usePageMeta'
 
 const MAX_ATTEMPTS = 5
 const LOCKOUT_MS = 5 * 60 * 1000 // 5 minutes
@@ -26,6 +27,12 @@ export default function Login() {
   const [lockoutSecsLeft, setLockoutSecsLeft] = useState(0)
   const { signIn, signInWithGoogle, user } = useAuth()
   const navigate = useNavigate()
+
+  usePageMeta({
+    title:       'Log In - Vikku',
+    description: 'Log in to your Vikku account to access your dashboard, project management tools, and saved results.',
+    url:         'https://vikku.in/login',
+  })
 
   useEffect(() => {
     if (user) navigate('/dashboard', { replace: true })

@@ -1,11 +1,6 @@
 import { useState } from 'react'
 import { ArrowRight, CheckCircle2, Mail, AlertCircle } from 'lucide-react'
-import emailjs from '@emailjs/browser'
 import { trackContactSubmit } from '../utils/analytics'
-
-const EMAILJS_SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-const EMAILJS_PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
 
 const budgets      = ['Under ₹50k', '₹50k – ₹2L', '₹2L – ₹10L', '₹10L – ₹20L', '₹20L+', 'Not sure yet']
 const services     = ['Business / Corporate Website', 'E-Commerce Store', 'Product Catalog + Admin Portal', 'Staffing & HR Management Platform', 'Booking & Appointment System', 'CRM / Client Management Portal', 'Custom Web Application', 'Landing Page / Marketing Site']
@@ -32,23 +27,12 @@ export default function Contact() {
     }
 
     setLoading(true)
-    emailjs
-      .send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        {
-          name:        form.name,
-          email:       form.email,
-          company:     form.company || 'Not provided',
-          phone:       form.phone   || 'Not provided',
-          service:     form.service || 'Not specified',
-          budget:      form.budget  || 'Not specified',
-          projectType: form.projectType || 'Not specified',
-          timeline:    form.timeline    || 'Not specified',
-          message:     form.message,
-        },
-        EMAILJS_PUBLIC_KEY
-      )
+    fetch('/api/contact', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ ...form, website }),
+    })
+      .then((res) => { if (!res.ok) throw new Error('Failed to send'); return res.json() })
       .then(() => { setLoading(false); setSubmitted(true); trackContactSubmit(form.service || 'not specified') })
       .catch(() => { setLoading(false); setError('Something went wrong while sending your message. Please try again or email us directly at connect@vikku.in.') })
   }

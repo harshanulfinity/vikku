@@ -49,7 +49,7 @@ function lines(tool, r) {
     if (r.summary) { out.push({ h: 'Summary' }); out.push({ bullet: r.summary }) }
     if (r.blockers?.length) {
       out.push({ h: 'Blockers' })
-      r.blockers.forEach((b) => out.push({ bullet: `[${b.severity || 'low'}] ${b.issue}${b.fix ? ` — Fix: ${b.fix}` : ''}` }))
+      r.blockers.forEach((b) => out.push({ bullet: `[${b.severity || 'low'}] ${b.issue}${b.fix ? `. Fix: ${b.fix}` : ''}` }))
     }
     if (r.strengths?.length) { out.push({ h: 'Strengths' }); bullets(r.strengths) }
     if (r.quickWins?.length) { out.push({ h: 'Quick wins' }); bullets(r.quickWins) }

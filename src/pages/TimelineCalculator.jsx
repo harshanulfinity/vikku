@@ -325,7 +325,7 @@ export default function TimelineCalculator() {
                       state: {
                         fromEstimate: {
                           name: form.projectType ? form.projectType.slice(0, 60) : 'New Project',
-                          description: `${form.projectType} — ${form.featureCount}`,
+                          description: `${form.projectType} (${form.featureCount})`,
                           phases: result.phases?.map((p) => {
                             cumDays += (p.weeksMax || p.weeksMin || 2) * 7
                             return { title: p.name, daysFromNow: cumDays }

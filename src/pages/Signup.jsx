@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabaseClient'
 import { ArrowLeft, Mail, Lock, AlertCircle, Inbox, User } from 'lucide-react'
+import usePageMeta from '../hooks/usePageMeta'
 
 export default function Signup() {
   const [name, setName] = useState('')
@@ -18,6 +19,12 @@ export default function Signup() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const refCode = searchParams.get('ref')
+
+  usePageMeta({
+    title:       'Sign Up - Vikku',
+    description: 'Create a free Vikku account to save tool results, track projects, and access your dashboard.',
+    url:         'https://vikku.in/signup',
+  })
 
   useEffect(() => {
     if (user) navigate('/dashboard', { replace: true })

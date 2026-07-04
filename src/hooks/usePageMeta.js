@@ -22,6 +22,8 @@ export default function usePageMeta({ title, description, url }) {
     setMeta('meta[name="twitter:title"]',       title)
     setMeta('meta[name="twitter:description"]', description)
 
+    document.documentElement.setAttribute('data-seo-ready', 'true')
+
     return () => {
       document.title = 'Vikku - Software & Tech Agency | Web Apps, Platforms & Digital Products'
     }

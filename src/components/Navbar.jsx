@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Menu, X, ChevronDown, LogOut, Sun, Moon } from 'lucide-react'
+import { Menu, X, ChevronDown, LogOut } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { useTheme } from '../contexts/ThemeContext'
 import useLockBodyScroll from '../hooks/useLockBodyScroll'
+import ThemeToggle from './ThemeToggle'
 
 const navLinks = [
   { label: 'Services', href: '#services' },
   {
-    label: 'Work', href: '#solution',
+    label: 'Work', href: '#solution', footerLabel: 'View all work',
     dropdown: [
       { label: 'Staffing & HR Platform',    path: '/work/staffing-platform' },
       { label: 'HSO CCTV - Online Store',    path: '/work/hso-cctv' },
@@ -18,7 +18,18 @@ const navLinks = [
   },
   { label: 'Process',  href: '#process' },
   { label: 'About',    href: '#about' },
-  { label: 'Tools',    href: '/dashboard', isRoute: true },
+  {
+    label: 'Tools', href: '#tools', footerLabel: 'Explore all free tools', dropdownOnly: true,
+    dropdown: [
+      { label: 'Free PM Tool',           path: '/pm' },
+      { label: 'AI Visibility Score',    path: '/tools/ai-visibility-score' },
+      { label: 'Cost Estimator',         path: '/tools/cost-estimator' },
+      { label: 'ROI Calculator',         path: '/tools/roi-calculator' },
+      { label: 'Timeline Calculator',    path: '/tools/timeline-calculator' },
+      { label: 'Tech Stack Recommender', path: '/tools/tech-recommender' },
+      { label: 'Maintenance Calculator', path: '/tools/maintenance-calculator' },
+    ],
+  },
   { label: 'Contact',  href: '#contact' },
 ]
 
@@ -26,13 +37,13 @@ export default function Navbar() {
   const [scrolled,    setScrolled]    = useState(false)
   const [menuOpen,    setMenuOpen]    = useState(false)
   useLockBodyScroll(menuOpen)
-  const [activeId,    setActiveId]    = useState('')
-  const [dropOpen,    setDropOpen]    = useState(false)
+  const [activeId,       setActiveId]       = useState('')
+  const [openDropdown,   setOpenDropdown]   = useState(null)
+  const [mobileExpanded, setMobileExpanded] = useState(null)
   const dropRef = useRef(null)
   const navigate  = useNavigate()
   const location  = useLocation()
   const { user, signOut } = useAuth()
-  const { theme, toggle } = useTheme()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -92,31 +103,20 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map(({ label, href, dropdown, isRoute }) => {
+          {navLinks.map(({ label, href, dropdown, footerLabel, dropdownOnly }) => {
             const isActive = activeId === href.slice(1)
-            if (isRoute) {
-              const handleRoute = () => navigate(href)
-              return (
-                <button
-                  key={label}
-                  onClick={handleRoute}
-                  className="text-xs transition-colors duration-200 tracking-wide text-white hover:text-white/90"
-                >
-                  {label}
-                </button>
-              )
-            }
             if (dropdown) {
+              const isOpen = openDropdown === label
               return (
                 <div
                   key={label}
                   ref={dropRef}
                   className="relative"
-                  onMouseEnter={() => setDropOpen(true)}
-                  onMouseLeave={() => setDropOpen(false)}
+                  onMouseEnter={() => setOpenDropdown(label)}
+                  onMouseLeave={() => setOpenDropdown(null)}
                 >
                   <button
-                    onClick={() => handleNav(href)}
+                    onClick={() => dropdownOnly ? setOpenDropdown(isOpen ? null : label) : handleNav(href)}
                     className={`flex items-center gap-1 text-xs transition-colors duration-200 tracking-wide relative ${
                       isActive ? 'text-white' : 'text-white hover:text-white/90'
                     }`}
@@ -125,7 +125,7 @@ export default function Navbar() {
                     <ChevronDown
                       size={10}
                       className="opacity-50 transition-transform duration-200"
-                      style={{ transform: dropOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                      style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
                     />
                     {isActive && <span className="absolute -bottom-1 left-0 right-0 h-px bg-white/40 rounded-full" />}
                   </button>
@@ -133,9 +133,9 @@ export default function Navbar() {
                   <div
                     className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-56 z-50"
                     style={{
-                      opacity:       dropOpen ? 1 : 0,
-                      pointerEvents: dropOpen ? 'auto' : 'none',
-                      transform:     `translateX(-50%) translateY(${dropOpen ? '0px' : '6px'})`,
+                      opacity:       isOpen ? 1 : 0,
+                      pointerEvents: isOpen ? 'auto' : 'none',
+                      transform:     `translateX(-50%) translateY(${isOpen ? '0px' : '6px'})`,
                       transition:    'opacity 0.2s ease, transform 0.2s ease',
                     }}
                   >
@@ -143,7 +143,7 @@ export default function Navbar() {
                       {dropdown.map(({ label: dl, path }) => (
                         <button
                           key={dl}
-                          onClick={() => { navigate(path); setDropOpen(false) }}
+                          onClick={() => { navigate(path); setOpenDropdown(null) }}
                           className="w-full text-left px-3 py-2.5 text-[10px] text-white hover:text-white hover:bg-white/[0.05] rounded-lg transition-all"
                         >
                           {dl}
@@ -151,10 +151,10 @@ export default function Navbar() {
                       ))}
                       <div className="border-t border-white/[0.06] mt-1 pt-1">
                         <button
-                          onClick={() => { handleNav(href); setDropOpen(false) }}
+                          onClick={() => { handleNav(href); setOpenDropdown(null) }}
                           className="w-full text-left px-3 py-2 text-[10px] text-white hover:text-white/60 hover:bg-white/[0.03] rounded-lg transition-all"
                         >
-                          View all work
+                          {footerLabel}
                         </button>
                       </div>
                     </div>
@@ -181,13 +181,7 @@ export default function Navbar() {
 
         {/* Auth buttons */}
         <div className="hidden md:flex items-center gap-3">
-          <button
-            onClick={toggle}
-            aria-label="Toggle theme"
-            className="flex items-center justify-center w-7 h-7 rounded-lg text-white/50 hover:text-white/80 hover:bg-white/[0.06] transition-all"
-          >
-            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-          </button>
+          <ThemeToggle />
           {user ? (
             <>
               <button
@@ -241,22 +235,24 @@ export default function Navbar() {
         <div className="md:hidden fixed inset-0 z-40 bg-black/95 backdrop-blur-xl flex flex-col pt-16">
           <div className="overflow-y-auto flex-1 px-4 py-4">
             <div className="glass rounded-2xl overflow-hidden mb-4">
-              {navLinks.map(({ label, href, dropdown, isRoute }) => (
+              {navLinks.map(({ label, href, dropdown }) => {
+                const isExpanded = mobileExpanded === label
+                return (
                 <div key={label} className="border-b border-white/[0.05] last:border-0">
                   <button
-                    onClick={() => {
-                      if (isRoute) {
-                        navigate(href)
-                        setMenuOpen(false)
-                      } else {
-                        handleNav(href)
-                      }
-                    }}
-                    className="w-full text-left px-5 py-4 text-sm text-white font-medium active:bg-white/[0.05] transition-colors"
+                    onClick={() => dropdown ? setMobileExpanded(isExpanded ? null : label) : handleNav(href)}
+                    className="w-full flex items-center justify-between px-5 py-4 text-sm text-white font-medium active:bg-white/[0.05] transition-colors"
                   >
                     {label}
+                    {dropdown && (
+                      <ChevronDown
+                        size={14}
+                        className="text-white/40 transition-transform duration-200"
+                        style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                      />
+                    )}
                   </button>
-                  {dropdown && (
+                  {dropdown && isExpanded && (
                     <div className="bg-white/[0.02] border-t border-white/[0.04]">
                       {dropdown.map(({ label: dl, path }) => (
                         <button
@@ -271,16 +267,13 @@ export default function Navbar() {
                     </div>
                   )}
                 </div>
-              ))}
+                )
+              })}
             </div>
 
-            <button
-              onClick={toggle}
-              className="flex items-center gap-3 w-full px-5 py-3.5 glass rounded-xl text-sm text-white font-medium mb-2.5"
-            >
-              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-              {theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            </button>
+            <div className="mb-2.5">
+              <ThemeToggle className="glass !w-9 !h-9" />
+            </div>
 
             <div className="space-y-2.5">
               {user ? (
