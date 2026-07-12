@@ -163,7 +163,7 @@ export default function PMDashboard() {
           >
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display font-bold text-white text-sm">My Subscription</h2>
-              <button onClick={() => { setShowManageSub(false) }} className="text-white/40 hover:text-white transition-colors" aria-label="Close">
+              <button onClick={() => { setShowManageSub(false) }} className="text-white/60 hover:text-white transition-colors" aria-label="Close">
                 <X size={15} />
               </button>
             </div>
@@ -171,7 +171,7 @@ export default function PMDashboard() {
             <div className="glass rounded-xl p-3 mb-2.5">
               <div className="flex items-center justify-between mb-2.5">
                 <div>
-                  <p className="text-[10px] text-white/40 uppercase tracking-wider mb-0.5">Current plan</p>
+                  <p className="text-[10px] text-white/60 uppercase tracking-wider mb-0.5">Current plan</p>
                   <p className="font-display font-bold text-white capitalize text-sm">{plan}</p>
                 </div>
                 <div className="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center">
@@ -180,11 +180,11 @@ export default function PMDashboard() {
               </div>
               {subscription?.current_period_end && (
                 <div>
-                  <p className="text-[10px] text-white/40 uppercase tracking-wider mb-0.5">Access until</p>
+                  <p className="text-[10px] text-white/60 uppercase tracking-wider mb-0.5">Access until</p>
                   <p className="text-xs text-white">
                     {new Date(subscription.current_period_end).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
-                  <p className="text-[10px] text-white/40 mt-2">One-time plan - it won't auto-renew. Pay again before this date to keep access.</p>
+                  <p className="text-[10px] text-white/60 mt-2">One-time plan - it won't auto-renew. Pay again before this date to keep access.</p>
                 </div>
               )}
             </div>
@@ -213,33 +213,39 @@ export default function PMDashboard() {
         breadcrumbs={[{ label: 'PM', href: '/pm' }, { label: 'Projects' }]}
         badge={
           !isPro ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 onClick={() => setShowUpgrade(true)}
-                className="text-[11px] text-yellow-400/80 hover:text-yellow-400 transition-colors border border-yellow-400/20 px-2.5 py-1 rounded-lg"
+                className="text-[11px] text-yellow-400 hover:text-yellow-300 transition-colors border border-yellow-400/30 px-2 sm:px-2.5 py-1 rounded-lg whitespace-nowrap"
               >
-                Free · Upgrade
+                <span className="hidden sm:inline">Free · </span>Upgrade
               </button>
               <button
                 onClick={() => navigate('/pm/refer')}
-                className="flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 transition-colors border border-white/[0.06] px-2.5 py-1 rounded-lg"
+                className="flex items-center gap-1.5 text-[11px] text-white/60 hover:text-white transition-colors border border-white/10 px-2 sm:px-2.5 py-1 rounded-lg whitespace-nowrap"
+                aria-label="Refer & Earn"
+                title="Refer & Earn"
               >
-                <Gift size={11} /> Refer &amp; Earn
+                <Gift size={11} className="flex-shrink-0" /> <span className="hidden sm:inline">Refer &amp; Earn</span>
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 onClick={() => navigate('/pm/refer')}
-                className="flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 transition-colors border border-white/[0.06] px-2.5 py-1 rounded-lg"
+                className="flex items-center gap-1.5 text-[11px] text-white/60 hover:text-white transition-colors border border-white/10 px-2 sm:px-2.5 py-1 rounded-lg whitespace-nowrap"
+                aria-label="Refer & Earn"
+                title="Refer & Earn"
               >
-                <Gift size={11} /> Refer &amp; Earn
+                <Gift size={11} className="flex-shrink-0" /> <span className="hidden sm:inline">Refer &amp; Earn</span>
               </button>
               <button
                 onClick={() => setShowManageSub(true)}
-                className="flex items-center gap-1.5 text-[11px] text-white/40 hover:text-white/70 border border-white/[0.08] hover:border-white/20 px-2.5 py-1 rounded-lg transition-all capitalize"
+                className="flex items-center gap-1.5 text-[11px] text-white/60 hover:text-white border border-white/10 hover:border-white/20 px-2 sm:px-2.5 py-1 rounded-lg transition-all capitalize whitespace-nowrap"
+                aria-label={`${plan} plan, manage subscription`}
+                title="Manage subscription"
               >
-                <Settings size={10} /> {plan} · Manage
+                <Settings size={10} className="flex-shrink-0" /> <span className="hidden sm:inline">{plan} · Manage</span>
               </button>
             </div>
           )
@@ -251,7 +257,7 @@ export default function PMDashboard() {
         <div className="flex items-start justify-between gap-3 mb-6 sm:mb-8">
           <div className="min-w-0">
             <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-white mb-1.5 sm:mb-2">My Projects</h1>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/40">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/60">
               <span>{projects.length} total</span>
               <span>{active} active</span>
               <span>{done} completed</span>
@@ -278,10 +284,10 @@ export default function PMDashboard() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
             <div className="glass rounded-xl px-4 py-3 flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
-                <Folder size={14} className="text-white/50" />
+                <Folder size={14} className="text-white/60" />
               </div>
               <div>
-                <p className="text-[10px] text-white/40 uppercase tracking-wider">Projects</p>
+                <p className="text-[10px] text-white/60 uppercase tracking-wider">Projects</p>
                 <p className="text-lg font-bold text-white">{projects.length}</p>
               </div>
             </div>
@@ -290,8 +296,8 @@ export default function PMDashboard() {
                 <CheckCircle size={14} className="text-green-400" />
               </div>
               <div>
-                <p className="text-[10px] text-white/40 uppercase tracking-wider">Tasks Done</p>
-                <p className="text-lg font-bold text-white">{doneTasks}<span className="text-xs text-white/30 font-normal ml-1">/ {totalTasks}</span></p>
+                <p className="text-[10px] text-white/60 uppercase tracking-wider">Tasks Done</p>
+                <p className="text-lg font-bold text-white">{doneTasks}<span className="text-xs text-white/50 font-normal ml-1">/ {totalTasks}</span></p>
               </div>
             </div>
             <div className="glass rounded-xl px-4 py-3 flex items-center gap-3">
@@ -299,7 +305,7 @@ export default function PMDashboard() {
                 <TrendingUp size={14} className="text-blue-400" />
               </div>
               <div>
-                <p className="text-[10px] text-white/40 uppercase tracking-wider">Completion</p>
+                <p className="text-[10px] text-white/60 uppercase tracking-wider">Completion</p>
                 <p className="text-lg font-bold text-white">{completionRate}%</p>
               </div>
             </div>
@@ -308,7 +314,7 @@ export default function PMDashboard() {
                 <AlertTriangle size={14} className="text-yellow-400" />
               </div>
               <div>
-                <p className="text-[10px] text-white/40 uppercase tracking-wider">Active</p>
+                <p className="text-[10px] text-white/60 uppercase tracking-wider">Active</p>
                 <p className="text-lg font-bold text-white">{active}</p>
               </div>
             </div>
@@ -323,18 +329,25 @@ export default function PMDashboard() {
           return (
             <div className={`mb-4 glass rounded-xl px-4 py-3 flex items-center gap-4 ${nearLimit ? 'border border-yellow-400/15' : ''}`}>
               <div className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
-                <HardDrive size={14} className={nearLimit ? 'text-yellow-400' : 'text-white/40'} />
+                <HardDrive size={14} className={nearLimit ? 'text-yellow-400' : 'text-white/60'} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1.5">
-                  <p className="text-[10px] text-white/40 uppercase tracking-wider">Storage</p>
-                  <p className="text-[10px] text-white/50">
+                  <p className="text-[10px] text-white/60 uppercase tracking-wider">Storage</p>
+                  <p className="text-[10px] text-white/70">
                     {storageUsedMb} MB / {limitMb >= 1024 ? `${limitMb / 1024} GB` : `${limitMb} MB`}
                   </p>
                 </div>
-                <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                <div
+                  className="h-1.5 rounded-full bg-white/10 overflow-hidden"
+                  role="progressbar"
+                  aria-valuenow={pct}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Storage used"
+                >
                   <div
-                    className={`h-full rounded-full transition-all ${nearLimit ? 'bg-yellow-400' : 'bg-white/40'}`}
+                    className={`h-full rounded-full transition-all ${nearLimit ? 'bg-yellow-400' : 'bg-white/70'}`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -368,19 +381,19 @@ export default function PMDashboard() {
 
         {/* My Projects - grouped by status */}
         {projects.length === 0 ? (
-          <div className="glass rounded-2xl p-16 text-center">
-            <div className="w-16 h-16 rounded-2xl glass flex items-center justify-center mx-auto mb-5">
-              <LayoutDashboard size={28} className="text-white/30" />
+          <div className="glass rounded-2xl flex flex-col items-center justify-center text-center py-12 px-6 sm:py-14 min-h-[280px]">
+            <div className="w-14 h-14 rounded-2xl glass flex items-center justify-center mb-4">
+              <LayoutDashboard size={24} className="text-white/50" />
             </div>
             <h3 className="font-display font-semibold text-white text-lg mb-2">No projects yet</h3>
-            <p className="text-white/40 text-sm mb-6 max-w-sm mx-auto">
+            <p className="text-white/60 text-sm mb-6 max-w-xs">
               Create your first project to start tracking tasks, milestones, and client progress.
             </p>
             <button
               onClick={() => navigate('/pm/projects/new')}
-              className="bg-white text-black font-semibold text-sm px-6 py-2.5 rounded-xl hover:bg-white/90 transition-colors"
+              className="flex items-center gap-1.5 sm:gap-2 bg-white text-black font-semibold text-xs sm:text-sm px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-xl hover:bg-white/90 transition-colors"
             >
-              Create first project
+              <Plus size={15} /> Create first project
             </button>
           </div>
         ) : (
@@ -398,7 +411,7 @@ export default function PMDashboard() {
                   <div className="flex items-center gap-2 mb-4">
                     <div className={`w-2 h-2 rounded-full ${dotColor}`} />
                     <h2 className="font-display font-semibold text-white/60 text-sm">{label}</h2>
-                    <span className="text-xs text-white/20">({group.length})</span>
+                    <span className="text-xs text-white/40">({group.length})</span>
                   </div>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {group.map((p) => (
@@ -419,9 +432,9 @@ export default function PMDashboard() {
               className={`glass rounded-2xl p-5 cursor-pointer hover:border-white/20 transition-all flex flex-col items-center justify-center gap-3 min-h-[140px] border-dashed ${atLimit ? 'opacity-50' : ''}`}
             >
               <div className="w-10 h-10 rounded-xl glass flex items-center justify-center">
-                {atLimit ? <Lock size={16} className="text-white/40" /> : <Plus size={18} className="text-white/40" />}
+                {atLimit ? <Lock size={16} className="text-white/50" /> : <Plus size={18} className="text-white/50" />}
               </div>
-              <p className="text-xs text-white/40">{atLimit ? 'Upgrade to add more' : 'New project'}</p>
+              <p className="text-xs text-white/50">{atLimit ? 'Upgrade to add more' : 'New project'}</p>
             </div>
           </>
         )}
@@ -432,7 +445,7 @@ export default function PMDashboard() {
             <div className="flex items-center gap-2 mb-4">
               <Users size={14} className="text-white/30" />
               <h2 className="font-display font-semibold text-white/60 text-sm">Shared with me</h2>
-              <span className="text-xs text-white/20">({sharedProjects.length})</span>
+              <span className="text-xs text-white/40">({sharedProjects.length})</span>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sharedProjects.map((p) => (
@@ -451,8 +464,8 @@ export default function PMDashboard() {
             >
               <CalendarClock size={14} className="text-white/30" />
               <h2 className="font-display font-semibold text-white/60 text-sm group-hover:text-white/80 transition-colors">My Tasks</h2>
-              <span className="text-xs text-white/20">({pendingTasks.length} pending)</span>
-              <div className="ml-auto text-white/20 group-hover:text-white/40 transition-colors">
+              <span className="text-xs text-white/40">({pendingTasks.length} pending)</span>
+              <div className="ml-auto text-white/30 group-hover:text-white/50 transition-colors">
                 {showMyTasks ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </div>
             </button>
@@ -471,7 +484,7 @@ export default function PMDashboard() {
                     <div className="flex items-center gap-2 mb-2">
                       <div className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
                       <span className={`text-xs font-semibold ${color}`}>{label}</span>
-                      <span className="text-[10px] text-white/20">({tasks.length})</span>
+                      <span className="text-[10px] text-white/40">({tasks.length})</span>
                     </div>
                     <div className="space-y-1.5">
                       {visibleTasks.map((t) => (
@@ -525,7 +538,7 @@ export default function PMDashboard() {
 
         {/* Quick Add hint + Weekly digest */}
         <div className="mt-8 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-white/20 text-xs">
+          <div className="flex items-center gap-2 text-white/50 text-xs">
             <Zap size={11} />
             <span>Press <kbd className="border border-white/10 rounded px-1 py-0.5 text-[10px]">{typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘K' : 'Ctrl+K'}</kbd> to quick-add a task anywhere</span>
           </div>
