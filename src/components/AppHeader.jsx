@@ -62,7 +62,7 @@ export default function AppHeader({ breadcrumbs = [], actions, badge }) {
         </div>
 
         {/* Right: actions + user */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
           {actions}
 
           {badge}
@@ -73,7 +73,7 @@ export default function AppHeader({ breadcrumbs = [], actions, badge }) {
 
           <button
             onClick={() => navigate('/account')}
-            className="hidden sm:flex items-center gap-1.5 text-xs text-white/40 hover:text-white transition-colors"
+            className="hidden sm:flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors"
             title={user?.email}
           >
             <UserCircle size={15} />
@@ -82,7 +82,8 @@ export default function AppHeader({ breadcrumbs = [], actions, badge }) {
 
           <button
             onClick={async () => { await signOut(); navigate('/') }}
-            className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors"
+            aria-label="Sign out"
           >
             <LogOut size={14} />
             <span className="hidden sm:inline">Sign out</span>

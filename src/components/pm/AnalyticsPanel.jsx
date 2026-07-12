@@ -154,6 +154,52 @@ function VelocityChart({ tasks, doneKeys }) {
   )
 }
 
+function CreatorBreakdown({ tasks }) {
+  const creators = {}
+  tasks.filter((t) => t.created_by_email).forEach((t) => {
+    creators[t.created_by_email] = (creators[t.created_by_email] || 0) + 1
+  })
+  const rows = Object.entries(creators).map(([email, count]) => ({ email, count })).sort((a, b) => b.count - a.count)
+  const unknown = tasks.filter((t) => !t.created_by_email).length
+
+  if (rows.length === 0) return null
+
+  const maxCount = Math.max(...rows.map((r) => r.count), 1)
+
+  return (
+    <div className="glass rounded-2xl p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Users size={13} className="text-white/40" />
+        <p className="text-xs font-semibold text-white/70">Tasks Added</p>
+      </div>
+      <div className="space-y-3">
+        {rows.map((r) => (
+          <div key={r.email} className="flex items-center gap-3">
+            <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] text-white/50 flex-shrink-0">
+              {r.email[0].toUpperCase()}
+            </span>
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] text-white/50 truncate max-w-[120px]">{r.email.split('@')[0]}</span>
+                <span className="text-[10px] text-white/40">{r.count}</span>
+              </div>
+              <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-400/60 rounded-full transition-all duration-700"
+                  style={{ width: `${(r.count / maxCount) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+        {unknown > 0 && (
+          <p className="text-[10px] text-white/25 pt-1">{unknown} task{unknown !== 1 ? 's' : ''} with no creator on record</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function AnalyticsPanel({ tasks, milestones, stages }) {
   const activeStages = (stages && stages.length > 0) ? stages : DEFAULT_WORKFLOW_STAGES
   const doneKeys = new Set(activeStages.filter((s) => s.is_done).map((s) => s.status_key))
@@ -242,6 +288,7 @@ export default function AnalyticsPanel({ tasks, milestones, stages }) {
       {/* Burndown + Velocity */}
       {total > 0 && <BurndownChart tasks={tasks} doneKeys={doneKeys} />}
       {total > 0 && <VelocityChart tasks={tasks} doneKeys={doneKeys} />}
+      {total > 0 && <CreatorBreakdown tasks={tasks} />}
 
       {/* Milestones */}
       {milestones.length > 0 && (
