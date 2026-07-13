@@ -94,6 +94,8 @@ export default function Navbar() {
           ? 'glass border-b border-white/[0.05] py-1.5'
           : 'bg-transparent py-2'
       }`}
+      // 30% more blur than the shared .glass (20px → 26px), navbar only
+      style={scrolled ? { backdropFilter: 'blur(26px)', WebkitBackdropFilter: 'blur(26px)' } : undefined}
     >
       <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
