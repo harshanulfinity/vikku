@@ -1,5 +1,11 @@
 export const TASK_LABELS = ['Design', 'Dev', 'Bug', 'Review', 'Content', 'Meeting', 'Research']
 
+// Assignees as an array, back-compat with the legacy single assigned_to_email
+// column (works whether a task row is migrated to assigned_to_emails or not).
+export const taskAssignees = (t) =>
+  t?.assigned_to_emails?.length ? t.assigned_to_emails
+  : (t?.assigned_to_email ? [t.assigned_to_email] : [])
+
 export const DEFAULT_LABELS = [
   { name: 'Design',   color: '#8b5cf6' },
   { name: 'Dev',      color: '#3b82f6' },

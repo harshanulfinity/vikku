@@ -34,8 +34,8 @@ function compareTasks(a, b, field, dir) {
       bv = (b.title || '').toLowerCase()
       break
     case 'assigned_to_email':
-      av = a.assigned_to_email || '￿'
-      bv = b.assigned_to_email || '￿'
+      av = taskAssignees(a)[0] || '￿'
+      bv = taskAssignees(b)[0] || '￿'
       break
     default:
       return 0
@@ -87,7 +87,7 @@ function matchesSmartView(t, view, userEmail, doneKeys) {
   const isDone = doneKeys.has(t.status)
   switch (view) {
     case 'myWork':
-      return t.assigned_to_email === userEmail && !isDone
+      return taskAssignees(t).includes(userEmail) && !isDone
     case 'dueSoon': {
       if (!t.due_date || isDone) return false
       const due = new Date(t.due_date + 'T00:00:00')
@@ -97,7 +97,7 @@ function matchesSmartView(t, view, userEmail, doneKeys) {
     }
     case 'needsAttention': {
       const overdue = t.due_date && new Date(t.due_date) < new Date() && !isDone
-      return overdue || !t.assigned_to_email || !!t._isBlocked
+      return overdue || taskAssignees(t).length === 0 || !!t._isBlocked
     }
     case 'recentlyUpdated': {
       const ts = new Date(t.updated_at || t.created_at).getTime()
@@ -125,7 +125,7 @@ function getNextDueDate(dueDate, recurrence) {
   else if (recurrence === 'monthly') d.setMonth(d.getMonth() + 1)
   return d.toISOString().split('T')[0]
 }
-import { getLabelStyle, DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
+import { getLabelStyle, DEFAULT_WORKFLOW_STAGES, taskAssignees } from '../../lib/pmConstants'
 
 const DEFAULT_EMPTY = {
   todo:        { Icon: ClipboardList, hint: 'Add tasks to get started' },
@@ -174,7 +174,7 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
 
   const taskMatchesFilters = (t) => {
     if (filters.priorities.length && !filters.priorities.includes(t.priority || 'none')) return false
-    if (filters.assignedToMe && t.assigned_to_email !== user?.email) return false
+    if (filters.assignedToMe && !taskAssignees(t).includes(user?.email)) return false
     if (filters.createdByMe && t.created_by_email !== user?.email) return false
     if (filters.createdByMembers.length && !filters.createdByMembers.includes(t.created_by_email)) return false
     if (filters.overdue) {
@@ -192,7 +192,7 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
       if (Date.now() - ts > 48 * 3600 * 1000) return false
     }
     if (filters.completed && !doneKeys.has(t.status)) return false
-    if (filters.unassigned && t.assigned_to_email) return false
+    if (filters.unassigned && taskAssignees(t).length > 0) return false
     if (filters.blocked && !t._isBlocked) return false
     if (filters.smartView && !matchesSmartView(t, filters.smartView, user?.email, doneKeys)) return false
     return true
@@ -218,7 +218,7 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
   const usedLabels = [...new Set(tasks.map((t) => t.label).filter(Boolean))]
 
   const handleCreateSubmit = async (fields) => {
-    const { status, title, description, priority, due_date, assigned_to_email, label, task_link } = fields
+    const { status, title, description, priority, due_date, assigned_to_emails = [], label, task_link } = fields
     const tempId = `temp-${Date.now()}`
     const tempTask = { id: tempId, project_id: projectId, created_at: new Date().toISOString(), ...fields }
     onTasksChange((prev) => [...prev, tempTask])
@@ -228,7 +228,8 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
         priority: priority || 'medium',
         description: description || null,
         due_date: due_date || null,
-        assigned_to_email: assigned_to_email || null,
+        assigned_to_emails,
+        assigned_to_email: assigned_to_emails[0] || null,
         created_by_email: user?.email || null,
         label: label || null,
         task_link: task_link || null,
@@ -236,15 +237,15 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
       if (!task) throw new Error('no task returned')
       onTasksChange((prev) => prev.map((t) => t.id === tempId ? task : t))
       if (user) logActivity({ project_id: projectId, user_id: user.id, user_email: user.email, action: 'task_created', entity_type: 'task', entity_id: task.id, entity_title: title })
-      // Notify assignee when a task is created already assigned to someone else
-      if (assigned_to_email && assigned_to_email !== user?.email) {
+      // Notify each assignee (other than self) a task was created assigned to them
+      assigned_to_emails.filter((email) => email !== user?.email).forEach((email) => {
         notifyTaskAssigned({
           taskTitle: title,
           projectName: projectName || '',
-          assigneeEmail: assigned_to_email,
+          assigneeEmail: email,
           dueDate: due_date || undefined,
         })
-        getMemberUserId(projectId, assigned_to_email).then(assigneeId => {
+        getMemberUserId(projectId, email).then(assigneeId => {
           if (assigneeId) insertPmNotification({
             userId: assigneeId,
             type: 'task_assigned',
@@ -254,7 +255,7 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
             entityId: task.id,
           })
         })
-      }
+      })
     } catch {
       onTasksChange((prev) => prev.filter((t) => t.id !== tempId))
     }
@@ -394,7 +395,8 @@ export default function KanbanBoard({ projectId, projectName, tasks, onTasksChan
         priority: task.priority || 'medium',
         status: firstStage.status_key,
         due_date: getNextDueDate(task.due_date, task.recurrence),
-        assigned_to_email: task.assigned_to_email || null,
+        assigned_to_emails: taskAssignees(task),
+        assigned_to_email: taskAssignees(task)[0] || null,
         created_by_email: task.created_by_email || null,
         label: task.label || null,
         recurrence: task.recurrence,

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Calendar, CheckSquare, ExternalLink, GitMerge, RotateCcw, ThumbsUp, ThumbsDown, AlertCircle } from 'lucide-react'
 import TaskEditModal from './TaskEditModal'
-import { getLabelStyle } from '../../lib/pmConstants'
+import { getLabelStyle, taskAssignees } from '../../lib/pmConstants'
 
 const PRIORITY_COLOR = {
   urgent: '#ef4444',
@@ -21,7 +21,7 @@ export default function TaskCard({ task, onTaskRemoved, onUpdate, draggable, onD
   const [editing, setEditing] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
 
-  const assigneeInitial = task.assigned_to_email ? task.assigned_to_email[0].toUpperCase() : null
+  const assignees = taskAssignees(task)
   const hasSubtasks = task._subtasksTotal > 0
   const labelStyle = task.label ? getLabelStyle(task.label, projectLabels) : null
   const isBlocked = task._isBlocked
@@ -156,13 +156,22 @@ export default function TaskCard({ task, onTaskRemoved, onUpdate, draggable, onD
                 </span>
               )}
 
-              {/* Assignee */}
-              {assigneeInitial && (
-                <span
-                  className="w-5 h-5 rounded-full bg-indigo-500/30 border border-indigo-500/40 flex items-center justify-center text-[9px] text-indigo-300 font-semibold shrink-0"
-                  title={task.assigned_to_email}
-                >
-                  {assigneeInitial}
+              {/* Assignees */}
+              {assignees.length > 0 && (
+                <span className="flex items-center shrink-0" title={assignees.join(', ')}>
+                  {assignees.slice(0, 3).map((email, i) => (
+                    <span
+                      key={email}
+                      className={`w-5 h-5 rounded-full bg-indigo-500/30 border border-indigo-500/40 flex items-center justify-center text-[9px] text-indigo-300 font-semibold ${i > 0 ? '-ml-1.5' : ''}`}
+                    >
+                      {email[0].toUpperCase()}
+                    </span>
+                  ))}
+                  {assignees.length > 3 && (
+                    <span className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[9px] text-white/60 font-semibold -ml-1.5">
+                      +{assignees.length - 3}
+                    </span>
+                  )}
                 </span>
               )}
             </div>
