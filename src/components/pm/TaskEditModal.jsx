@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import useLockBodyScroll from '../../hooks/useLockBodyScroll'
 import {
   X, Trash2, Loader2, MessageCircle, Send, Trash,
-  CheckSquare, Square, Plus, Clock, User, Timer, Link, ExternalLink,
+  CheckSquare, Square, Plus, Clock, User, Timer, Link, ExternalLink, Check,
   Paperclip, Download, FileText, Bell, BellOff, TrendingUp, TrendingDown,
   GitMerge, RotateCcw, Eye, EyeOff, ThumbsUp, ThumbsDown, Activity,
 } from 'lucide-react'
@@ -17,7 +17,7 @@ import {
   getProjectLabels, saveProjectLabels, logActivity, getEntityActivity,
 } from '../../lib/pmService'
 import { STORAGE_LIMITS_MB } from '../../lib/entitlements'
-import { DEFAULT_LABELS, LABEL_COLORS, getLabelStyle } from '../../lib/pmConstants'
+import { DEFAULT_LABELS, LABEL_COLORS, getLabelStyle, taskAssignees } from '../../lib/pmConstants'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import useSubscription from '../../hooks/useSubscription'
@@ -80,7 +80,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     priority: task.priority || 'medium',
     due_date: task.due_date || '',
     reminder_enabled: task.reminder_enabled || false,
-    assigned_to_email: task.assigned_to_email || '',
+    assigned_to_emails: taskAssignees(task),
     label: task.label || '',
     task_link: task.task_link || '',
     estimated_minutes: task.estimated_minutes || '',
@@ -88,6 +88,13 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   })
   const [deleting, setDeleting] = useState(false)
   const [commentError, setCommentError] = useState('')
+
+  const toggleAssignee = (email) => setForm((f) => ({
+    ...f,
+    assigned_to_emails: f.assigned_to_emails.includes(email)
+      ? f.assigned_to_emails.filter((e) => e !== email)
+      : [...f.assigned_to_emails, email],
+  }))
 
   const [comments, setComments] = useState([])
   const [newComment, setNewComment] = useState('')
@@ -174,7 +181,8 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
       priority: form.priority,
       due_date: form.due_date || null,
       reminder_enabled: form.due_date ? form.reminder_enabled : false,
-      assigned_to_email: form.assigned_to_email || null,
+      assigned_to_emails: form.assigned_to_emails,
+      assigned_to_email: form.assigned_to_emails[0] || null,
       label: form.label || null,
       task_link: form.task_link.trim() || null,
       estimated_minutes: form.estimated_minutes ? parseInt(form.estimated_minutes) : null,
@@ -182,17 +190,20 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     }).catch((err) => {
       console.error('updateTask failed:', err)
     })
-    const prevEmail = task.assigned_to_email
-    if (user && (form.assigned_to_email || null) !== (prevEmail || null)) {
+    const prevAssignees = taskAssignees(task)
+    const nextAssignees = form.assigned_to_emails
+    const addedAssignees = nextAssignees.filter((e) => !prevAssignees.includes(e))
+    const changed = addedAssignees.length > 0 || nextAssignees.length !== prevAssignees.length
+    if (user && changed) {
       logActivity({
         project_id: task.project_id,
         user_id: user.id,
         user_email: user.email,
-        action: form.assigned_to_email ? 'task_assigned' : 'task_unassigned',
+        action: nextAssignees.length === 0 ? 'task_unassigned' : 'task_assigned',
         entity_type: 'task',
         entity_id: task.id,
         entity_title: form.title.trim(),
-        detail: form.assigned_to_email ? `assigned to ${form.assigned_to_email}` : undefined,
+        detail: addedAssignees.length ? `assigned to ${addedAssignees.join(', ')}` : undefined,
       })
     }
     if (user) {
@@ -218,15 +229,15 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
         })
       })
     }
-    if (form.assigned_to_email && form.assigned_to_email !== prevEmail && form.assigned_to_email !== user?.email) {
+    // Notify each newly-added assignee (skip self)
+    addedAssignees.filter((email) => email !== user?.email).forEach((email) => {
       notifyTaskAssigned({
         taskTitle: form.title.trim(),
         projectName: task._projectName || '',
-        assigneeEmail: form.assigned_to_email,
+        assigneeEmail: email,
         dueDate: form.due_date || undefined,
       })
-      // In-app realtime notification for the assignee
-      getMemberUserId(task.project_id, form.assigned_to_email).then(assigneeId => {
+      getMemberUserId(task.project_id, email).then(assigneeId => {
         if (assigneeId) insertPmNotification({
           userId: assigneeId,
           type: 'task_assigned',
@@ -236,7 +247,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
           entityId: task.id,
         })
       })
-    }
+    })
   }
 
   const handleDelete = async () => {
@@ -601,25 +612,33 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                 className="w-full flex items-center gap-2 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-left transition-colors hover:border-white/20"
               >
                 <User size={12} className="text-white/30 flex-shrink-0" />
-                <span className={form.assigned_to_email ? 'text-white/70' : 'text-white/30'}>
-                  {form.assigned_to_email || 'Unassigned'}
-                </span>
+                {form.assigned_to_emails.length === 0 ? (
+                  <span className="text-white/30">Unassigned</span>
+                ) : (
+                  <span className="flex items-center gap-1.5 text-white/70 min-w-0">
+                    <span className="flex items-center">
+                      {form.assigned_to_emails.slice(0, 4).map((email, i) => (
+                        <span key={email} className={`w-5 h-5 rounded-full bg-white/10 border border-[#111] flex items-center justify-center text-[9px] ${i > 0 ? '-ml-1.5' : ''}`}>{email[0].toUpperCase()}</span>
+                      ))}
+                    </span>
+                    <span className="truncate">{form.assigned_to_emails.length === 1 ? form.assigned_to_emails[0] : `${form.assigned_to_emails.length} assignees`}</span>
+                  </span>
+                )}
               </button>
               {showAssigneeMenu && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-10 overflow-hidden">
-                  <button onClick={() => { setForm({ ...form, assigned_to_email: '' }); setShowAssigneeMenu(false) }} className="w-full text-left px-3 py-2 text-xs text-white/40 hover:bg-white/[0.05] transition-colors">Unassigned</button>
-                  {user?.email && (
-                    <button onClick={() => { setForm({ ...form, assigned_to_email: user.email }); setShowAssigneeMenu(false) }} className="w-full text-left px-3 py-2 text-xs text-white/70 hover:bg-white/[0.05] transition-colors flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px]">{user.email[0].toUpperCase()}</span>
-                      {user.email} <span className="text-white/30 ml-auto">me</span>
-                    </button>
-                  )}
-                  {members.filter((m) => m.email !== user?.email).map((m) => (
-                    <button key={m.id} onClick={() => { setForm({ ...form, assigned_to_email: m.email }); setShowAssigneeMenu(false) }} className="w-full text-left px-3 py-2 text-xs text-white/70 hover:bg-white/[0.05] transition-colors flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px]">{(m.email || '?')[0].toUpperCase()}</span>
-                      {m.email}
-                    </button>
-                  ))}
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-10 overflow-hidden max-h-56 overflow-y-auto">
+                  <button onClick={() => { setForm((f) => ({ ...f, assigned_to_emails: [] })); }} className="w-full text-left px-3 py-2 text-xs text-white/40 hover:bg-white/[0.05] transition-colors">Unassigned</button>
+                  {[...(user?.email ? [{ id: 'me', email: user.email, isMe: true }] : []), ...members.filter((m) => m.email !== user?.email)].map((m) => {
+                    const selected = form.assigned_to_emails.includes(m.email)
+                    return (
+                      <button key={m.id} onClick={() => toggleAssignee(m.email)} className="w-full text-left px-3 py-2 text-xs text-white/70 hover:bg-white/[0.05] transition-colors flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px]">{(m.email || '?')[0].toUpperCase()}</span>
+                        <span className="truncate">{m.email}</span>
+                        {m.isMe && <span className="text-white/30">me</span>}
+                        {selected && <Check size={13} className="text-green-400 ml-auto flex-shrink-0" />}
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </div>

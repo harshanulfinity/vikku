@@ -1,5 +1,5 @@
 import { BarChart2, TrendingDown, Users } from 'lucide-react'
-import { DEFAULT_WORKFLOW_STAGES } from '../../lib/pmConstants'
+import { DEFAULT_WORKFLOW_STAGES, taskAssignees } from '../../lib/pmConstants'
 
 const FALLBACK_STATUS_COLORS = {
   done:        '#22c55e',
@@ -96,15 +96,16 @@ function BurndownChart({ tasks, doneKeys }) {
 
 function VelocityChart({ tasks, doneKeys }) {
   const assignees = {}
-  tasks.filter((t) => t.assigned_to_email).forEach((t) => {
-    const email = t.assigned_to_email
-    if (!assignees[email]) assignees[email] = { email, done: 0, total: 0 }
-    assignees[email].total++
-    if (doneKeys.has(t.status)) assignees[email].done++
+  tasks.forEach((t) => {
+    taskAssignees(t).forEach((email) => {
+      if (!assignees[email]) assignees[email] = { email, done: 0, total: 0 }
+      assignees[email].total++
+      if (doneKeys.has(t.status)) assignees[email].done++
+    })
   })
 
   const rows = Object.values(assignees).sort((a, b) => b.done - a.done)
-  const unassigned = tasks.filter((t) => !t.assigned_to_email)
+  const unassigned = tasks.filter((t) => taskAssignees(t).length === 0)
 
   if (rows.length === 0) {
     return (
