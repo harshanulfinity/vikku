@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import useLockBodyScroll from '../../hooks/useLockBodyScroll'
 import {
@@ -100,6 +100,15 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const [newComment, setNewComment] = useState('')
   const [sendingComment, setSendingComment] = useState(false)
   const [taskActivity, setTaskActivity] = useState([])
+  const notesRef = useRef(null)
+
+  // Auto-grow the Notes textarea to fit its content (capped, then scrolls)
+  useEffect(() => {
+    const el = notesRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 320) + 'px'
+  }, [form.description])
 
   const [members, setMembers] = useState([])
   const [showAssigneeMenu, setShowAssigneeMenu] = useState(false)
@@ -464,10 +473,11 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
             <div>
               <label className="text-[10px] text-white/40 mb-1.5 block uppercase tracking-wider">Notes</label>
               <textarea
+                ref={notesRef}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 rows={3}
-                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-white placeholder-white/30 outline-none focus:border-white/20 transition-colors resize-none"
+                className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-white placeholder-white/30 outline-none focus:border-white/20 transition-colors resize-none overflow-y-auto min-h-[4.5rem]"
                 placeholder="Add notes or details..."
               />
             </div>
