@@ -53,6 +53,10 @@ const ACTIVITY_FALLBACK_TEXT = {
   task_assigned: 'changed the assignee',
   task_unassigned: 'unassigned this task',
   task_deleted: 'deleted this task',
+  subtask_added: 'added a subtask',
+  subtask_done: 'completed a subtask',
+  subtask_reopened: 'reopened a subtask',
+  subtask_deleted: 'removed a subtask',
 }
 
 function describeActivity(item) {
@@ -293,13 +297,29 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
     setComments((prev) => prev.filter((c) => c.id !== commentId))
   }
 
+  // Log a subtask change against the PARENT task's activity feed, and
+  // optimistically prepend it so it shows in the panel immediately.
+  const logSubtaskActivity = (action, detail) => {
+    if (!user) return
+    logActivity({
+      project_id: task.project_id, user_id: user.id, user_email: user.email,
+      action, entity_type: 'task', entity_id: task.id, entity_title: task.title, detail,
+    })
+    setTaskActivity((prev) => [
+      { id: `local-${Date.now()}`, action, detail, user_email: user.email, created_at: new Date().toISOString() },
+      ...prev,
+    ])
+  }
+
   const handleAddSubtask = async () => {
     if (!newSubtask.trim()) return
+    const title = newSubtask.trim()
     setAddingSubtask(true)
     try {
-      const st = await createSubtask({ task_id: task.id, title: newSubtask.trim(), completed: false })
+      const st = await createSubtask({ task_id: task.id, title, completed: false })
       setSubtasks((prev) => [...prev, st])
       setNewSubtask('')
+      logSubtaskActivity('subtask_added', `added subtask "${title}"`)
     } catch (err) {
       console.error('Failed to add subtask:', err)
     } finally {
@@ -310,11 +330,16 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
   const handleToggleSubtask = async (st) => {
     const updated = await updateSubtask(st.id, { completed: !st.completed })
     setSubtasks((prev) => prev.map((s) => (s.id === st.id ? updated : s)))
+    logSubtaskActivity(
+      updated.completed ? 'subtask_done' : 'subtask_reopened',
+      `${updated.completed ? 'completed' : 'reopened'} subtask "${st.title}"`,
+    )
   }
 
-  const handleDeleteSubtask = async (id) => {
-    await deleteSubtask(id)
-    setSubtasks((prev) => prev.filter((s) => s.id !== id))
+  const handleDeleteSubtask = async (st) => {
+    await deleteSubtask(st.id)
+    setSubtasks((prev) => prev.filter((s) => s.id !== st.id))
+    logSubtaskActivity('subtask_deleted', `removed subtask "${st.title}"`)
   }
 
   const handleAddDependency = async (blockerTask) => {
@@ -685,7 +710,7 @@ export default function TaskEditModal({ task, onClose, onUpdated, onDeleted }) {
                           {st.completed ? <CheckSquare size={13} className="text-green-400" /> : <Square size={13} />}
                         </button>
                         <span className={`text-xs flex-1 leading-snug ${st.completed ? 'line-through text-white/30' : 'text-white/70'}`}>{st.title}</span>
-                        <button onClick={() => handleDeleteSubtask(st.id)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all"><Trash size={10} /></button>
+                        <button onClick={() => handleDeleteSubtask(st)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all"><Trash size={10} /></button>
                       </div>
                     ))}
                   </div>

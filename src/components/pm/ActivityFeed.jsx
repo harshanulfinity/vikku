@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Activity, Plus, ArrowRight, CheckCircle, Flag, Loader2, ChevronDown, ChevronUp, UserPlus, UserMinus, Trash2 } from 'lucide-react'
+import { Activity, Plus, ArrowRight, CheckCircle, Flag, Loader2, ChevronDown, ChevronUp, UserPlus, UserMinus, Trash2, CheckSquare, RotateCcw } from 'lucide-react'
 import { getProjectActivity } from '../../lib/pmService'
 
 const VISIBLE_COUNT = 7
@@ -12,6 +12,10 @@ const ACTION_ICON = {
   task_assigned: UserPlus,
   task_unassigned: UserMinus,
   task_deleted: Trash2,
+  subtask_added: Plus,
+  subtask_done: CheckSquare,
+  subtask_reopened: RotateCcw,
+  subtask_deleted: Trash2,
 }
 
 const ACTION_COLOR = {
@@ -22,6 +26,10 @@ const ACTION_COLOR = {
   task_assigned: 'text-violet-400',
   task_unassigned: 'text-white/40',
   task_deleted: 'text-red-400',
+  subtask_added: 'text-blue-400',
+  subtask_done: 'text-green-400',
+  subtask_reopened: 'text-white/40',
+  subtask_deleted: 'text-red-400',
 }
 
 function timeAgo(dateStr) {
@@ -81,6 +89,10 @@ export default function ActivityFeed({ projectId }) {
                     {item.action === 'task_assigned' && 'changed assignee on'}
                     {item.action === 'task_unassigned' && 'unassigned'}
                     {item.action === 'task_deleted' && 'deleted'}
+                    {item.action === 'subtask_added' && 'added a subtask to'}
+                    {item.action === 'subtask_done' && 'completed a subtask in'}
+                    {item.action === 'subtask_reopened' && 'reopened a subtask in'}
+                    {item.action === 'subtask_deleted' && 'removed a subtask from'}
                     {' '}
                     <span className="text-white/80">{item.entity_title}</span>
                   </p>
