@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { DollarSign, Clock, LayoutDashboard, TrendingUp, Kanban, ArrowRight, FileText, Wrench, Radar } from 'lucide-react'
+import { DollarSign, Clock, LayoutDashboard, TrendingUp, ArrowRight, FileText, Wrench, Radar } from 'lucide-react'
 import AppHeader from '../components/AppHeader'
+import ToolArt from '../components/ToolArt'
 import { getMyToolResults } from '../lib/toolResultsService'
 
 export default function Dashboard() {
@@ -49,7 +50,7 @@ export default function Dashboard() {
           description: "Paste your URL and see how likely AI is to recommend your business - and what's blocking you",
           useWhen: 'You already have a website and want to know if AI assistants can find and recommend it',
           gives: 'A visibility score, a prioritized list of blockers, and concrete fixes',
-          path: '/dashboard/ai-visibility-score',
+          art: 'visibility', path: '/dashboard/ai-visibility-score',
         },
       ],
     },
@@ -64,7 +65,7 @@ export default function Dashboard() {
           description: 'See how much revenue you\'re losing without a website - and how fast it pays back',
           useWhen: 'You\'re not sure a website or app is worth the money',
           gives: 'Payback period + the monthly revenue you\'re leaving on the table',
-          path: '/dashboard/roi-calculator',
+          art: 'roi', path: '/dashboard/roi-calculator',
         },
         {
           icon: DollarSign,
@@ -72,7 +73,7 @@ export default function Dashboard() {
           description: 'Describe your project in plain words and get a cost estimate in your local currency',
           useWhen: 'You have an idea but no budget number to plan around',
           gives: 'A realistic cost range with a feature-by-feature breakdown',
-          path: '/dashboard/cost-estimator',
+          art: 'cost', path: '/dashboard/cost-estimator',
         },
       ],
     },
@@ -87,7 +88,7 @@ export default function Dashboard() {
           description: 'Get a realistic timeline with phase breakdown and milestones',
           useWhen: 'You need a delivery date you can commit to',
           gives: 'Week-by-week phases with clear milestones',
-          path: '/dashboard/timeline-calculator',
+          art: 'timeline', path: '/dashboard/timeline-calculator',
         },
         {
           icon: LayoutDashboard,
@@ -95,7 +96,7 @@ export default function Dashboard() {
           description: 'Get an AI architect\'s pick for the best tech stack for your project',
           useWhen: 'You don\'t know which technologies to build on',
           gives: 'A recommended stack with the reasoning behind each choice',
-          path: '/dashboard/tech-recommender',
+          art: 'stack', path: '/dashboard/tech-recommender',
         },
       ],
     },
@@ -110,7 +111,7 @@ export default function Dashboard() {
           description: 'Estimate the ongoing monthly cost to maintain and support your product',
           useWhen: 'You want to budget beyond launch day',
           gives: 'A monthly figure covering hosting, support and updates',
-          path: '/dashboard/maintenance-calculator',
+          art: 'maintenance', path: '/dashboard/maintenance-calculator',
         },
       ],
     },
@@ -185,8 +186,8 @@ export default function Dashboard() {
           className="mb-8 glass rounded-2xl p-6 cursor-pointer hover:border-white/20 transition-all group flex items-center justify-between"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center flex-shrink-0">
-              <Kanban size={22} className="text-black" />
+            <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
+              <ToolArt art="pm" />
             </div>
             <div>
               <div className="flex items-center gap-2 mb-0.5">
@@ -207,22 +208,19 @@ export default function Dashboard() {
             </div>
             <p className="text-sm text-white/40 italic mb-4">"{group.question}"</p>
             <div className="grid md:grid-cols-2 gap-4">
-              {group.tools.map((tool) => {
-                const Icon = tool.icon
-                return (
-                  <div
-                    key={tool.title}
-                    onClick={() => navigate(tool.path)}
-                    className="glass rounded-2xl p-6 group transition-all hover:border-white/20 cursor-pointer flex flex-col"
-                  >
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="w-12 h-12 rounded-xl glass flex items-center justify-center flex-shrink-0">
-                        <Icon size={24} className="text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-display font-semibold text-lg text-white mb-1">{tool.title}</h3>
-                        <p className="text-sm text-white/60">{tool.description}</p>
-                      </div>
+              {group.tools.map((tool) => (
+                <div
+                  key={tool.title}
+                  onClick={() => navigate(tool.path)}
+                  className="glass rounded-2xl overflow-hidden group transition-all hover:border-white/20 cursor-pointer flex flex-col"
+                >
+                  <div className="h-28 w-full overflow-hidden">
+                    <ToolArt art={tool.art} />
+                  </div>
+                  <div className="p-6 flex flex-col flex-1">
+                    <div className="mb-3">
+                      <h3 className="font-display font-semibold text-lg text-white mb-1">{tool.title}</h3>
+                      <p className="text-sm text-white/60">{tool.description}</p>
                     </div>
                     <div className="space-y-1.5 mb-4 text-xs flex-1">
                       <p className="text-white/40">
@@ -239,8 +237,8 @@ export default function Dashboard() {
                       Open Tool
                     </button>
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
           </div>
         ))}
