@@ -2,18 +2,16 @@
 // No external assets - each `art` key maps to a distinct gradient + motif.
 // Gradient IDs are namespaced per art so multiple SVGs can share a page.
 
-function Frame({ id, from, to, children }) {
+// Gradient fills the whole band via CSS; the motif is rendered with `meet`
+// (contain) so the full illustration is always visible - never cropped,
+// whatever the card/banner aspect ratio.
+function Frame({ from, to, children }) {
   return (
-    <svg viewBox="0 0 320 120" preserveAspectRatio="xMidYMid slice" className="w-full h-full block" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor={from} />
-          <stop offset="100%" stopColor={to} />
-        </linearGradient>
-      </defs>
-      <rect width="320" height="120" fill={`url(#${id})`} />
-      {children}
-    </svg>
+    <div className="w-full h-full" style={{ background: `linear-gradient(135deg, ${from}, ${to})` }}>
+      <svg viewBox="0 0 320 120" preserveAspectRatio="xMidYMid meet" className="w-full h-full block" xmlns="http://www.w3.org/2000/svg">
+        {children}
+      </svg>
+    </div>
   )
 }
 
