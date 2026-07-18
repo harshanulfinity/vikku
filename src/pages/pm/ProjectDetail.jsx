@@ -356,7 +356,6 @@ export default function ProjectDetail() {
 
       <AppHeader
         breadcrumbs={[
-          { label: 'PM', href: '/pm' },
           { label: 'Projects', href: '/pm/dashboard' },
           { label: project.name },
         ]}
@@ -612,7 +611,7 @@ export default function ProjectDetail() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-5 sm:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-5 sm:py-8 pb-20 sm:pb-8">
         {/* Progress bar */}
         <div className="glass rounded-2xl p-5 mb-6">
           <div className="flex items-center justify-between mb-2">
@@ -664,7 +663,7 @@ export default function ProjectDetail() {
           ) : null
         })()}
         {/* Tabs */}
-        <div className="flex items-center gap-0.5 sm:gap-1 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1 overflow-x-auto max-w-full">
+        <div className="hidden sm:flex items-center gap-0.5 sm:gap-1 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1 overflow-x-auto max-w-full">
           {TABS.map((tab) => {
             const Icon = tab.icon
             const active = activeTab === tab.key
@@ -686,6 +685,30 @@ export default function ProjectDetail() {
             )
           })}
         </div>
+        </div>
+
+        {/* Mobile tab bar - fixed to bottom of screen */}
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 glass border-t border-white/[0.06] flex overflow-x-auto">
+          {TABS.map((tab) => {
+            const Icon = tab.icon
+            const active = activeTab === tab.key
+            const locked = tab.pro && !isPro
+            return (
+              <button
+                key={tab.key}
+                onClick={() => handleTabClick(tab)}
+                className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium flex-shrink-0 ${
+                  active ? 'text-white' : 'text-white/40'
+                }`}
+              >
+                <Icon size={16} />
+                <span className="flex items-center gap-1">
+                  {tab.label}
+                  {locked && <Lock size={8} className="text-yellow-400/60" />}
+                </span>
+              </button>
+            )
+          })}
         </div>
 
         {/* Main + Sidebar */}

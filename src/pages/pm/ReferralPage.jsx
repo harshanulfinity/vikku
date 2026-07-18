@@ -55,7 +55,7 @@ export default function ReferralPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <AppHeader breadcrumbs={[{ label: 'PM', href: '/pm' }, { label: 'Projects', href: '/pm/dashboard' }, { label: 'Refer & Earn' }]} />
+      <AppHeader breadcrumbs={[{ label: 'Projects', href: '/pm/dashboard' }, { label: 'Refer & Earn' }]} />
 
       <div className="max-w-2xl mx-auto px-6 py-12">
 

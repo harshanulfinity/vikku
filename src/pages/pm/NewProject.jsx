@@ -86,9 +86,9 @@ export default function NewProject() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <AppHeader breadcrumbs={[{ label: 'PM', href: '/pm' }, { label: 'Projects', href: '/pm/dashboard' }, { label: 'New Project' }]} />
+      <AppHeader breadcrumbs={[{ label: 'Projects', href: '/pm/dashboard' }, { label: 'New Project' }]} />
 
-      <div className="max-w-2xl mx-auto px-6 py-10">
+      <div className="max-w-6xl mx-auto px-6 py-10">
 
         {fromEstimate && !bannerDismissed && (
           <div className="mb-6 flex items-center gap-3 bg-white/[0.06] border border-white/[0.12] rounded-xl px-4 py-3">
@@ -97,22 +97,23 @@ export default function NewProject() {
           </div>
         )}
 
-        {/* Template picker */}
-        <div className="mb-8">
-          <label className="text-xs text-white/50 mb-3 block">Choose a template</label>
-          <TemplateGallery selectedKey={selectedTemplate} onPick={setSelectedTemplate} />
-          {template && template.key !== 'blank' && (
-            <div className="mt-3 flex items-center gap-3 bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3">
-              <template.Icon size={16} className="text-white/50 flex-shrink-0" />
-              <div>
-                <p className="text-xs text-white font-medium">{template.name} template</p>
-                <p className="text-[10px] text-white/40">{template.description} will be created automatically</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          {/* Template picker */}
+          <div>
+            <label className="text-xs text-white/50 mb-3 block">Choose a template</label>
+            <TemplateGallery selectedKey={selectedTemplate} onPick={setSelectedTemplate} />
+            {template && template.key !== 'blank' && (
+              <div className="mt-3 flex items-center gap-3 bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3">
+                <template.Icon size={16} className="text-white/50 flex-shrink-0" />
+                <div>
+                  <p className="text-xs text-white font-medium">{template.name} template</p>
+                  <p className="text-[10px] text-white/40">{template.description} will be created automatically</p>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 lg:sticky lg:top-6">
           {/* Color picker */}
           <div>
             <label className="text-xs text-white/50 mb-3 block">Project Color</label>
@@ -223,6 +224,7 @@ export default function NewProject() {
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   )
