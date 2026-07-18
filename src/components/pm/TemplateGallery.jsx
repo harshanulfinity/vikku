@@ -3,27 +3,34 @@ import { TEMPLATES, CATEGORY_ORDER, CATEGORY_META } from '../../lib/projectTempl
 // Categorized template picker, shared by the New Project page and the
 // dashboard "Start from Template" popup.
 export default function TemplateGallery({ selectedKey, onPick, includeBlank = true }) {
-  const tplBtn = (t) => (
+  const tplCard = (t) => (
     <button
       key={t.key}
       type="button"
       onClick={() => onPick(t.key)}
-      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border text-center transition-all ${
+      className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
         selectedKey === t.key
           ? 'border-white bg-white/10'
           : 'border-white/[0.08] hover:border-white/25 hover:bg-white/[0.04]'
       }`}
     >
-      <t.Icon size={16} className={selectedKey === t.key ? 'text-white' : 'text-white/50'} />
-      <span className="text-[10px] text-white/70 leading-tight">{t.name}</span>
+      <div className="w-9 h-9 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
+        <t.Icon size={18} className={selectedKey === t.key ? 'text-white' : 'text-white/60'} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-white leading-tight">{t.name}</p>
+        {t.description && <p className="text-[11px] text-white/40 mt-1">{t.description}</p>}
+      </div>
     </button>
   )
 
+  const grid = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {includeBlank && (
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-          {TEMPLATES.filter((t) => !t.category).map(tplBtn)}
+        <div className={grid}>
+          {TEMPLATES.filter((t) => !t.category).map(tplCard)}
         </div>
       )}
       {CATEGORY_ORDER.map((cat) => {
@@ -38,8 +45,8 @@ export default function TemplateGallery({ selectedKey, onPick, includeBlank = tr
                 {meta.desc && <p className="text-[11px] text-white/80 mt-0.5">{meta.desc}</p>}
               </div>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {group.map(tplBtn)}
+            <div className={grid}>
+              {group.map(tplCard)}
             </div>
           </div>
         )
