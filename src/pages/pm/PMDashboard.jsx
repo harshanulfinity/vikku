@@ -222,7 +222,7 @@ export default function PMDashboard() {
       )}
 
       <AppHeader
-        breadcrumbs={[{ label: 'PM', href: '/pm' }, { label: 'Projects' }]}
+        breadcrumbs={[{ label: 'Projects' }]}
         badge={
           !isPro ? (
             <div className="flex items-center gap-1.5 sm:gap-2">
@@ -264,7 +264,7 @@ export default function PMDashboard() {
         }
       />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 pb-24 sm:pb-10">
         {/* Page header */}
         <div className="flex items-start justify-between gap-3 mb-6 sm:mb-8">
           <div className="min-w-0">
@@ -278,7 +278,7 @@ export default function PMDashboard() {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
             <button
               onClick={handleStartFromTemplate}
               className="flex items-center gap-1.5 sm:gap-2 font-semibold text-xs sm:text-sm px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-white/[0.12] text-white/70 hover:text-white hover:border-white/25 transition-colors"
@@ -494,6 +494,27 @@ export default function PMDashboard() {
           )}
         </div>
       </div>
+
+      {/* Mobile action bar - fixed to bottom of screen */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 glass border-t border-white/[0.06] flex gap-2 p-3">
+        <button
+          onClick={handleStartFromTemplate}
+          className="flex-1 flex items-center justify-center gap-1.5 font-semibold text-sm px-4 py-2.5 rounded-xl border border-white/[0.12] text-white/70"
+        >
+          <LayoutGrid size={14} />
+          Template
+        </button>
+        <button
+          onClick={handleNewProject}
+          className={`flex-1 flex items-center justify-center gap-1.5 font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors ${
+            atLimit ? 'bg-white/10 text-white/50' : 'bg-white text-black'
+          }`}
+        >
+          {atLimit ? <Lock size={14} /> : <Plus size={15} />}
+          Project
+        </button>
+      </div>
+
       <QuickAdd />
     </div>
   )

@@ -235,7 +235,6 @@ export default function InvoiceGenerator() {
     <div className="min-h-screen bg-black text-white">
       <AppHeader
         breadcrumbs={[
-          { label: 'PM', href: '/pm' },
           { label: 'Projects', href: '/pm/dashboard' },
           { label: project?.name, href: `/pm/projects/${project?.slug || id}` },
           { label: 'Invoice' },
