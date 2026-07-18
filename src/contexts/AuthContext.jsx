@@ -21,7 +21,13 @@ export function AuthProvider({ children }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+      // Keep the same user object when the id is unchanged. Supabase fires
+      // TOKEN_REFRESHED on every tab refocus; minting a new user object each
+      // time re-runs every effect keyed on `user` (e.g. ProjectDetail's load),
+      // which unmounts the view and drops open modals + unsaved edits.
+      // ponytail: dedupe by id; a same-id USER_UPDATED (rare, no in-app flow) is not reflected.
+      const nextUser = session?.user ?? null
+      setUser((prev) => (prev?.id === nextUser?.id ? prev : nextUser))
       setLoading(false)
     })
 
