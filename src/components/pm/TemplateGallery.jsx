@@ -1,4 +1,4 @@
-import { TEMPLATES, CATEGORY_ORDER } from '../../lib/projectTemplates'
+import { TEMPLATES, CATEGORY_ORDER, CATEGORY_META } from '../../lib/projectTemplates'
 
 // Categorized template picker, shared by the New Project page and the
 // dashboard "Start from Template" popup.
@@ -29,9 +29,15 @@ export default function TemplateGallery({ selectedKey, onPick, includeBlank = tr
       {CATEGORY_ORDER.map((cat) => {
         const group = TEMPLATES.filter((t) => t.category === cat)
         if (group.length === 0) return null
+        const meta = CATEGORY_META[cat] || {}
         return (
           <div key={cat}>
-            <p className="text-[10px] uppercase tracking-wider text-white/40 mb-2">{cat}</p>
+            <div className={`rounded-xl overflow-hidden mb-3 bg-gradient-to-r ${meta.gradient || 'from-white/10 to-white/5'}`}>
+              <div className="px-4 py-3 bg-black/10">
+                <h3 className="font-display font-bold text-sm text-white">{cat}</h3>
+                {meta.desc && <p className="text-[11px] text-white/80 mt-0.5">{meta.desc}</p>}
+              </div>
+            </div>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {group.map(tplBtn)}
             </div>
