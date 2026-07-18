@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { DollarSign, Clock, LayoutDashboard, TrendingUp, ArrowRight, FileText, Wrench, Radar } from 'lucide-react'
+import { DollarSign, Clock, LayoutDashboard, TrendingUp, ArrowRight, FileText, Wrench, Radar, Kanban, Sparkles, Share2, Flag, LayoutGrid } from 'lucide-react'
 import AppHeader from '../components/AppHeader'
 import ToolArt from '../components/ToolArt'
 import { getMyToolResults } from '../lib/toolResultsService'
@@ -183,21 +183,50 @@ export default function Dashboard() {
         {/* PM Tool banner */}
         <div
           onClick={() => navigate('/pm')}
-          className="mb-8 glass rounded-2xl p-6 cursor-pointer hover:border-white/20 transition-all group flex items-center justify-between"
+          className="mb-8 glass rounded-2xl overflow-hidden cursor-pointer hover:border-white/20 transition-all group"
         >
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
-              <ToolArt art="pm" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <h3 className="font-display font-semibold text-white">Vikku PM - Project Management</h3>
+          <div className="h-32 sm:h-40 w-full overflow-hidden">
+            <ToolArt art="pm" />
+          </div>
+          <div className="p-6 sm:p-8">
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-display font-bold text-xl sm:text-2xl text-white">Vikku PM — Project Management</h3>
                 <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full text-white/60">New</span>
               </div>
-              <p className="text-sm text-white/50">Manage client projects, tasks & milestones. AI planning + client share links.</p>
+              <ArrowRight size={20} className="text-white/30 group-hover:text-white transition-colors flex-shrink-0 mt-1" />
             </div>
+            <p className="text-sm text-white/60 mb-6 max-w-2xl">
+              Run client projects end to end — plan with AI, track work on a board, and share live
+              progress with clients. Free to start, no credit card.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+              {[
+                { icon: Kanban,    title: 'Kanban boards',    sub: 'Drag-and-drop task board with custom stages' },
+                { icon: Sparkles,  title: 'AI project planning', sub: 'Describe it, AI builds tasks + milestones' },
+                { icon: Share2,    title: 'Client share links', sub: 'Read-only progress link, no login needed' },
+                { icon: Flag,      title: 'Milestones & timeline', sub: 'Deadlines with a visual timeline view' },
+                { icon: Clock,     title: 'Time tracking',    sub: 'Timers + billable hours and reports' },
+                { icon: LayoutGrid, title: '100+ templates',  sub: 'Start from a proven project template' },
+              ].map(({ icon: Icon, title, sub }) => (
+                <div key={title} className="flex items-start gap-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
+                    <Icon size={14} className="text-white/70" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-white">{title}</p>
+                    <p className="text-[11px] text-white/40 mt-0.5 leading-tight">{sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); navigate('/pm') }}
+              className="bg-white text-black font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-white/90 transition-colors"
+            >
+              Open Vikku PM →
+            </button>
           </div>
-          <ArrowRight size={18} className="text-white/30 group-hover:text-white transition-colors flex-shrink-0 ml-4" />
         </div>
 
         {toolGroups.map((group) => (
