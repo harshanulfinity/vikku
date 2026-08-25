@@ -58,12 +58,12 @@ function RoiGauge({ pct }) {
   const r = 54, cx = 64, cy = 64
   const arcLen = Math.PI * r
   return (
-    <svg viewBox="0 0 128 72" className="w-32">
-      <path d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`} fill="none" stroke="white" strokeOpacity=".1" strokeWidth="10" strokeLinecap="round" />
-      <path d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`} fill="none" stroke="white" strokeOpacity=".7" strokeWidth="10" strokeLinecap="round"
+    <svg viewBox="0 0 128 72" className="w-32 text-white">
+      <path d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`} fill="none" stroke="currentColor" strokeOpacity=".15" strokeWidth="10" strokeLinecap="round" />
+      <path d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`} fill="none" stroke="currentColor" strokeOpacity=".7" strokeWidth="10" strokeLinecap="round"
         strokeDasharray={`${fill * arcLen} ${arcLen}`} />
-      <text x={cx} y={cy - 4} textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">{pct}%</text>
-      <text x={cx} y={cy + 10} textAnchor="middle" fill="white" fillOpacity=".4" fontSize="8">ROI</text>
+      <text x={cx} y={cy - 4} textAnchor="middle" fill="currentColor" fontSize="18" fontWeight="bold">{pct}%</text>
+      <text x={cx} y={cy + 10} textAnchor="middle" fill="currentColor" fillOpacity=".4" fontSize="8">ROI</text>
     </svg>
   )
 }

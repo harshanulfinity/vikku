@@ -29,12 +29,12 @@ function ScoreGauge({ score }) {
   const arcLen = Math.PI * r
   const color = pct >= 70 ? '#4ade80' : pct >= 40 ? '#facc15' : '#f87171'
   return (
-    <svg viewBox="0 0 128 72" className="w-32">
-      <path d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`} fill="none" stroke="white" strokeOpacity=".1" strokeWidth="10" strokeLinecap="round" />
+    <svg viewBox="0 0 128 72" className="w-32 text-white">
+      <path d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`} fill="none" stroke="currentColor" strokeOpacity=".15" strokeWidth="10" strokeLinecap="round" />
       <path d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`} fill="none" stroke={color} strokeWidth="10" strokeLinecap="round"
         strokeDasharray={`${(pct / 100) * arcLen} ${arcLen}`} />
-      <text x={cx} y={cy - 4} textAnchor="middle" fill="white" fontSize="20" fontWeight="bold">{pct}</text>
-      <text x={cx} y={cy + 10} textAnchor="middle" fill="white" fillOpacity=".4" fontSize="8">AI VISIBILITY</text>
+      <text x={cx} y={cy - 4} textAnchor="middle" fill="currentColor" fontSize="20" fontWeight="bold">{pct}</text>
+      <text x={cx} y={cy + 10} textAnchor="middle" fill="currentColor" fillOpacity=".4" fontSize="8">AI VISIBILITY</text>
     </svg>
   )
 }
